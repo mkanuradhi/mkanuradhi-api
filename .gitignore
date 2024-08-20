@@ -11,3 +11,9 @@
 
 #!.yarn/cache
 .pnp.*
+
+# Dependency directories
+node_modules/
+
+# Compiled binary
+dist/
