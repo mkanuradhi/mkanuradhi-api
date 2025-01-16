@@ -1,4 +1,4 @@
-import logger from "../config/Logger";
+import logger from "../config/logger-config";
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({

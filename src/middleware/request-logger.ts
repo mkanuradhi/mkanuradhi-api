@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import logger from '../config/Logger';
+import logger from '../config/logger-config';
 
 const RequestLogger = (req: Request, res: Response, next: NextFunction) => {
     const ipAddress = getIpAddress(req);

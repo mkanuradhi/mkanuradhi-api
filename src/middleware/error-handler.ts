@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import logger from "../config/Logger";
+import logger from "../config/logger-config";
 
 const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
     logger.error(`Error occurred when accessing ${req.url}`);
