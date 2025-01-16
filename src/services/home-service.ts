@@ -1,4 +1,4 @@
-import logger from "../config/Logger";
+import logger from "../config/logger-config";
 
 const init = async (): Promise<Object> => {
   logger.info(`API is working`);

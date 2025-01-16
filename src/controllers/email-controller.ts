@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import logger from "../config/Logger";
-import * as emailService from '../services/EmailService';
+import logger from "../config/logger-config";
+import * as emailService from '../services/email-service';
 
 const notifyMessage = async (req: Request, res: Response, next: NextFunction) => {
   try {
