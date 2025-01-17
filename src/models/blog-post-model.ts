@@ -162,7 +162,7 @@ blogPostSchema.pre('validate', async function (next) {
   next();
 });
 
-blogPostSchema.index({ titleEn: "text", descriptionEn: "text" }); // For text search
+blogPostSchema.index({ titleEn: "text", summaryEn: "text", contentEn: "text", titleSi: "text", summarySi: "text", contentSi: "text" }); // For text search
 blogPostSchema.index({ createdAt: -1 }); // For recent posts
 
 const BlogPostModel = model<BlogPostDocument>('BlogPost', blogPostSchema);

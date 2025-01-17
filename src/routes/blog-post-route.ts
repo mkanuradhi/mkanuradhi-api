@@ -5,6 +5,9 @@ import upload from '../middleware/file-upload';
 
 const blogPostRoute = express.Router();
 
+// Search products by query
+blogPostRoute.get('/search', blogPostController.searchBlogPosts);
+
 // Add a new blog post (text data)
 blogPostRoute.post('/', blogPostController.createBlogPostText);
 
@@ -25,6 +28,9 @@ blogPostRoute.patch('/:id/primary-image', upload.single('primaryImage'), blogPos
 
 // Update the images for a blog post
 blogPostRoute.patch('/:id/images', upload.array('images', 5), blogPostController.uploadImages);
+
+// Publish or unpublish a blog post
+blogPostRoute.patch('/:id/publish', validateObjectId, blogPostController.publishBlogPost);
 
 // Delete a blog post
 blogPostRoute.delete('/:id', validateObjectId, blogPostController.deleteBlogPost);

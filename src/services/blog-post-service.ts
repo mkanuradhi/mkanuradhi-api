@@ -1,5 +1,5 @@
 import logger from "../config/logger-config";
-import { CreateBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
+import { CreateBlogPostTextDto, PublishBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
 import DocumentStatus from "../enums/document-status";
 import BlogPost from "../interfaces/i-blog-post";
 import BlogPostModel from "../models/blog-post-model";
@@ -8,6 +8,7 @@ import { mapDocumentToBlogPost, mapDocumentsToBlogPosts } from "../mappers/blog-
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadImageToCloudService } from "../utils/common-util";
+import { SearchParamsDto } from "../dtos/search-params-dto";
 
 const createBlogPostText = async (blogPostDto: CreateBlogPostTextDto): Promise<BlogPost> => {
   const existingProductDoc = await BlogPostModel.findOne({
@@ -227,6 +228,34 @@ const uploadImages = async (blogPostId: string, imageFiles?: Express.Multer.File
   return mapDocumentToBlogPost(blogPostDoc);
 }
 
+const publishBlogPost = async (blogPostId: string, blogPostDto: PublishBlogPostTextDto): Promise<BlogPost> => {
+  const existingBlogPostDoc = await BlogPostModel.findOne({
+    _id: blogPostId,
+    deleted: false,
+  });
+  if (!existingBlogPostDoc) {
+      throw new AppError(`Cannot find the blog post with ID: ${blogPostId}. Unable to update the blog post.`, 400);
+  }
+
+  const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
+    blogPostId,
+    { 
+      $set: {
+        published: blogPostDto.published,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedBlogPostDoc) {
+      throw new AppError('Failed to update blog post document.', 500);
+  }
+
+  logger.info(`Blog post updated for published for ID: ${blogPostId}`);
+  return mapDocumentToBlogPost(updatedBlogPostDoc);
+}
+
 const deleteBlogPost = async (blogPostId: string): Promise<void> => {
   const blogPostDoc = await BlogPostModel.findOne({ 
     _id: blogPostId,
@@ -257,4 +286,76 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
   }
 }
 
-export { createBlogPostText, getBlogPosts, getBlogPost, getBlogPostByPath, updateBlogPostText, uploadPrimaryImage, uploadImages, deleteBlogPost };
+const searchBlogPosts = async (searchParams: SearchParamsDto): Promise<{ blogPosts: BlogPost[]; totalCount: number; }> => {
+  const {page = 0, size = 10, sort} = searchParams;
+  
+  validatePaginationDetails(page || 0, size || 10);
+
+  const searchFilter = buildSearchFilter(searchParams);
+  const sortOptions = getSortOptions(sort);
+  
+  const [productDocs, totalCount] = await Promise.all([
+    // Fetch paginated products
+    BlogPostModel.find(
+      searchFilter,
+      {
+        titleEn: 1,
+        summaryEn: 1,
+        titleSi: 1,
+        summarySi: 1,
+        path: 1,
+        primaryImage: 1,
+        published: 1
+      }
+    )
+      .sort(sortOptions)
+      .skip(page * size)
+      .limit(size),
+    
+    // Count total documents for the query
+    BlogPostModel.countDocuments(searchFilter),
+
+  ]);
+
+  const blogPosts = mapDocumentsToBlogPosts(productDocs);
+
+  return { blogPosts, totalCount };
+}
+
+const buildSearchFilter = ({ query, published }: SearchParamsDto): Record<string, any> => {
+  const filter: Record<string, any> = {
+    status: { $ne: DocumentStatus.Inactive },
+    deleted: false,
+  };
+
+  if (query) filter.$text = { $search: query };
+  if (published !== undefined) filter.published = published;
+
+  return filter;
+};
+
+const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
+  const defaultSort: Record<string, 1 | -1> = { dateTime: -1 }; // Default to newest first
+  if (!sort) {
+    return defaultSort;
+  }
+
+  switch (sort) {
+    case "latest": return { dateTime: -1 };
+    case "oldest": return { dateTime: 1 };
+    default: return defaultSort;
+  }
+};
+
+export {
+  createBlogPostText,
+  getBlogPosts,
+  getBlogPost,
+  getBlogPostByPath,
+  updateBlogPostText,
+  uploadPrimaryImage,
+  uploadImages,
+  publishBlogPost,
+  deleteBlogPost,
+  searchBlogPosts,
+};
