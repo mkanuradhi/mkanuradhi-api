@@ -1,6 +1,10 @@
 import DocumentStatus from "../enums/document-status";
 
-export interface CreateBlogPostTextDto {
+export interface PublishBlogPostTextDto {
+  published: boolean;
+}
+
+export interface CreateBlogPostTextDto extends PublishBlogPostTextDto {
   titleEn: string;
   summaryEn: string;
   contentEn: string;
@@ -13,7 +17,6 @@ export interface CreateBlogPostTextDto {
   status: DocumentStatus;
   keywords: string[];
   dateTime: Date;
-  published: boolean;
   deleted: boolean;
 }
 

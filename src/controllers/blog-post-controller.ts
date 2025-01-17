@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
+import { CreateBlogPostTextDto, PublishBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
 import * as blogPostService from "../services/blog-post-service";
+import { SearchParamsDto } from "../dtos/search-params-dto";
 
 export const createBlogPostText = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
@@ -119,8 +120,60 @@ export const uploadImages = asyncErrorHandler(async (req: Request, res: Response
   res.status(200).json(updatedProduct);
 });
 
+export const publishBlogPost = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const blogPostId = req.params.id;
+  const {
+    published,
+  } = req.body;
+
+  const blogPostTextDto: PublishBlogPostTextDto = {
+    published,
+  };
+  
+  const updatedBlogPost = await blogPostService.publishBlogPost(blogPostId, blogPostTextDto);
+  res.status(200).json(updatedBlogPost);
+});
+
 export const deleteBlogPost = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const blogPostId = req.params.id;
   await blogPostService.deleteBlogPost(blogPostId);
   res.status(204).json();
 });
+
+export const searchBlogPosts = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const searchParams: SearchParamsDto = parseSearchParams(req);
+  const { blogPosts, totalCount } = await blogPostService.searchBlogPosts(searchParams);
+  
+  const message = `${totalCount} result${totalCount !== 1 ? 's' : ''} found for '${searchParams.query}'`;
+
+  res.status(200).json({
+    message,
+    data: blogPosts,
+    pagination: {
+      page: searchParams.page,
+      size: searchParams.size,
+      pageCount: blogPosts.length,
+      totalCount,
+    },
+  });
+});
+
+const parseSearchParams = (req: Request): SearchParamsDto => {
+  const parsePublished = (value: string | undefined): boolean | undefined => {
+    if (value === undefined) return undefined;
+    const truthyValues = ["1", "true", "t", "yes", "y"];
+    const falsyValues = ["0", "false", "f", "no", "n"];
+    const normalizedValue = value.trim().toLowerCase();
+    if (truthyValues.includes(normalizedValue)) return true;
+    if (falsyValues.includes(normalizedValue)) return false;
+    return undefined;
+  };
+
+  return {
+    query: (req.query.q as string) || "",
+    page: parseInt(req.query.page as string) || 0,
+    size: Math.min(parseInt(req.query.size as string) || 20, 100),
+    published: parsePublished(req.query.published as string),
+    sort: req.query.sort as string, // Expected: "latest", "oldest"
+  };
+};
