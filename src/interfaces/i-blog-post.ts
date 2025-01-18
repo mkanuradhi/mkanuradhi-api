@@ -1,10 +1,5 @@
 import DocumentStatus from "../enums/document-status";
 
-interface ProductCategory {
-  id: string; 
-  name: string;
-}
-
 interface BlogPost {
   id: string;
   titleEn: string;

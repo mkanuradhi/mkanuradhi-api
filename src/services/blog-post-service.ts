@@ -32,7 +32,7 @@ const createBlogPostText = async (blogPostDto: CreateBlogPostTextDto): Promise<B
     contentSi: blogPostDto.contentSi,
     pageDescriptionSi: blogPostDto.pageDescriptionSi,
     path: blogPostDto.path,
-    status: blogPostDto.status || DocumentStatus.Active,
+    status: blogPostDto.status || DocumentStatus.ACTIVE,
     keywords: blogPostDto.keywords || [],
     dateTime: blogPostDto.dateTime || new Date(),
     published: blogPostDto.published,
@@ -155,7 +155,7 @@ const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPos
         contentSi: blogPostDto.contentSi,
         pageDescriptionSi: blogPostDto.pageDescriptionSi,
         path: blogPostDto.path,
-        status: blogPostDto.status || DocumentStatus.Active,
+        status: blogPostDto.status || DocumentStatus.ACTIVE,
         keywords: blogPostDto.keywords || [],
         dateTime: blogPostDto.dateTime || new Date(),
         published: blogPostDto.published,
@@ -265,8 +265,8 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
     throw new AppError(`Cannot find the blog post with ID '${blogPostId}' or it is already deleted.`, 404);
   }
 
-  const deletedTitleEn = `${blogPostDoc.titleEn}-${DocumentStatus.Deleted}-${uuidv4()}`;
-  const deletedTitleSi = `${blogPostDoc.titleSi}-${DocumentStatus.Deleted}-${uuidv4()}`;
+  const deletedTitleEn = `${blogPostDoc.titleEn}-${DocumentStatus.DELETED}-${uuidv4()}`;
+  const deletedTitleSi = `${blogPostDoc.titleSi}-${DocumentStatus.DELETED}-${uuidv4()}`;
 
   const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
     blogPostId,
@@ -275,7 +275,7 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
         titleEn: deletedTitleEn,
         titleSi: deletedTitleSi,
         deleted: true,
-        status: DocumentStatus.Deleted,
+        status: DocumentStatus.DELETED,
       },
       $inc: { __v: 1 }
     },
@@ -324,7 +324,7 @@ const searchBlogPosts = async (searchParams: SearchParamsDto): Promise<{ blogPos
 
 const buildSearchFilter = ({ query, published }: SearchParamsDto): Record<string, any> => {
   const filter: Record<string, any> = {
-    status: { $ne: DocumentStatus.Inactive },
+    status: { $ne: DocumentStatus.INACTIVE },
     deleted: false,
   };
 
