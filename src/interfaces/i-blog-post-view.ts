@@ -1,21 +1,19 @@
 import DocumentStatus from "../enums/document-status";
 
-interface BlogPost {
+interface BlogPostView {
   id: string;
-  titleEn: string;
-  summaryEn: string;
-  contentEn: string;
-  pageDescriptionEn: string;
-  titleSi: string;
-  summarySi: string;
-  contentSi: string;
-  pageDescriptionSi: string;
+  title: string;
+  summary: string;
+  content: string;
+  pageDescription: string;
   primaryImage: string;
   images: string[];
   path: string;
   status: DocumentStatus;
   keywords: string[];
   dateTime: Date;
+  formattedDate: string;
+  formattedTime: string;
   published: boolean;
   deleted: boolean;
   createdAt: Date;
@@ -23,4 +21,4 @@ interface BlogPost {
   v: number;
 }
 
-export default BlogPost;
+export default BlogPostView;

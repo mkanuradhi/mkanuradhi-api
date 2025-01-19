@@ -2,6 +2,8 @@ import FormData from "form-data";
 import axios, { AxiosResponse } from "axios";
 import { ImgbbResponseDto } from "../dtos/imgbb-response-dto";
 import AppError from "../errors/app-error";
+import { Request } from "express";
+import { AVAILABLE_LANGS, DEFAULT_LANG } from "../constants/common-vars";
 
 export const uploadImageToCloudService = async (file: Express.Multer.File): Promise<string> => {
   const formData = new FormData();
@@ -34,3 +36,10 @@ export const uploadImageToCloudService = async (file: Express.Multer.File): Prom
     throw new AppError("Image upload failed. Please try again.", 500);
   }
 };
+
+export const parseLangQueryParam = (req: Request): string => {
+  const langParam = req.query.lang as string;
+  return AVAILABLE_LANGS.includes(langParam) ? langParam : DEFAULT_LANG;
+}
+
+export const capitalizeLang = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);

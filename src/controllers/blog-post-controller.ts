@@ -3,6 +3,7 @@ import asyncErrorHandler from "../utils/async-error-handler";
 import { CreateBlogPostTextDto, PublishBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
 import * as blogPostService from "../services/blog-post-service";
 import { SearchParamsDto } from "../dtos/search-params-dto";
+import { parseLangQueryParam } from "../utils/common-util";
 
 export const createBlogPostText = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
@@ -56,9 +57,10 @@ export const getBlogPost = asyncErrorHandler( async (req: Request, res: Response
 });
 
 export const getBlogPostByPath = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const lang: string = parseLangQueryParam(req);
   const blogPostPath = req.params.path;
-  const blogPost = await blogPostService.getBlogPostByPath(blogPostPath);
-  res.status(200).json(blogPost);
+  const blogPostView = await blogPostService.getBlogPostByPath(lang, blogPostPath);
+  res.status(200).json(blogPostView);
 });
 
 export const updateBlogPostText = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
@@ -142,17 +144,18 @@ export const deleteBlogPost = asyncErrorHandler( async (req: Request, res: Respo
 
 export const searchBlogPosts = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const searchParams: SearchParamsDto = parseSearchParams(req);
-  const { blogPosts, totalCount } = await blogPostService.searchBlogPosts(searchParams);
+  const lang: string = parseLangQueryParam(req);
+  const { blogPostViews, totalCount } = await blogPostService.searchBlogPosts(lang, searchParams);
   
   const message = `${totalCount} result${totalCount !== 1 ? 's' : ''} found for '${searchParams.query}'`;
 
   res.status(200).json({
     message,
-    data: blogPosts,
+    data: blogPostViews,
     pagination: {
       page: searchParams.page,
       size: searchParams.size,
-      pageCount: blogPosts.length,
+      pageCount: blogPostViews.length,
       totalCount,
     },
   });

@@ -2,13 +2,15 @@ import logger from "../config/logger-config";
 import { CreateBlogPostTextDto, PublishBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
 import DocumentStatus from "../enums/document-status";
 import BlogPost from "../interfaces/i-blog-post";
+import BlogPostView from "../interfaces/i-blog-post-view";
 import BlogPostModel from "../models/blog-post-model";
 import AppError from "../errors/app-error";
-import { mapDocumentToBlogPost, mapDocumentsToBlogPosts } from "../mappers/blog-post-mapper";
+import { mapDocumentToBlogPost, mapDocumentToBlogPostView, mapDocumentsToBlogPostViews, mapDocumentsToBlogPosts } from "../mappers/blog-post-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
-import { uploadImageToCloudService } from "../utils/common-util";
+import { capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
 import { SearchParamsDto } from "../dtos/search-params-dto";
+import BlogPostDocument from "../documents/blog-post-document";
 
 const createBlogPostText = async (blogPostDto: CreateBlogPostTextDto): Promise<BlogPost> => {
   const existingProductDoc = await BlogPostModel.findOne({
@@ -32,7 +34,7 @@ const createBlogPostText = async (blogPostDto: CreateBlogPostTextDto): Promise<B
     contentSi: blogPostDto.contentSi,
     pageDescriptionSi: blogPostDto.pageDescriptionSi,
     path: blogPostDto.path,
-    status: blogPostDto.status || DocumentStatus.Active,
+    status: blogPostDto.status || DocumentStatus.ACTIVE,
     keywords: blogPostDto.keywords || [],
     dateTime: blogPostDto.dateTime || new Date(),
     published: blogPostDto.published,
@@ -97,37 +99,38 @@ const getBlogPost = async (blogPostId: string): Promise<BlogPost> => {
   }
 }
 
-const getBlogPostByPath = async (blogPostPath: string): Promise<BlogPost> => {
-  const blogPostDoc = await BlogPostModel.findOne(
-    { path: blogPostPath }, 
-    { 
-      titleEn: 1,
-      summaryEn: 1,
-      contentEn: 1,
-      pageDescriptionEn: 1,
-      titleSi: 1,
-      summarySi: 1,
-      contentSi: 1,
-      pageDescriptionSi: 1,
-      primaryImage: 1,
-      images: 1,
-      path: 1,
-      status: 1,
-      keywords: 1,
-      dateTime: 1,
-      published: 1,
-      deleted: 1,
-      createdAt: 1,
-      updatedAt: 1,
-      __v: 1
-    }
-  );
+const getBlogPostByPath = async (lang: string, blogPostPath: string): Promise<BlogPostView> => {
+  const commonFields = {
+    primaryImage: 1,
+    images: 1,
+    path: 1,
+    status: 1,
+    keywords: 1,
+    dateTime: 1,
+    published: 1,
+    deleted: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    __v: 1,
+  };
+  const langFields = {
+    [`title${capitalizeLang(lang)}`]: 1,
+    [`summary${capitalizeLang(lang)}`]: 1,
+    [`content${capitalizeLang(lang)}`]: 1,
+    [`pageDescription${capitalizeLang(lang)}`]: 1,
+  };
+  const projection = { ...commonFields, ...langFields };
 
-  if (blogPostDoc) {
-    return mapDocumentToBlogPost(blogPostDoc);
-  } else {
+  const blogPostDoc = await BlogPostModel.findOne(
+    { path: blogPostPath },
+    projection
+  ) as BlogPostDocument & Record<string, any>;
+
+  if (!blogPostDoc) {
     throw new AppError(`Blog post cannot be found for path: ${blogPostPath}`, 400);
   }
+
+  return mapDocumentToBlogPostView(lang, blogPostDoc);
 }
 
 const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPostTextDto): Promise<BlogPost> => {
@@ -155,7 +158,7 @@ const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPos
         contentSi: blogPostDto.contentSi,
         pageDescriptionSi: blogPostDto.pageDescriptionSi,
         path: blogPostDto.path,
-        status: blogPostDto.status || DocumentStatus.Active,
+        status: blogPostDto.status || DocumentStatus.ACTIVE,
         keywords: blogPostDto.keywords || [],
         dateTime: blogPostDto.dateTime || new Date(),
         published: blogPostDto.published,
@@ -265,8 +268,8 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
     throw new AppError(`Cannot find the blog post with ID '${blogPostId}' or it is already deleted.`, 404);
   }
 
-  const deletedTitleEn = `${blogPostDoc.titleEn}-${DocumentStatus.Deleted}-${uuidv4()}`;
-  const deletedTitleSi = `${blogPostDoc.titleSi}-${DocumentStatus.Deleted}-${uuidv4()}`;
+  const deletedTitleEn = `${blogPostDoc.titleEn}-${DocumentStatus.DELETED}-${uuidv4()}`;
+  const deletedTitleSi = `${blogPostDoc.titleSi}-${DocumentStatus.DELETED}-${uuidv4()}`;
 
   const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
     blogPostId,
@@ -275,7 +278,7 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
         titleEn: deletedTitleEn,
         titleSi: deletedTitleSi,
         deleted: true,
-        status: DocumentStatus.Deleted,
+        status: DocumentStatus.DELETED,
       },
       $inc: { __v: 1 }
     },
@@ -286,45 +289,47 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
   }
 }
 
-const searchBlogPosts = async (searchParams: SearchParamsDto): Promise<{ blogPosts: BlogPost[]; totalCount: number; }> => {
+const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Promise<{ blogPostViews: BlogPostView[]; totalCount: number; }> => {
   const {page = 0, size = 10, sort} = searchParams;
   
-  validatePaginationDetails(page || 0, size || 10);
+  validatePaginationDetails(page, size);
 
   const searchFilter = buildSearchFilter(searchParams);
   const sortOptions = getSortOptions(sort);
+
+  const commonFields = {
+    path: 1,
+    primaryImage: 1,
+    dateTime: 1,
+    published: 1,
+  };
+
+  const langFields = {
+    [`title${capitalizeLang(lang)}`]: 1,
+    [`summary${capitalizeLang(lang)}`]: 1,
+  };
+
+  const projection = { ...commonFields, ...langFields };
   
-  const [productDocs, totalCount] = await Promise.all([
-    // Fetch paginated products
-    BlogPostModel.find(
-      searchFilter,
-      {
-        titleEn: 1,
-        summaryEn: 1,
-        titleSi: 1,
-        summarySi: 1,
-        path: 1,
-        primaryImage: 1,
-        published: 1
-      }
-    )
+  const [blogPostDocs, totalCount] = await Promise.all([
+    // Fetch paginated blog posts
+    BlogPostModel.find(searchFilter, projection)
       .sort(sortOptions)
       .skip(page * size)
       .limit(size),
     
     // Count total documents for the query
     BlogPostModel.countDocuments(searchFilter),
-
   ]);
 
-  const blogPosts = mapDocumentsToBlogPosts(productDocs);
+  const blogPostViews: BlogPostView[] = mapDocumentsToBlogPostViews(lang, blogPostDocs);
 
-  return { blogPosts, totalCount };
+  return { blogPostViews, totalCount };
 }
 
 const buildSearchFilter = ({ query, published }: SearchParamsDto): Record<string, any> => {
   const filter: Record<string, any> = {
-    status: { $ne: DocumentStatus.Inactive },
+    status: { $ne: DocumentStatus.INACTIVE },
     deleted: false,
   };
 

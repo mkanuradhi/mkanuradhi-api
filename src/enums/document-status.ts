@@ -1,7 +1,7 @@
 enum DocumentStatus {
-  Active = 'ACTIVE',
-  Inactive = 'INACTIVE',
-  Deleted = 'DELETED',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  DELETED = 'DELETED',
 }
 
 export default DocumentStatus;

@@ -96,7 +96,7 @@ const blogPostSchema = new Schema<BlogPostDocument>(
         values: Object.values(DocumentStatus),
         message: 'Blog post status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.Active,
+      default: DocumentStatus.ACTIVE,
     },
     keywords: {
       type: [String],
