@@ -4,7 +4,7 @@ export interface PublishBlogPostTextDto {
   published: boolean;
 }
 
-export interface CreateBlogPostTextDto extends PublishBlogPostTextDto {
+export interface CreateBlogPostTextDto {
   titleEn: string;
   summaryEn: string;
   contentEn: string;
@@ -17,7 +17,6 @@ export interface CreateBlogPostTextDto extends PublishBlogPostTextDto {
   status: DocumentStatus;
   keywords: string[];
   dateTime: Date;
-  deleted: boolean;
 }
 
 export interface UpdateBlogPostTextDto extends CreateBlogPostTextDto {

@@ -19,8 +19,6 @@ export const createBlogPostText = asyncErrorHandler( async (req: Request, res: R
     status,
     keywords,
     dateTime,
-    published,
-    deleted,
   } = req.body;
 
   const blogPostTextDto: CreateBlogPostTextDto = {
@@ -36,8 +34,6 @@ export const createBlogPostText = asyncErrorHandler( async (req: Request, res: R
     status,
     keywords,
     dateTime,
-    published,
-    deleted,
   };
   const addedBlogPost = await blogPostService.createBlogPostText(blogPostTextDto);
   res.status(201).json(addedBlogPost);
@@ -78,8 +74,6 @@ export const updateBlogPostText = asyncErrorHandler( async (req: Request, res: R
     status,
     keywords,
     dateTime,
-    published,
-    deleted,
     v
   } = req.body;
 
@@ -96,8 +90,6 @@ export const updateBlogPostText = asyncErrorHandler( async (req: Request, res: R
     status,
     keywords,
     dateTime,
-    published,
-    deleted,
     v
   };
   
