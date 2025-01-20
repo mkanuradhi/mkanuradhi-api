@@ -37,8 +37,6 @@ const createBlogPostText = async (blogPostDto: CreateBlogPostTextDto): Promise<B
     status: blogPostDto.status || DocumentStatus.ACTIVE,
     keywords: blogPostDto.keywords || [],
     dateTime: blogPostDto.dateTime || new Date(),
-    published: blogPostDto.published,
-    deleted: blogPostDto.deleted,
   });
 
   logger.info(`Blog Post created for ${blogPostDto.titleEn}`);
@@ -161,8 +159,6 @@ const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPos
         status: blogPostDto.status || DocumentStatus.ACTIVE,
         keywords: blogPostDto.keywords || [],
         dateTime: blogPostDto.dateTime || new Date(),
-        published: blogPostDto.published,
-        deleted: blogPostDto.deleted,
       },
       $inc: { __v: 1 }
     },
