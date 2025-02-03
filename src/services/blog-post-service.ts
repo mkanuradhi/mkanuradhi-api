@@ -1,5 +1,5 @@
 import logger from "../config/logger-config";
-import { CreateBlogPostTextDto, PublishBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
+import { CreateBlogPostTextEnDto, UpdateBlogPostTextSiDto, PublishBlogPostTextDto, UpdateBlogPostTextEnDto } from "../dtos/blog-post-dto";
 import DocumentStatus from "../enums/document-status";
 import BlogPost from "../interfaces/i-blog-post";
 import BlogPostView from "../interfaces/i-blog-post-view";
@@ -12,16 +12,13 @@ import { capitalizeLang, uploadImageToCloudService } from "../utils/common-util"
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import BlogPostDocument from "../documents/blog-post-document";
 
-const createBlogPostText = async (blogPostDto: CreateBlogPostTextDto): Promise<BlogPost> => {
-  const existingProductDoc = await BlogPostModel.findOne({
-    $or: [
-      { titleEn: blogPostDto.titleEn.trim() },
-      { titleSi: blogPostDto.titleSi.trim() }
-    ],
+const createBlogPostTextEn = async (blogPostDto: CreateBlogPostTextEnDto): Promise<BlogPost> => {
+  const existingBlogPostDoc = await BlogPostModel.findOne({
+    titleEn: blogPostDto.titleEn.trim(),
     deleted: false
   });
-  if (existingProductDoc) {
-      throw new AppError(`Existing blog post found for the title: ${blogPostDto.titleEn} OR ${blogPostDto.titleSi}`, 400);
+  if (existingBlogPostDoc) {
+      throw new AppError(`Existing blog post found for the title: ${blogPostDto.titleEn}`, 400);
   }
 
   const blogPostDoc = await BlogPostModel.create({ 
@@ -29,10 +26,6 @@ const createBlogPostText = async (blogPostDto: CreateBlogPostTextDto): Promise<B
     summaryEn: blogPostDto.summaryEn,
     contentEn: blogPostDto.contentEn,
     pageDescriptionEn: blogPostDto.pageDescriptionEn,
-    titleSi: blogPostDto.titleSi,
-    summarySi: blogPostDto.summarySi,
-    contentSi: blogPostDto.contentSi,
-    pageDescriptionSi: blogPostDto.pageDescriptionSi,
     path: blogPostDto.path,
     status: blogPostDto.status || DocumentStatus.ACTIVE,
     keywords: blogPostDto.keywords || [],
@@ -131,7 +124,7 @@ const getBlogPostByPath = async (lang: string, blogPostPath: string): Promise<Bl
   return mapDocumentToBlogPostView(lang, blogPostDoc);
 }
 
-const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPostTextDto): Promise<BlogPost> => {
+const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogPostTextEnDto): Promise<BlogPost> => {
   const existingBlogPostDoc = await BlogPostModel.findOne({
     _id: blogPostId,
     deleted: false,
@@ -143,6 +136,15 @@ const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPos
     throw new AppError(`Blog post has been modified by another process. Please refresh and try again.`, 409);
   }
 
+  const existingBlogPostDocsWithTitle = await BlogPostModel.find({
+    _id: { $ne: blogPostId },
+    titleEn: blogPostDto.titleEn.trim(),
+    deleted: false,
+  });
+  if (existingBlogPostDocsWithTitle && existingBlogPostDocsWithTitle.length > 0) {
+    throw new AppError(`Existing blog post found for the title in En: ${blogPostDto.titleEn}`, 400);
+  }
+
   const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
     blogPostId,
     { 
@@ -151,10 +153,6 @@ const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPos
         summaryEn: blogPostDto.summaryEn,
         contentEn: blogPostDto.contentEn,
         pageDescriptionEn: blogPostDto.pageDescriptionEn,
-        titleSi: blogPostDto.titleSi,
-        summarySi: blogPostDto.summarySi,
-        contentSi: blogPostDto.contentSi,
-        pageDescriptionSi: blogPostDto.pageDescriptionSi,
         path: blogPostDto.path,
         status: blogPostDto.status || DocumentStatus.ACTIVE,
         keywords: blogPostDto.keywords || [],
@@ -170,6 +168,48 @@ const updateBlogPostText = async (blogPostId: string, blogPostDto: UpdateBlogPos
   }
 
   logger.info(`Blog post updated for ID: ${blogPostId}`);
+  return mapDocumentToBlogPost(updatedBlogPostDoc);
+}
+
+const updateBlogPostTextSi = async (blogPostId: string, blogPostDto: UpdateBlogPostTextSiDto): Promise<BlogPost> => {
+  const existingBlogPostDoc = await BlogPostModel.findOne({
+    _id: blogPostId,
+    deleted: false,
+  });
+  if (!existingBlogPostDoc) {
+      throw new AppError(`Cannot find the blog post with ID: ${blogPostId}. Unable to update the blog post.`, 400);
+  }
+  if (existingBlogPostDoc.__v !== blogPostDto.v) {
+    throw new AppError(`Blog post has been modified by another process. Please refresh and try again.`, 409);
+  }
+
+  const existingBlogPostDocsWithTitle = await BlogPostModel.find({
+    titleSi: blogPostDto.titleSi.trim(),
+    deleted: false,
+  });
+  if (existingBlogPostDocsWithTitle && existingBlogPostDocsWithTitle.length > 0) {
+    throw new AppError(`Existing blog post found for the title in Si: ${blogPostDto.titleSi}`, 400);
+  }
+
+  const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
+    blogPostId,
+    { 
+      $set: {
+        titleSi: blogPostDto.titleSi,
+        summarySi: blogPostDto.summarySi,
+        contentSi: blogPostDto.contentSi,
+        pageDescriptionSi: blogPostDto.pageDescriptionSi,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedBlogPostDoc) {
+    throw new AppError('Failed to update blog post document.', 500);
+  }
+
+  logger.info(`Blog post updated for ID: ${blogPostId} and title Si: ${blogPostDto.titleSi}`);
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
 
@@ -349,11 +389,12 @@ const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
 };
 
 export {
-  createBlogPostText,
+  createBlogPostTextEn,
   getBlogPosts,
   getBlogPost,
   getBlogPostByPath,
-  updateBlogPostText,
+  updateBlogPostTextEn,
+  updateBlogPostTextSi,
   uploadPrimaryImage,
   uploadImages,
   publishBlogPost,
