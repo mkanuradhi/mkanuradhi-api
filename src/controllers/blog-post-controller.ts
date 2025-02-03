@@ -1,49 +1,41 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateBlogPostTextDto, PublishBlogPostTextDto, UpdateBlogPostTextDto } from "../dtos/blog-post-dto";
+import { CreateBlogPostTextEnDto, PublishBlogPostTextDto, UpdateBlogPostTextEnDto, UpdateBlogPostTextSiDto } from "../dtos/blog-post-dto";
 import * as blogPostService from "../services/blog-post-service";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import { parseLangQueryParam } from "../utils/common-util";
 
-export const createBlogPostText = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+export const createBlogPostTextEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
     titleEn,
     summaryEn,
     contentEn,
     pageDescriptionEn,
-    titleSi,
-    summarySi,
-    contentSi,
-    pageDescriptionSi,
     path,
     status,
     keywords,
     dateTime,
   } = req.body;
 
-  const blogPostTextDto: CreateBlogPostTextDto = {
+  const blogPostTextEnDto: CreateBlogPostTextEnDto = {
     titleEn,
     summaryEn,
     contentEn,
     pageDescriptionEn,
-    titleSi,
-    summarySi,
-    contentSi,
-    pageDescriptionSi,
     path,
     status,
     keywords,
     dateTime,
   };
-  const addedBlogPost = await blogPostService.createBlogPostText(blogPostTextDto);
+  const addedBlogPost = await blogPostService.createBlogPostTextEn(blogPostTextEnDto);
   res.status(201).json(addedBlogPost);
 });
 
 export const getBlogPosts = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const page = parseInt(req.query.page as string) || 0;
   const size = Math.min(parseInt(req.query.size as string) || 10, 100);
-  const products = await blogPostService.getBlogPosts(page, size);
-  res.status(200).json(products);
+  const blogPosts = await blogPostService.getBlogPosts(page, size);
+  res.status(200).json(blogPosts);
 });
 
 export const getBlogPost = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
@@ -59,17 +51,13 @@ export const getBlogPostByPath = asyncErrorHandler( async (req: Request, res: Re
   res.status(200).json(blogPostView);
 });
 
-export const updateBlogPostText = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+export const updateBlogPostTextEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const blogPostId = req.params.id;
   const {
     titleEn,
     summaryEn,
     contentEn,
     pageDescriptionEn,
-    titleSi,
-    summarySi,
-    contentSi,
-    pageDescriptionSi,
     path,
     status,
     keywords,
@@ -77,15 +65,11 @@ export const updateBlogPostText = asyncErrorHandler( async (req: Request, res: R
     v
   } = req.body;
 
-  const blogPostTextDto: UpdateBlogPostTextDto = {
+  const blogPostTextDto: UpdateBlogPostTextEnDto = {
     titleEn,
     summaryEn,
     contentEn,
     pageDescriptionEn,
-    titleSi,
-    summarySi,
-    contentSi,
-    pageDescriptionSi,
     path,
     status,
     keywords,
@@ -93,7 +77,29 @@ export const updateBlogPostText = asyncErrorHandler( async (req: Request, res: R
     v
   };
   
-  const updatedBlogPost = await blogPostService.updateBlogPostText(blogPostId, blogPostTextDto);
+  const updatedBlogPost = await blogPostService.updateBlogPostTextEn(blogPostId, blogPostTextDto);
+  res.status(200).json(updatedBlogPost);
+});
+
+export const updateBlogPostTextSi = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const blogPostId = req.params.id;
+  const {
+    titleSi,
+    summarySi,
+    contentSi,
+    pageDescriptionSi,
+    v
+  } = req.body;
+
+  const blogPostTextDto: UpdateBlogPostTextSiDto = {
+    titleSi,
+    summarySi,
+    contentSi,
+    pageDescriptionSi,
+    v
+  };
+  
+  const updatedBlogPost = await blogPostService.updateBlogPostTextSi(blogPostId, blogPostTextDto);
   res.status(200).json(updatedBlogPost);
 });
 
@@ -104,14 +110,14 @@ export const uploadPrimaryImage = asyncErrorHandler(async (req: Request, res: Re
 });
 
 export const uploadImages = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const productId = req.params.id;
+  const blogPostId = req.params.id;
   const files: Express.Multer.File[] | undefined = Array.isArray(req.files)
     ? req.files
     : req.files && typeof req.files === "object"
     ? Object.values(req.files).flat()
     : undefined; 
-  const updatedProduct = await blogPostService.uploadImages(productId, files);
-  res.status(200).json(updatedProduct);
+  const updatedBlogPost = await blogPostService.uploadImages(blogPostId, files);
+  res.status(200).json(updatedBlogPost);
 });
 
 export const publishBlogPost = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {

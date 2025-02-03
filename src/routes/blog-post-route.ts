@@ -8,8 +8,8 @@ const blogPostRoute = express.Router();
 // Search products by query
 blogPostRoute.get('/search', blogPostController.searchBlogPosts);
 
-// Add a new blog post (text data)
-blogPostRoute.post('/', blogPostController.createBlogPostText);
+// Add a new blog post (en text data)
+blogPostRoute.post('/', blogPostController.createBlogPostTextEn);
 
 // Fetch all blog post
 blogPostRoute.get('/', blogPostController.getBlogPosts);
@@ -20,8 +20,11 @@ blogPostRoute.get('/id/:id', validateObjectId, blogPostController.getBlogPost);
 // Fetch a specific blog post by path
 blogPostRoute.get('/path/:path', blogPostController.getBlogPostByPath);
 
-// Update blog post text data (partial update for text data only)
-blogPostRoute.patch('/:id/text-data', validateObjectId, blogPostController.updateBlogPostText);
+// Update blog post text data (partial update only for en text data)
+blogPostRoute.patch('/:id/en', validateObjectId, blogPostController.updateBlogPostTextEn);
+
+// Update blog post si text data (partial update only for si text data)
+blogPostRoute.patch('/:id/si', validateObjectId, blogPostController.updateBlogPostTextSi);
 
 // Update the primary image for a blog post
 blogPostRoute.patch('/:id/primary-image', upload.single('primaryImage'), blogPostController.uploadPrimaryImage);
