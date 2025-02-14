@@ -4,6 +4,8 @@ import { CreateBlogPostTextEnDto, PublishBlogPostTextDto, UpdateBlogPostTextEnDt
 import * as blogPostService from "../services/blog-post-service";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import { parseLangQueryParam } from "../utils/common-util";
+import PaginatedResult from "../interfaces/i-paginated-result";
+import BlogPost from "../interfaces/i-blog-post";
 
 export const createBlogPostTextEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
@@ -34,8 +36,21 @@ export const createBlogPostTextEn = asyncErrorHandler( async (req: Request, res:
 export const getBlogPosts = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const page = parseInt(req.query.page as string) || 0;
   const size = Math.min(parseInt(req.query.size as string) || 10, 100);
-  const blogPosts = await blogPostService.getBlogPosts(page, size);
-  res.status(200).json(blogPosts);
+
+  const { items, totalCount } = await blogPostService.getBlogPosts(page, size);
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
+
+  const result: PaginatedResult<BlogPost> = {
+    items,
+    pagination: {
+      totalCount,
+      totalPages,
+      currentPage: page,
+      currentPageSize: items.length,
+    },
+  };
+
+  res.status(200).json(result);
 });
 
 export const getBlogPost = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
