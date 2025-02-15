@@ -36,8 +36,9 @@ const createBlogPostTextEn = async (blogPostDto: CreateBlogPostTextEnDto): Promi
   return mapDocumentToBlogPost(blogPostDoc);
 }
 
-const getBlogPosts = async (page: number, size: number): Promise<BlogPost[]> => {
+const getBlogPosts = async (page: number, size: number): Promise<{ items: BlogPost[], totalCount: number }> => {
   validatePaginationDetails(page, size);
+  const totalCount = await BlogPostModel.countDocuments({ deleted: false });
   const blogPostDocs = await BlogPostModel
     .find(
       { deleted: false  }, 
@@ -49,12 +50,16 @@ const getBlogPosts = async (page: number, size: number): Promise<BlogPost[]> => 
         path: 1,
         primaryImage: 1,
         dateTime: 1,
+        published: 1,
       })
-    .sort({ dateTime: 1 })
+    .sort({ dateTime: -1 })
     .skip(page * size)
     .limit(size);
 
-  return mapDocumentsToBlogPosts(blogPostDocs);
+  return {
+    items: mapDocumentsToBlogPosts(blogPostDocs),
+    totalCount
+  };
 }
 
 const getBlogPost = async (blogPostId: string): Promise<BlogPost> => {
