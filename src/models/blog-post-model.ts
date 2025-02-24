@@ -3,11 +3,13 @@ import DocumentStatus from "../enums/document-status";
 import BlogPostDocument from "../documents/blog-post-document";
 import AppError from "../errors/app-error";
 
+const MIN_TITLE_LENGTH = 3;
 const MAX_TITLE_LENGTH = 100;
 
 const MIN_SUMMARY_LENGTH = 30;
 const MAX_SUMMARY_LENGTH = 400;
 
+const MIN_CONTENT_LENGTH = 50;
 const MAX_CONTENT_LENGTH = 5000;
 
 const MIN_DESCRIPTION_LENGTH = 50;
@@ -20,7 +22,7 @@ const blogPostSchema = new Schema<BlogPostDocument>(
       trim: true,
       unique: true,
       required: [true, 'Blog title in English is required.'],
-      minLength: [3, 'Blog title in English must be present.'],
+      minLength: [MIN_TITLE_LENGTH, `Blog title in English must be minimum ${MIN_TITLE_LENGTH} characters long.`],
       maxLength: [MAX_TITLE_LENGTH, `Blog title in English cannot exceed ${MAX_TITLE_LENGTH} characters.`]
     },
     summaryEn: {
@@ -34,7 +36,7 @@ const blogPostSchema = new Schema<BlogPostDocument>(
       type: String,
       trim: true,
       required: [true, "Content in English is required."],
-      minLength: [10, 'Content in English must be present.'],
+      minLength: [MIN_CONTENT_LENGTH, `Content in English must be minimum ${MIN_CONTENT_LENGTH} characters long.`],
       maxLength: [MAX_CONTENT_LENGTH, `Content in English cannot exceed ${MAX_CONTENT_LENGTH} characters.`],
     },
     pageDescriptionEn: {
@@ -48,7 +50,8 @@ const blogPostSchema = new Schema<BlogPostDocument>(
       type: String,
       trim: true,
       unique: true,
-      minLength: [3, 'Blog title in Sinhala must be present.'],
+      sparse: true,
+      minLength: [MIN_TITLE_LENGTH, `Blog title in Sinhala must be minimum ${MIN_TITLE_LENGTH} characters long.`],
       maxLength: [MAX_TITLE_LENGTH, `Blog title in Sinhala cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
     summarySi: {
@@ -60,7 +63,7 @@ const blogPostSchema = new Schema<BlogPostDocument>(
     contentSi: {
       type: String,
       trim: true,
-      minLength: [10, 'Content in Sinhala must be present.'],
+      minLength: [MIN_CONTENT_LENGTH, `Content in Sinhala must be minimum ${MIN_CONTENT_LENGTH} characters long.`],
       maxLength: [MAX_CONTENT_LENGTH, `Content in Sinhala cannot exceed ${MAX_CONTENT_LENGTH} characters.`],
     },
     pageDescriptionSi: {
