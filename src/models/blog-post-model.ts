@@ -50,6 +50,7 @@ const blogPostSchema = new Schema<BlogPostDocument>(
       type: String,
       trim: true,
       unique: true,
+      sparse: true,
       minLength: [MIN_TITLE_LENGTH, `Blog title in Sinhala must be minimum ${MIN_TITLE_LENGTH} characters long.`],
       maxLength: [MAX_TITLE_LENGTH, `Blog title in Sinhala cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
