@@ -189,6 +189,7 @@ const updateBlogPostTextSi = async (blogPostId: string, blogPostDto: UpdateBlogP
   }
 
   const existingBlogPostDocsWithTitle = await BlogPostModel.find({
+    _id: { $ne: blogPostId },
     titleSi: blogPostDto.titleSi.trim(),
     deleted: false,
   });
