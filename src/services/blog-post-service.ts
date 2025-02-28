@@ -282,6 +282,15 @@ const publishBlogPost = async (blogPostId: string, blogPostDto: PublishBlogPostT
       throw new AppError(`Cannot find the blog post with ID: ${blogPostId}. Unable to update the blog post.`, 400);
   }
 
+  if (
+    !existingBlogPostDoc.titleSi?.trim() || 
+    !existingBlogPostDoc.summarySi?.trim() || 
+    !existingBlogPostDoc.contentSi?.trim() || 
+    !existingBlogPostDoc.pageDescriptionSi?.trim()
+  ) {
+    throw new AppError("Missing or empty required fields in Sinhala: Either the title, summary, content, or page description is missing.", 400);
+  }
+
   const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
     blogPostId,
     { 
