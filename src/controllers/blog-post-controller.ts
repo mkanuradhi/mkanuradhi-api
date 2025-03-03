@@ -6,6 +6,7 @@ import { SearchParamsDto } from "../dtos/search-params-dto";
 import { parseLangQueryParam } from "../utils/common-util";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import BlogPost from "../interfaces/i-blog-post";
+import BlogPostView from "../interfaces/i-blog-post-view";
 
 export const createBlogPostTextEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
@@ -160,18 +161,24 @@ export const searchBlogPosts = asyncErrorHandler( async (req: Request, res: Resp
   const lang: string = parseLangQueryParam(req);
   const { blogPostViews, totalCount } = await blogPostService.searchBlogPosts(lang, searchParams);
   
-  const message = `${totalCount} result${totalCount !== 1 ? 's' : ''} found for '${searchParams.query}'`;
+  const page = searchParams.page || 0;
+  const size = searchParams.size || 10;
 
-  res.status(200).json({
+  const message = `${totalCount} result${totalCount !== 1 ? 's' : ''} found for '${searchParams.query}'`;
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
+
+  const result: PaginatedResult<BlogPostView> = {
     message,
-    data: blogPostViews,
+    items: blogPostViews,
     pagination: {
-      page: searchParams.page,
-      size: searchParams.size,
-      pageCount: blogPostViews.length,
       totalCount,
+      totalPages,
+      currentPage: page,
+      currentPageSize: blogPostViews.length,
     },
-  });
+  };
+
+  res.status(200).json(result);
 });
 
 const parseSearchParams = (req: Request): SearchParamsDto => {
@@ -188,7 +195,7 @@ const parseSearchParams = (req: Request): SearchParamsDto => {
   return {
     query: (req.query.q as string) || "",
     page: parseInt(req.query.page as string) || 0,
-    size: Math.min(parseInt(req.query.size as string) || 20, 100),
+    size: Math.min(parseInt(req.query.size as string) || 10, 100),
     published: parsePublished(req.query.published as string),
     sort: req.query.sort as string, // Expected: "latest", "oldest"
   };
