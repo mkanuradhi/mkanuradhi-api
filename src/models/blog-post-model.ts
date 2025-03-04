@@ -49,8 +49,6 @@ const blogPostSchema = new Schema<BlogPostDocument>(
     titleSi: {
       type: String,
       trim: true,
-      unique: true,
-      sparse: true,
       minLength: [MIN_TITLE_LENGTH, `Blog title in Sinhala must be minimum ${MIN_TITLE_LENGTH} characters long.`],
       maxLength: [MAX_TITLE_LENGTH, `Blog title in Sinhala cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
@@ -161,6 +159,7 @@ blogPostSchema.pre('validate', async function (next) {
   next();
 });
 
+blogPostSchema.index({ titleSi: 1 }, { unique: true, sparse: true });
 blogPostSchema.index({ titleEn: "text", summaryEn: "text", contentEn: "text", titleSi: "text", summarySi: "text", contentSi: "text" }); // For text search
 blogPostSchema.index({ createdAt: -1 }); // For recent posts
 
