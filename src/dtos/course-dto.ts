@@ -16,7 +16,7 @@ interface VersionDto {
   v: number;
 }
 
-export interface UpdateCourseEnDto extends VersionDto {
+export interface UpdateCourseEnDto extends CreateCourseEnDto, VersionDto {
 }
 
 export interface UpdateCourseSiDto extends VersionDto {
