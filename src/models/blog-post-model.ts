@@ -2,6 +2,7 @@ import { model, Schema } from "mongoose";
 import DocumentStatus from "../enums/document-status";
 import BlogPostDocument from "../documents/blog-post-document";
 import AppError from "../errors/app-error";
+import { sanitizeString } from "../utils/common-util";
 
 const MIN_TITLE_LENGTH = 3;
 const MAX_TITLE_LENGTH = 100;
@@ -124,19 +125,9 @@ blogPostSchema.set('toObject', { virtuals: true });
 
 blogPostSchema.pre('validate', async function (next) {
   if (this.path) {
-    this.path = this.path
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9\-]/g, '')
-      .replace(/-+/g, '-');
+    this.path = sanitizeString(this.path);
   } else if (this.titleEn) {
-    this.path = this.titleEn
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9\-]/g, '')
-      .replace(/-+/g, '-');
+    this.path = sanitizeString(this.titleEn);
   }
   // Check for uniqueness and modify path if necessary
   let uniquePath = this.path;

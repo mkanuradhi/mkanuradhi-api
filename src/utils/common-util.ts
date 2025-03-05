@@ -43,3 +43,13 @@ export const parseLangQueryParam = (req: Request): string => {
 }
 
 export const capitalizeLang = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
+
+export const sanitizeString = (str: string) => {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .replace(/-+/g, '-');
+}
