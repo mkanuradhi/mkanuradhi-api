@@ -56,7 +56,6 @@ const courseSchema = new Schema<CourseDocument>(
     },
     titleSi: {
       type: String,
-      required: [true, "Course title in Sinhala is required."],
       trim: true,
     },
     subtitleSi: {
@@ -69,7 +68,6 @@ const courseSchema = new Schema<CourseDocument>(
     },
     locationSi: {
       type: String,
-      required: [true, "Location in Sinhala is required."],
       trim: true,
       maxLength: [MAX_LOCATION_LENGTH, `Location in Sinhala cannot exceed ${MAX_LOCATION_LENGTH} characters.`],
     },

@@ -4,6 +4,7 @@ import cors from 'cors';
 import express from 'express';
 import emailRoute from './routes/email-route';
 import blogPostRoute from './routes/blog-post-route';
+import courseRoute from './routes/course-router';
 import logger from './config/logger-config';
 import limiter from './config/rate-limit-config';
 import RequestLogger from './middleware/request-logger';
@@ -42,6 +43,7 @@ app.use(express.json());
 app.use('/', homeRoute);
 app.use('/email', emailRoute);
 app.use('/blog-posts', blogPostRoute);
+app.use('/courses', courseRoute);
 
 // handling errors
 app.use(notFoundHandler);
