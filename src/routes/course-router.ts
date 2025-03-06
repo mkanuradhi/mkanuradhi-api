@@ -4,6 +4,9 @@ import validateObjectId from '../middleware/validate-objectid';
 
 const courseRoute = express.Router();
 
+// Search products by query
+courseRoute.get('/search', courseController.searchCourses);
+
 // Add a new course (en text data)
 courseRoute.post('/', courseController.createCourseEn);
 

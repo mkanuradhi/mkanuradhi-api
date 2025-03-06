@@ -4,6 +4,10 @@ import { ActivationCourseDto, CreateCourseEnDto, UpdateCourseEnDto, UpdateCourse
 import * as courseService from "../services/course-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Course from "../interfaces/i-course";
+import { SearchParamsDto } from "../dtos/search-params-dto";
+import CourseView from "../interfaces/i-course-view";
+import { parseLangQueryParam } from "../utils/common-util";
+import DocumentStatus from "../enums/document-status";
 
 export const createCourseEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
@@ -122,3 +126,47 @@ export const deleteCourse = asyncErrorHandler( async (req: Request, res: Respons
   await courseService.deleteCourse(courseId);
   res.status(204).json();
 });
+
+export const searchCourses = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const searchParams: SearchParamsDto = parseSearchParams(req);
+  const lang: string = parseLangQueryParam(req);
+  const { courseViews, totalCount } = await courseService.searchCourses(lang, searchParams);
+  
+  const page = searchParams.page || 0;
+  const size = searchParams.size || 200;
+
+  const message = `${totalCount} result${totalCount !== 1 ? 's' : ''} found for '${searchParams.query}'`;
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
+
+  const result: PaginatedResult<CourseView> = {
+    message,
+    items: courseViews,
+    pagination: {
+      totalCount,
+      totalPages,
+      currentPage: page,
+      currentPageSize: courseViews.length,
+    },
+  };
+
+  res.status(200).json(result);
+});
+
+const parseSearchParams = (req: Request): SearchParamsDto => {
+  const parseStatus = (value: string | undefined): DocumentStatus | undefined => {
+    if (!value) return undefined;
+    const normalizedValue = value.trim().toUpperCase();
+    if (Object.values(DocumentStatus).includes(normalizedValue as DocumentStatus)) {
+      return normalizedValue as DocumentStatus;
+    }
+    return undefined;
+  };
+
+  return {
+    query: (req.query.q as string) || "",
+    page: parseInt(req.query.page as string) || 0,
+    size: Math.min(parseInt(req.query.size as string) || 10, 100),
+    status: parseStatus(req.query.status as string),
+    sort: req.query.sort as string, // Expected: "latest", "oldest"
+  };
+};

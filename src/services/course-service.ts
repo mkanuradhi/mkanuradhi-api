@@ -4,9 +4,12 @@ import DocumentStatus from "../enums/document-status";
 import Course from "../interfaces/i-course";
 import CourseModel from "../models/course-model";
 import AppError from "../errors/app-error";
-import { mapDocumentsToCourses, mapDocumentToCourse } from "../mappers/course-mapper";
+import { mapDocumentsToCourses, mapDocumentsToCourseViews, mapDocumentToCourse } from "../mappers/course-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
+import { SearchParamsDto } from "../dtos/search-params-dto";
+import CourseView from "../interfaces/i-course-view";
+import { capitalizeLang } from "../utils/common-util";
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
@@ -220,3 +223,67 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
     throw new AppError('Failed to delete course document.', 500);
   }
 }
+
+export const searchCourses = async (lang: string, searchParams: SearchParamsDto): Promise<{ courseViews: CourseView[]; totalCount: number; }> => {
+  const {page = 0, size = 200, sort} = searchParams;
+  
+  validatePaginationDetails(page, size);
+
+  const searchFilter = buildSearchFilter(searchParams);
+  const sortOptions = getSortOptions(sort);
+
+  const commonFields = {
+    year: 1,
+    code: 1,
+    credits: 1,
+    path: 1,
+  };
+
+  const langFields = {
+    [`title${capitalizeLang(lang)}`]: 1,
+    [`subtitle${capitalizeLang(lang)}`]: 1,
+    [`location${capitalizeLang(lang)}`]: 1,
+  };
+
+  const projection = { ...commonFields, ...langFields };
+  
+  const [courseDocs, totalCount] = await Promise.all([
+    // Fetch paginated sourses
+    CourseModel.find(searchFilter, projection)
+      .sort(sortOptions)
+      .skip(page * size)
+      .limit(size),
+    
+    // Count total documents for the query
+    CourseModel.countDocuments(searchFilter),
+  ]);
+
+  const courseViews: CourseView[] = mapDocumentsToCourseViews(lang, courseDocs);
+
+  return { courseViews, totalCount };
+}
+
+const buildSearchFilter = ({ query, status }: SearchParamsDto): Record<string, any> => {
+  const filter: Record<string, any> = {
+    status: { $ne: DocumentStatus.INACTIVE },
+    deleted: false,
+  };
+
+  if (query) filter.$text = { $search: query };
+  if (status !== undefined) filter.status = status;
+
+  return filter;
+};
+
+const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
+  const defaultSort: Record<string, 1 | -1> = { year: -1, code: -1, updatedAt: -1 };
+  if (!sort) {
+    return defaultSort;
+  }
+
+  switch (sort) {
+    case "latest": return { year: -1 };
+    case "oldest": return { year: 1 };
+    default: return defaultSort;
+  }
+};

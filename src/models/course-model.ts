@@ -132,6 +132,17 @@ courseSchema.pre('validate', async function (next) {
 courseSchema.index({ code: 1 }, { sparse: true });
 courseSchema.index({ titleEn: 1 });
 courseSchema.index({ titleSi: 1 }, { sparse: true });
+courseSchema.index(
+  { year: "text",
+    code: "text",
+    titleEn: "text",
+    descriptionEn: "text",
+    locationEn: "text",
+    titleSi: "text",
+    descriptionSi: "text",
+    locationSi: "text",
+  }
+); // For text search
 
 const CourseModel = model<CourseDocument>("Course", courseSchema);
 
