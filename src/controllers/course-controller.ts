@@ -116,3 +116,9 @@ export const toggleCourseActivation = asyncErrorHandler( async (req: Request, re
   const updatedCourse = await courseService.toggleCourseActivation(courseId, courseDto);
   res.status(200).json(updatedCourse);
 });
+
+export const deleteCourse = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const courseId = req.params.id;
+  await courseService.deleteCourse(courseId);
+  res.status(204).json();
+});

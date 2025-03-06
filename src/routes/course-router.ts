@@ -19,4 +19,7 @@ courseRoute.patch('/:id/si', validateObjectId, courseController.updateCourseSi);
 // Activate or deactivate a course
 courseRoute.patch('/:id/toggle', validateObjectId, courseController.toggleCourseActivation);
 
+// Delete a course
+courseRoute.delete('/:id', validateObjectId, courseController.deleteCourse);
+
 export default courseRoute;

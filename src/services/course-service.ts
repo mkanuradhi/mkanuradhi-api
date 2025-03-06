@@ -6,6 +6,7 @@ import CourseModel from "../models/course-model";
 import AppError from "../errors/app-error";
 import { mapDocumentsToCourses, mapDocumentToCourse } from "../mappers/course-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
+import { v4 as uuidv4 } from 'uuid';
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
@@ -189,4 +190,33 @@ export const toggleCourseActivation = async (courseId: string, courseDto: Activa
 
   logger.info(`Course updated for status for ID: ${courseId}`);
   return mapDocumentToCourse(updatedCourseDoc);
+}
+
+export const deleteCourse = async (courseId: string): Promise<void> => {
+  const courseDoc = await CourseModel.findOne({ 
+    _id: courseId,
+    deleted: false,
+  });
+  if (!courseDoc) {
+    throw new AppError(`Cannot find the course with ID '${courseId}' or it is already deleted.`, 404);
+  }
+
+  const deletedTitleEn = `${courseDoc.titleEn}-${DocumentStatus.DELETED}-${uuidv4()}`;
+  const deletedTitleSi = `${courseDoc.titleSi}-${DocumentStatus.DELETED}-${uuidv4()}`;
+
+  const updatedCourseDoc = await CourseModel.findByIdAndUpdate(
+    courseId,
+    {
+      $set: {
+        titleEn: deletedTitleEn,
+        titleSi: deletedTitleSi,
+        deleted: true,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedCourseDoc) {
+    throw new AppError('Failed to delete course document.', 500);
+  }
 }
