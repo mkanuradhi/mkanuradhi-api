@@ -16,4 +16,7 @@ courseRoute.patch('/:id/en', validateObjectId, courseController.updateCourseEn);
 // Update course si text data (partial update only for si text data)
 courseRoute.patch('/:id/si', validateObjectId, courseController.updateCourseSi);
 
+// Activate or deactivate a course
+courseRoute.patch('/:id/toggle', validateObjectId, courseController.toggleCourseActivation);
+
 export default courseRoute;

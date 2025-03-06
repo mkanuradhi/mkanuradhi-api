@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateCourseEnDto, UpdateCourseEnDto, UpdateCourseSiDto } from "../dtos/course-dto";
+import { ActivationCourseDto, CreateCourseEnDto, UpdateCourseEnDto, UpdateCourseSiDto } from "../dtos/course-dto";
 import * as courseService from "../services/course-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Course from "../interfaces/i-course";
@@ -15,7 +15,6 @@ export const createCourseEn = asyncErrorHandler( async (req: Request, res: Respo
     descriptionEn,
     locationEn,
     path,
-    status
   } = req.body;
 
   const courseEnDto: CreateCourseEnDto = {
@@ -27,7 +26,6 @@ export const createCourseEn = asyncErrorHandler( async (req: Request, res: Respo
     descriptionEn,
     locationEn,
     path,
-    status
   };
   const addedCourse = await courseService.createCourseEn(courseEnDto);
   res.status(201).json(addedCourse);
@@ -64,7 +62,6 @@ export const updateCourseEn = asyncErrorHandler( async (req: Request, res: Respo
     descriptionEn,
     locationEn,
     path,
-    status,
     v
   } = req.body;
 
@@ -77,7 +74,6 @@ export const updateCourseEn = asyncErrorHandler( async (req: Request, res: Respo
     descriptionEn,
     locationEn,
     path,
-    status,
     v
   };
   
@@ -104,5 +100,19 @@ export const updateCourseSi = asyncErrorHandler( async (req: Request, res: Respo
   };
   
   const updatedCourse = await courseService.updateCourseSi(courseId, courseDto);
+  res.status(200).json(updatedCourse);
+});
+
+export const toggleCourseActivation = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const courseId = req.params.id;
+  const {
+    status,
+  } = req.body;
+
+  const courseDto: ActivationCourseDto = {
+    status,
+  };
+  
+  const updatedCourse = await courseService.toggleCourseActivation(courseId, courseDto);
   res.status(200).json(updatedCourse);
 });

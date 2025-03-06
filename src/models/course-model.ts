@@ -90,7 +90,7 @@ const courseSchema = new Schema<CourseDocument>(
         values: Object.values(DocumentStatus),
         message: 'Blog post status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.ACTIVE,
+      default: DocumentStatus.INACTIVE,
     },
     deleted: {
       type: Boolean,

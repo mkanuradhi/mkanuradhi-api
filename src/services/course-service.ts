@@ -1,5 +1,5 @@
 import logger from "../config/logger-config";
-import { CreateCourseEnDto, UpdateCourseEnDto, UpdateCourseSiDto } from "../dtos/course-dto";
+import { ActivationCourseDto, CreateCourseEnDto, UpdateCourseEnDto, UpdateCourseSiDto } from "../dtos/course-dto";
 import DocumentStatus from "../enums/document-status";
 import Course from "../interfaces/i-course";
 import CourseModel from "../models/course-model";
@@ -29,7 +29,6 @@ export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Cour
     locationEn: courseDto.locationEn,
     path: courseDto.path,
     quizzes: [],
-    status: courseDto.status || DocumentStatus.ACTIVE,
   });
 
   logger.info(`Course created for ${courseDto.titleEn}`);
@@ -98,7 +97,6 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
         descriptinEn: courseDto.descriptionEn,
         locationEn: courseDto.locationEn,
         path: courseDto.path,
-        status: courseDto.status || DocumentStatus.ACTIVE,
       },
       $inc: { __v: 1 }
     },
@@ -156,5 +154,39 @@ export const updateCourseSi = async (courseId: string, courseDto: UpdateCourseSi
   }
 
   logger.info(`Course updated for ID: ${courseId} and title Si: ${courseDto.titleSi}`);
+  return mapDocumentToCourse(updatedCourseDoc);
+}
+
+export const toggleCourseActivation = async (courseId: string, courseDto: ActivationCourseDto): Promise<Course> => {
+  const existingCourseDoc = await CourseModel.findOne({
+    _id: courseId,
+    deleted: false,
+  });
+  if (!existingCourseDoc) {
+      throw new AppError(`Cannot find the course with ID: ${courseId}. Unable to update the course.`, 400);
+  }
+
+  if (courseDto.status === DocumentStatus.ACTIVE) { // check sinhala details are available only when course is going to be activated
+    if (!existingCourseDoc.titleSi?.trim() || !existingCourseDoc.locationSi?.trim()) {
+      throw new AppError("Missing or empty required fields in Sinhala: Either the title or location is missing.", 400);
+    }
+  }
+
+  const updatedCourseDoc = await CourseModel.findByIdAndUpdate(
+    courseId,
+    { 
+      $set: {
+        status: courseDto.status,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedCourseDoc) {
+      throw new AppError('Failed to update course document.', 500);
+  }
+
+  logger.info(`Course updated for status for ID: ${courseId}`);
   return mapDocumentToCourse(updatedCourseDoc);
 }

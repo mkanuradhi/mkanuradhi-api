@@ -1,5 +1,9 @@
 import DocumentStatus from "../enums/document-status";
 
+export interface ActivationCourseDto {
+  status: DocumentStatus;
+}
+
 export interface CreateCourseEnDto {
   year: number;
   code?: string;
@@ -9,7 +13,6 @@ export interface CreateCourseEnDto {
   descriptionEn?: string;
   locationEn: string;
   path?: string;
-  status?: DocumentStatus;
 }
 
 interface VersionDto {
