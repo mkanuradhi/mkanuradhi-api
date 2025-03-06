@@ -13,4 +13,7 @@ courseRoute.get('/', courseController.getCourses);
 // Update course data (partial update only for en text data)
 courseRoute.patch('/:id/en', validateObjectId, courseController.updateCourseEn);
 
+// Update course si text data (partial update only for si text data)
+courseRoute.patch('/:id/si', validateObjectId, courseController.updateCourseSi);
+
 export default courseRoute;

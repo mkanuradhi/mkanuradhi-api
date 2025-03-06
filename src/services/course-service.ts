@@ -1,5 +1,5 @@
 import logger from "../config/logger-config";
-import { CreateCourseEnDto, UpdateCourseEnDto } from "../dtos/course-dto";
+import { CreateCourseEnDto, UpdateCourseEnDto, UpdateCourseSiDto } from "../dtos/course-dto";
 import DocumentStatus from "../enums/document-status";
 import Course from "../interfaces/i-course";
 import CourseModel from "../models/course-model";
@@ -76,11 +76,14 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
 
   const existingCourseDocsWithTitle = await CourseModel.find({
     _id: { $ne: courseId },
+    year: courseDto.year,
+    code: courseDto.code,
     titleEn: courseDto.titleEn.trim(),
+    locationEn: courseDto.locationEn.trim(),
     deleted: false,
   });
   if (existingCourseDocsWithTitle && existingCourseDocsWithTitle.length > 0) {
-    throw new AppError(`Existing course found for the title in En: ${courseDto.titleEn}`, 400);
+    throw new AppError(`Existing course found for the year: ${courseDto.year}, code: ${courseDto.code}, title: ${courseDto.titleEn} and location: ${courseDto.locationEn}`, 400);
   }
 
   const updatedCourseDoc = await CourseModel.findByIdAndUpdate(
@@ -91,6 +94,7 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
         code: courseDto.code,
         credits: courseDto.credits,
         titleEn: courseDto.titleEn,
+        subtitleEn: courseDto.subtitleEn,
         descriptinEn: courseDto.descriptionEn,
         locationEn: courseDto.locationEn,
         path: courseDto.path,
@@ -106,5 +110,51 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
   }
 
   logger.info(`course updated for ID: ${courseId}`);
+  return mapDocumentToCourse(updatedCourseDoc);
+}
+
+export const updateCourseSi = async (courseId: string, courseDto: UpdateCourseSiDto): Promise<Course> => {
+  const existingCourseDoc = await CourseModel.findOne({
+    _id: courseId,
+    deleted: false,
+  });
+  if (!existingCourseDoc) {
+      throw new AppError(`Cannot find the course with ID: ${courseId}. Unable to update the course.`, 400);
+  }
+  if (existingCourseDoc.__v !== courseDto.v) {
+    throw new AppError(`Course has been modified by another process. Please refresh and try again.`, 409);
+  }
+
+  const existingCourseDocsWithTitle = await CourseModel.find({
+    _id: { $ne: courseId },
+    year: existingCourseDoc.year,
+    code: existingCourseDoc.code,
+    titleSi: courseDto.titleSi.trim(),
+    locationSi: courseDto.locationSi.trim(),
+    deleted: false,
+  });
+  if (existingCourseDocsWithTitle && existingCourseDocsWithTitle.length > 0) {
+    throw new AppError(`Existing course found for the year: ${existingCourseDoc.year}, code: ${existingCourseDoc.code}, title: ${courseDto.titleSi} and location: ${courseDto.locationSi}`, 400);
+  }
+
+  const updatedCourseDoc = await CourseModel.findByIdAndUpdate(
+    courseId,
+    { 
+      $set: {
+        titleSi: courseDto.titleSi,
+        subtitleSi: courseDto.subtitleSi,
+        descriptionSi: courseDto.descriptionSi,
+        locationSi: courseDto.locationSi,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedCourseDoc) {
+    throw new AppError('Failed to update course document.', 500);
+  }
+
+  logger.info(`Course updated for ID: ${courseId} and title Si: ${courseDto.titleSi}`);
   return mapDocumentToCourse(updatedCourseDoc);
 }

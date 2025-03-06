@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateCourseEnDto, UpdateCourseEnDto } from "../dtos/course-dto";
+import { CreateCourseEnDto, UpdateCourseEnDto, UpdateCourseSiDto } from "../dtos/course-dto";
 import * as courseService from "../services/course-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Course from "../interfaces/i-course";
@@ -82,5 +82,27 @@ export const updateCourseEn = asyncErrorHandler( async (req: Request, res: Respo
   };
   
   const updatedCourse = await courseService.updateCourseEn(courseId, courseDto);
+  res.status(200).json(updatedCourse);
+});
+
+export const updateCourseSi = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const courseId = req.params.id;
+  const {
+    titleSi,
+    subtitleSi,
+    descriptionSi,
+    locationSi,
+    v
+  } = req.body;
+
+  const courseDto: UpdateCourseSiDto = {
+    titleSi,
+    subtitleSi,
+    descriptionSi,
+    locationSi,
+    v
+  };
+  
+  const updatedCourse = await courseService.updateCourseSi(courseId, courseDto);
   res.status(200).json(updatedCourse);
 });
