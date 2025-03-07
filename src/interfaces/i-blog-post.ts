@@ -16,7 +16,6 @@ interface BlogPost {
   status: DocumentStatus;
   keywords: string[];
   dateTime: Date;
-  published: boolean;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date;
