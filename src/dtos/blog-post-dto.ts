@@ -1,7 +1,8 @@
 import DocumentStatus from "../enums/document-status";
+import { VersionDto } from "./base-dto";
 
-export interface PublishBlogPostTextDto {
-  published: boolean;
+export interface ActivationBlogPostDto {
+  status: DocumentStatus;
 }
 
 export interface CreateBlogPostTextEnDto {
@@ -10,19 +11,16 @@ export interface CreateBlogPostTextEnDto {
   contentEn: string;
   pageDescriptionEn: string;
   path?: string;
-  status: DocumentStatus;
   keywords: string[];
   dateTime: Date;
 }
 
-export interface UpdateBlogPostTextEnDto extends CreateBlogPostTextEnDto {
-  v: number;
+export interface UpdateBlogPostTextEnDto extends CreateBlogPostTextEnDto, VersionDto {
 }
 
-export interface UpdateBlogPostTextSiDto {
+export interface UpdateBlogPostTextSiDto extends VersionDto {
   titleSi: string;
   summarySi: string;
   contentSi: string;
   pageDescriptionSi: string;
-  v: number;
 }

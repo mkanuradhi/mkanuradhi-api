@@ -9,7 +9,7 @@ import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import CourseView from "../interfaces/i-course-view";
-import { capitalizeLang } from "../utils/common-util";
+import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
@@ -204,8 +204,8 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
     throw new AppError(`Cannot find the course with ID '${courseId}' or it is already deleted.`, 404);
   }
 
-  const deletedTitleEn = `${courseDoc.titleEn}-${DocumentStatus.DELETED}-${uuidv4()}`;
-  const deletedTitleSi = `${courseDoc.titleSi}-${DocumentStatus.DELETED}-${uuidv4()}`;
+  const deletedTitleEn = `${courseDoc.titleEn}-DELETED-${uuidv4()}`;
+  const deletedTitleSi = `${courseDoc.titleSi}-DELETED-${uuidv4()}`;
 
   const updatedCourseDoc = await CourseModel.findByIdAndUpdate(
     courseId,
@@ -262,18 +262,6 @@ export const searchCourses = async (lang: string, searchParams: SearchParamsDto)
 
   return { courseViews, totalCount };
 }
-
-const buildSearchFilter = ({ query, status }: SearchParamsDto): Record<string, any> => {
-  const filter: Record<string, any> = {
-    status: { $ne: DocumentStatus.INACTIVE },
-    deleted: false,
-  };
-
-  if (query) filter.$text = { $search: query };
-  if (status !== undefined) filter.status = status;
-
-  return filter;
-};
 
 const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
   const defaultSort: Record<string, 1 | -1> = { year: -1, code: -1, updatedAt: -1 };

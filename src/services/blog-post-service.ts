@@ -1,6 +1,5 @@
 import logger from "../config/logger-config";
-import { CreateBlogPostTextEnDto, UpdateBlogPostTextSiDto, PublishBlogPostTextDto, UpdateBlogPostTextEnDto } from "../dtos/blog-post-dto";
-import DocumentStatus from "../enums/document-status";
+import { CreateBlogPostTextEnDto, UpdateBlogPostTextSiDto, UpdateBlogPostTextEnDto, ActivationBlogPostDto } from "../dtos/blog-post-dto";
 import BlogPost from "../interfaces/i-blog-post";
 import BlogPostView from "../interfaces/i-blog-post-view";
 import BlogPostModel from "../models/blog-post-model";
@@ -8,7 +7,7 @@ import AppError from "../errors/app-error";
 import { mapDocumentToBlogPost, mapDocumentToBlogPostView, mapDocumentsToBlogPostViews, mapDocumentsToBlogPosts } from "../mappers/blog-post-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
-import { capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
+import { buildSearchFilter, capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import BlogPostDocument from "../documents/blog-post-document";
 
@@ -27,7 +26,6 @@ const createBlogPostTextEn = async (blogPostDto: CreateBlogPostTextEnDto): Promi
     contentEn: blogPostDto.contentEn,
     pageDescriptionEn: blogPostDto.pageDescriptionEn,
     path: blogPostDto.path,
-    status: blogPostDto.status || DocumentStatus.ACTIVE,
     keywords: blogPostDto.keywords || [],
     dateTime: blogPostDto.dateTime || new Date(),
   });
@@ -50,7 +48,7 @@ const getBlogPosts = async (page: number, size: number): Promise<{ items: BlogPo
         path: 1,
         primaryImage: 1,
         dateTime: 1,
-        published: 1,
+        status: 1,
       })
     .sort({ dateTime: -1 })
     .skip(page * size)
@@ -80,7 +78,6 @@ const getBlogPost = async (blogPostId: string): Promise<BlogPost> => {
       status: 1,
       keywords: 1,
       dateTime: 1,
-      published: 1,
       deleted: 1,
       createdAt: 1,
       updatedAt: 1,
@@ -103,7 +100,6 @@ const getBlogPostByPath = async (lang: string, blogPostPath: string): Promise<Bl
     status: 1,
     keywords: 1,
     dateTime: 1,
-    published: 1,
     deleted: 1,
     createdAt: 1,
     updatedAt: 1,
@@ -159,7 +155,6 @@ const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogP
         contentEn: blogPostDto.contentEn,
         pageDescriptionEn: blogPostDto.pageDescriptionEn,
         path: blogPostDto.path,
-        status: blogPostDto.status || DocumentStatus.ACTIVE,
         keywords: blogPostDto.keywords || [],
         dateTime: blogPostDto.dateTime || new Date(),
       },
@@ -172,7 +167,7 @@ const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogP
       throw new AppError('Failed to update blog post document.', 500);
   }
 
-  logger.info(`Blog post updated for ID: ${blogPostId}`);
+  logger.info(`English details updated for blog post ID: ${blogPostId}`);
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
 
@@ -215,7 +210,7 @@ const updateBlogPostTextSi = async (blogPostId: string, blogPostDto: UpdateBlogP
     throw new AppError('Failed to update blog post document.', 500);
   }
 
-  logger.info(`Blog post updated for ID: ${blogPostId} and title Si: ${blogPostDto.titleSi}`);
+  logger.info(`Sinhala details updated for blog post ID: ${blogPostId}`);
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
 
@@ -242,6 +237,7 @@ const uploadPrimaryImage = async (blogPostId: string, imageFile?: Express.Multer
   blogPostDoc.increment();
   await blogPostDoc.save();
 
+  logger.info(`Uploaded primary image for blog post ID: ${blogPostId}`);
   return mapDocumentToBlogPost(blogPostDoc);
 }
 
@@ -270,10 +266,11 @@ const uploadImages = async (blogPostId: string, imageFiles?: Express.Multer.File
   blogPostDoc.increment();
   await blogPostDoc.save();
 
+  logger.info(`Uploaded images for blog post ID: ${blogPostId}`);
   return mapDocumentToBlogPost(blogPostDoc);
 }
 
-const publishBlogPost = async (blogPostId: string, blogPostDto: PublishBlogPostTextDto): Promise<BlogPost> => {
+const toggleBlogPostActivation = async (blogPostId: string, blogPostDto: ActivationBlogPostDto): Promise<BlogPost> => {
   const existingBlogPostDoc = await BlogPostModel.findOne({
     _id: blogPostId,
     deleted: false,
@@ -295,7 +292,7 @@ const publishBlogPost = async (blogPostId: string, blogPostDto: PublishBlogPostT
     blogPostId,
     { 
       $set: {
-        published: blogPostDto.published,
+        status: blogPostDto.status,
       },
       $inc: { __v: 1 }
     },
@@ -306,7 +303,7 @@ const publishBlogPost = async (blogPostId: string, blogPostDto: PublishBlogPostT
       throw new AppError('Failed to update blog post document.', 500);
   }
 
-  logger.info(`Blog post updated for published for ID: ${blogPostId}`);
+  logger.info(`Updated status for blog post ID: ${blogPostId}`);
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
 
@@ -319,8 +316,8 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
     throw new AppError(`Cannot find the blog post with ID '${blogPostId}' or it is already deleted.`, 404);
   }
 
-  const deletedTitleEn = `${blogPostDoc.titleEn}-${DocumentStatus.DELETED}-${uuidv4()}`;
-  const deletedTitleSi = `${blogPostDoc.titleSi}-${DocumentStatus.DELETED}-${uuidv4()}`;
+  const deletedTitleEn = `${blogPostDoc.titleEn}-DELETED-${uuidv4()}`;
+  const deletedTitleSi = `${blogPostDoc.titleSi}-DELETED-${uuidv4()}`;
 
   const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
     blogPostId,
@@ -329,7 +326,6 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
         titleEn: deletedTitleEn,
         titleSi: deletedTitleSi,
         deleted: true,
-        status: DocumentStatus.DELETED,
       },
       $inc: { __v: 1 }
     },
@@ -337,6 +333,8 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
   );
   if (!updatedBlogPostDoc) {
     throw new AppError('Failed to delete blog post document.', 500);
+  } else {
+    logger.info(`Blog post deleted for ID: ${blogPostId}`);
   }
 }
 
@@ -352,7 +350,7 @@ const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Pro
     path: 1,
     primaryImage: 1,
     dateTime: 1,
-    published: 1,
+    status: 1,
   };
 
   const langFields = {
@@ -378,18 +376,6 @@ const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Pro
   return { blogPostViews, totalCount };
 }
 
-const buildSearchFilter = ({ query, published }: SearchParamsDto): Record<string, any> => {
-  const filter: Record<string, any> = {
-    status: { $ne: DocumentStatus.INACTIVE },
-    deleted: false,
-  };
-
-  if (query) filter.$text = { $search: query };
-  if (published !== undefined) filter.published = published;
-
-  return filter;
-};
-
 const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
   const defaultSort: Record<string, 1 | -1> = { dateTime: -1 }; // Default to newest first
   if (!sort) {
@@ -412,7 +398,7 @@ export {
   updateBlogPostTextSi,
   uploadPrimaryImage,
   uploadImages,
-  publishBlogPost,
+  toggleBlogPostActivation,
   deleteBlogPost,
   searchBlogPosts,
 };

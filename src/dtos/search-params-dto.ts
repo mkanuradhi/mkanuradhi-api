@@ -5,6 +5,5 @@ export interface SearchParamsDto {
   page?: number;
   size?: number;
   status?: DocumentStatus;
-  published?: boolean;
   sort?: string;
 }

@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateBlogPostTextEnDto, PublishBlogPostTextDto, UpdateBlogPostTextEnDto, UpdateBlogPostTextSiDto } from "../dtos/blog-post-dto";
+import { CreateBlogPostTextEnDto, ActivationBlogPostDto, UpdateBlogPostTextEnDto, UpdateBlogPostTextSiDto } from "../dtos/blog-post-dto";
 import * as blogPostService from "../services/blog-post-service";
 import { SearchParamsDto } from "../dtos/search-params-dto";
-import { parseLangQueryParam } from "../utils/common-util";
+import { parseLangQueryParam, parseSearchParams } from "../utils/common-util";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import BlogPost from "../interfaces/i-blog-post";
 import BlogPostView from "../interfaces/i-blog-post-view";
@@ -15,7 +15,6 @@ export const createBlogPostTextEn = asyncErrorHandler( async (req: Request, res:
     contentEn,
     pageDescriptionEn,
     path,
-    status,
     keywords,
     dateTime,
   } = req.body;
@@ -26,7 +25,6 @@ export const createBlogPostTextEn = asyncErrorHandler( async (req: Request, res:
     contentEn,
     pageDescriptionEn,
     path,
-    status,
     keywords,
     dateTime,
   };
@@ -75,7 +73,6 @@ export const updateBlogPostTextEn = asyncErrorHandler( async (req: Request, res:
     contentEn,
     pageDescriptionEn,
     path,
-    status,
     keywords,
     dateTime,
     v
@@ -87,7 +84,6 @@ export const updateBlogPostTextEn = asyncErrorHandler( async (req: Request, res:
     contentEn,
     pageDescriptionEn,
     path,
-    status,
     keywords,
     dateTime,
     v
@@ -136,17 +132,17 @@ export const uploadImages = asyncErrorHandler(async (req: Request, res: Response
   res.status(200).json(updatedBlogPost);
 });
 
-export const publishBlogPost = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+export const toggleBlogPostActivation = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const blogPostId = req.params.id;
   const {
-    published,
+    status,
   } = req.body;
 
-  const blogPostTextDto: PublishBlogPostTextDto = {
-    published,
+  const blogPostDto: ActivationBlogPostDto = {
+    status,
   };
   
-  const updatedBlogPost = await blogPostService.publishBlogPost(blogPostId, blogPostTextDto);
+  const updatedBlogPost = await blogPostService.toggleBlogPostActivation(blogPostId, blogPostDto);
   res.status(200).json(updatedBlogPost);
 });
 
@@ -180,23 +176,3 @@ export const searchBlogPosts = asyncErrorHandler( async (req: Request, res: Resp
 
   res.status(200).json(result);
 });
-
-const parseSearchParams = (req: Request): SearchParamsDto => {
-  const parsePublished = (value: string | undefined): boolean | undefined => {
-    if (value === undefined) return undefined;
-    const truthyValues = ["1", "true", "t", "yes", "y"];
-    const falsyValues = ["0", "false", "f", "no", "n"];
-    const normalizedValue = value.trim().toLowerCase();
-    if (truthyValues.includes(normalizedValue)) return true;
-    if (falsyValues.includes(normalizedValue)) return false;
-    return undefined;
-  };
-
-  return {
-    query: (req.query.q as string) || "",
-    page: parseInt(req.query.page as string) || 0,
-    size: Math.min(parseInt(req.query.size as string) || 10, 100),
-    published: parsePublished(req.query.published as string),
-    sort: req.query.sort as string, // Expected: "latest", "oldest"
-  };
-};

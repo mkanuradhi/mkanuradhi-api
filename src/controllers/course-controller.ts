@@ -6,8 +6,7 @@ import PaginatedResult from "../interfaces/i-paginated-result";
 import Course from "../interfaces/i-course";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import CourseView from "../interfaces/i-course-view";
-import { parseLangQueryParam } from "../utils/common-util";
-import DocumentStatus from "../enums/document-status";
+import { parseLangQueryParam, parseSearchParams } from "../utils/common-util";
 
 export const createCourseEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
@@ -151,22 +150,3 @@ export const searchCourses = asyncErrorHandler( async (req: Request, res: Respon
 
   res.status(200).json(result);
 });
-
-const parseSearchParams = (req: Request): SearchParamsDto => {
-  const parseStatus = (value: string | undefined): DocumentStatus | undefined => {
-    if (!value) return undefined;
-    const normalizedValue = value.trim().toUpperCase();
-    if (Object.values(DocumentStatus).includes(normalizedValue as DocumentStatus)) {
-      return normalizedValue as DocumentStatus;
-    }
-    return undefined;
-  };
-
-  return {
-    query: (req.query.q as string) || "",
-    page: parseInt(req.query.page as string) || 0,
-    size: Math.min(parseInt(req.query.size as string) || 10, 100),
-    status: parseStatus(req.query.status as string),
-    sort: req.query.sort as string, // Expected: "latest", "oldest"
-  };
-};

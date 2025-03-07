@@ -14,7 +14,6 @@ interface BlogPostView {
   dateTime: Date;
   formattedDate: string;
   formattedTime: string;
-  published: boolean;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date;

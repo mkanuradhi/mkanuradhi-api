@@ -1,4 +1,5 @@
 import DocumentStatus from "../enums/document-status";
+import { VersionDto } from "./base-dto";
 
 export interface ActivationCourseDto {
   status: DocumentStatus;
@@ -13,10 +14,6 @@ export interface CreateCourseEnDto {
   descriptionEn?: string;
   locationEn: string;
   path?: string;
-}
-
-interface VersionDto {
-  v: number;
 }
 
 export interface UpdateCourseEnDto extends CreateCourseEnDto, VersionDto {

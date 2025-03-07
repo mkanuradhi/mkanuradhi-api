@@ -16,7 +16,6 @@ interface BlogPostDocument extends BaseDocument {
   status: DocumentStatus;
   keywords: string[];
   dateTime: Date;
-  published: boolean;
   deleted: boolean;
 }
 

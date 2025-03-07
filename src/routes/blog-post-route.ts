@@ -33,7 +33,7 @@ blogPostRoute.patch('/:id/primary-image', upload.single('primaryImage'), blogPos
 blogPostRoute.patch('/:id/images', upload.array('images', 5), blogPostController.uploadImages);
 
 // Publish or unpublish a blog post
-blogPostRoute.patch('/:id/publish', validateObjectId, blogPostController.publishBlogPost);
+blogPostRoute.patch('/:id/toggle', validateObjectId, blogPostController.toggleBlogPostActivation);
 
 // Delete a blog post
 blogPostRoute.delete('/:id', validateObjectId, blogPostController.deleteBlogPost);

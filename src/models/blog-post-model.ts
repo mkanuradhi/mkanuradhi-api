@@ -94,7 +94,7 @@ const blogPostSchema = new Schema<BlogPostDocument>(
         values: Object.values(DocumentStatus),
         message: 'Blog post status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.ACTIVE,
+      default: DocumentStatus.INACTIVE,
     },
     keywords: {
       type: [String],
@@ -104,10 +104,6 @@ const blogPostSchema = new Schema<BlogPostDocument>(
       type: Date,
       required: [true, "Date and time is required."],
       trim: true,
-    },
-    published: {
-      type: Boolean,
-      default: false,
     },
     deleted: {
       type: Boolean,
