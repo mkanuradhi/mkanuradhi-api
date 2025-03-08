@@ -13,6 +13,9 @@ courseRoute.post('/', courseController.createCourseEn);
 // Fetch all course
 courseRoute.get('/', courseController.getCourses);
 
+// Fetch a specific course by ID
+courseRoute.get('/id/:id', validateObjectId, courseController.getCourse);
+
 // Update course data (partial update only for en text data)
 courseRoute.patch('/:id/en', validateObjectId, courseController.updateCourseEn);
 
