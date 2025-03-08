@@ -51,9 +51,12 @@ export const getCourses = async (page: number, size: number): Promise<{ items: C
         credits: 1,
         titleEn: 1, 
         subtitleEn: 1,
+        locationEn: 1,
         titleSi: 1,
         subtitleSi: 1,
+        locationSi: 1,
         path: 1,
+        status: 1,
       })
     .sort({ year: -1 })
     .skip(page * size)
