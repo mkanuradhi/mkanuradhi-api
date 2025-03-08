@@ -54,6 +54,12 @@ export const getCourses = asyncErrorHandler( async (req: Request, res: Response,
   res.status(200).json(result);
 });
 
+export const getCourse = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const courseId = req.params.id;
+  const course = await courseService.getCourse(courseId);
+  res.status(200).json(course);
+});
+
 export const updateCourseEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const courseId = req.params.id;
   const {
