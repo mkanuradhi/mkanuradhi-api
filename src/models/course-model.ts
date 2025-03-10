@@ -4,6 +4,7 @@ import { sanitizeString } from "../utils/common-util";
 import DocumentStatus from "../enums/document-status";
 
 const MAX_CODE_LENGTH = 20;
+const MAX_MODE_LENGTH = 30;
 const MAX_TITLE_LENGTH = 150;
 const MAX_PATH_LENGTH = MAX_CODE_LENGTH + MAX_TITLE_LENGTH + 4 + 5; // year length + dashes length
 const MAX_LOCATION_LENGTH = 200;
@@ -33,6 +34,11 @@ const courseSchema = new Schema<CourseDocument>(
     credits: {
       type: Number,
       min: [1, "Credits must be at least 1."],
+    },
+    mode: {
+      type: String,
+      trim: true,
+      maxLength: [MAX_MODE_LENGTH, `Delivery mode cannot exceed ${MAX_MODE_LENGTH} characters.`],
     },
     titleEn: {
       type: String,
