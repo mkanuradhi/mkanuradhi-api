@@ -1,3 +1,4 @@
+import DeliveryMode from "../enums/delivery-mode";
 import DocumentStatus from "../enums/document-status";
 
 interface CourseQuiz {
@@ -11,6 +12,7 @@ interface Course {
   year: number;
   code: string;
   credits: number;
+  mode: DeliveryMode;
   titleEn: string;
   subtitleEn: string;
   descriptionEn: string;

@@ -1,5 +1,6 @@
 import DocumentStatus from "../enums/document-status";
 import { VersionDto } from "./base-dto";
+import DeliveryMode from "../enums/delivery-mode";
 
 export interface ActivationCourseDto {
   status: DocumentStatus;
@@ -9,6 +10,7 @@ export interface CreateCourseEnDto {
   year: number;
   code?: string;
   credits?: number;
+  mode: DeliveryMode;
   titleEn: string;
   subtitleEn?: string;
   descriptionEn?: string;
