@@ -50,6 +50,7 @@ export const getCourses = async (page: number, size: number): Promise<{ items: C
         year: 1,
         code: 1,
         credits: 1,
+        mode: 1,
         titleEn: 1, 
         subtitleEn: 1,
         locationEn: 1,
@@ -76,6 +77,7 @@ export const getCourse = async (courseId: string): Promise<Course> => {
       year: 1,
       code: 1,
       credits: 1,
+      mode: 1,
       titleEn: 1,
       subtitleEn: 1,
       descriptionEn: 1,
@@ -272,6 +274,7 @@ export const searchCourses = async (lang: string, searchParams: SearchParamsDto)
     year: 1,
     code: 1,
     credits: 1,
+    mode: 1,
     path: 1,
   };
 
