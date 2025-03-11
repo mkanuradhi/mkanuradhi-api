@@ -2,11 +2,12 @@ import { model, Schema } from "mongoose";
 import CourseDocument from "../documents/course-document";
 import { sanitizeString } from "../utils/common-util";
 import DocumentStatus from "../enums/document-status";
+import DeliveryMode from "../enums/delivery-mode";
 
 const MAX_CODE_LENGTH = 20;
-const MAX_MODE_LENGTH = 30;
 const MAX_TITLE_LENGTH = 150;
 const MAX_PATH_LENGTH = MAX_CODE_LENGTH + MAX_TITLE_LENGTH + 4 + 5; // year length + dashes length
+const MAX_DESCRIPTION_LENGTH = 5000;
 const MAX_LOCATION_LENGTH = 200;
 
 const courseQuizSchema = new Schema(
@@ -34,11 +35,15 @@ const courseSchema = new Schema<CourseDocument>(
     credits: {
       type: Number,
       min: [1, "Credits must be at least 1."],
+      max: [30, "Credits must be less than 30."]
     },
     mode: {
       type: String,
-      trim: true,
-      maxLength: [MAX_MODE_LENGTH, `Delivery mode cannot exceed ${MAX_MODE_LENGTH} characters.`],
+      enum: {
+        values: Object.values(DeliveryMode),
+        message: 'Course delivery mode `{VALUE}` is not valid.',
+      },
+      default: DeliveryMode.PHYSICAL,
     },
     titleEn: {
       type: String,
@@ -49,10 +54,12 @@ const courseSchema = new Schema<CourseDocument>(
     subtitleEn: {
       type: String,
       trim: true,
+      maxLength: [MAX_TITLE_LENGTH, `Subtitle in English cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
     descriptionEn: {
       type: String,
       trim: true,
+      maxLength: [MAX_DESCRIPTION_LENGTH, `Description in English cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.`],
     },
     locationEn: {
       type: String,
@@ -63,14 +70,17 @@ const courseSchema = new Schema<CourseDocument>(
     titleSi: {
       type: String,
       trim: true,
+      maxLength: [MAX_TITLE_LENGTH, `Title in Sinhala cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
     subtitleSi: {
       type: String,
       trim: true,
+      maxLength: [MAX_TITLE_LENGTH, `Subtitle in Sinhala cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
     descriptionSi: {
       type: String,
       trim: true,
+      maxLength: [MAX_DESCRIPTION_LENGTH, `Description in Sinhala cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.`],
     },
     locationSi: {
       type: String,
@@ -94,7 +104,7 @@ const courseSchema = new Schema<CourseDocument>(
       type: String,
       enum: {
         values: Object.values(DocumentStatus),
-        message: 'Blog post status `{VALUE}` is not valid.',
+        message: 'Course status `{VALUE}` is not valid.',
       },
       default: DocumentStatus.INACTIVE,
     },

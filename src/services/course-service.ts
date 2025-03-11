@@ -136,7 +136,7 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
         mode: courseDto.mode,
         titleEn: courseDto.titleEn,
         subtitleEn: courseDto.subtitleEn,
-        descriptinEn: courseDto.descriptionEn,
+        descriptionEn: courseDto.descriptionEn,
         locationEn: courseDto.locationEn,
         path: courseDto.path,
       },
