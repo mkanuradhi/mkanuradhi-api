@@ -172,7 +172,6 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
         subtitleEn: courseDto.subtitleEn,
         descriptionEn: courseDto.descriptionEn,
         locationEn: courseDto.locationEn,
-        path: courseDto.path,
       },
       $inc: { __v: 1 }
     },
