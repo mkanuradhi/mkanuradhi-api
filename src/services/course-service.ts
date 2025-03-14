@@ -4,12 +4,13 @@ import DocumentStatus from "../enums/document-status";
 import Course from "../interfaces/i-course";
 import CourseModel from "../models/course-model";
 import AppError from "../errors/app-error";
-import { mapDocumentsToCourses, mapDocumentsToCourseViews, mapDocumentToCourse } from "../mappers/course-mapper";
+import { mapDocumentsToCourses, mapDocumentsToCourseViews, mapDocumentToCourse, mapDocumentToCourseView } from "../mappers/course-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import CourseView from "../interfaces/i-course-view";
 import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
+import CourseDocument from "../documents/course-document";
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
@@ -100,6 +101,39 @@ export const getCourse = async (courseId: string): Promise<Course> => {
   } else {
     throw new AppError(`Course cannot be found for id: ${courseId}`, 400);
   }
+}
+
+export const getCourseByPath = async (lang: string, coursePath: string): Promise<CourseView> => {
+  const commonFields = {
+    year: 1,
+    code: 1,
+    credits: 1,
+    mode: 1,
+    path: 1,
+    status: 1,
+    deleted: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    __v: 1,
+  };
+  const langFields = {
+    [`title${capitalizeLang(lang)}`]: 1,
+    [`subtitle${capitalizeLang(lang)}`]: 1,
+    [`description${capitalizeLang(lang)}`]: 1,
+    [`location${capitalizeLang(lang)}`]: 1,
+  };
+  const projection = { ...commonFields, ...langFields };
+
+  const courseDoc = await CourseModel.findOne(
+    { path: coursePath },
+    projection
+  ) as CourseDocument & Record<string, any>;
+
+  if (!courseDoc) {
+    throw new AppError(`Course cannot be found for path: ${coursePath}`, 400);
+  }
+
+  return mapDocumentToCourseView(lang, courseDoc);
 }
 
 export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEnDto): Promise<Course> => {

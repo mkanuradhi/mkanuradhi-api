@@ -62,6 +62,13 @@ export const getCourse = asyncErrorHandler( async (req: Request, res: Response, 
   res.status(200).json(course);
 });
 
+export const getCourseByPath = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const lang: string = parseLangQueryParam(req);
+  const coursePath = req.params.path;
+  const courseView = await courseService.getCourseByPath(lang, coursePath);
+  res.status(200).json(courseView);
+});
+
 export const updateCourseEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const courseId = req.params.id;
   const {
