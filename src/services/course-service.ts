@@ -244,6 +244,7 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
 
   const deletedTitleEn = `${courseDoc.titleEn}-DELETED-${uuidv4()}`;
   const deletedTitleSi = `${courseDoc.titleSi}-DELETED-${uuidv4()}`;
+  const deletedPath = `${courseDoc.path}-DELETED-${uuidv4()}`;
 
   const updatedCourseDoc = await CourseModel.findByIdAndUpdate(
     courseId,
@@ -251,6 +252,7 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
       $set: {
         titleEn: deletedTitleEn,
         titleSi: deletedTitleSi,
+        path: deletedPath,
         deleted: true,
       },
       $inc: { __v: 1 }
