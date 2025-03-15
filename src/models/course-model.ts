@@ -145,6 +145,47 @@ courseSchema.pre('validate', async function (next) {
   next();
 });
 
+courseSchema.pre('findOneAndUpdate', async function (next) {
+  const update = this.getUpdate() as Record<string, any>;
+
+  const updatedFields = update.$set || update;
+
+  // If user explicitly provides a new path, do nothing.
+  if (updatedFields.path) {
+    return next();
+  }
+
+  // Determine if any fields that affect the path are being updated.
+  if (updatedFields.titleEn || updatedFields.code || updatedFields.year) {
+    // Fetch the current document values to fill in any missing fields.
+    const doc = await this.model.findOne(this.getQuery());
+
+    if (!doc) {
+      return next(new Error("Document not found during update."));
+    }
+
+    // Use the updated values if provided, otherwise fallback to the current document values.
+    const newTitle = updatedFields.titleEn ? sanitizeString(updatedFields.titleEn) : sanitizeString(doc.titleEn);
+    const newCode = updatedFields.code ? sanitizeString(updatedFields.code) : (doc.code ? sanitizeString(doc.code) : '');
+    const newYear = updatedFields.year || doc.year;
+
+    // Build the new path
+    let newPath = newCode ? `${newCode}-${newTitle}-${newYear}` : `${newTitle}-${newYear}`;
+
+    // Ensure uniqueness by appending a counter if necessary.
+    let uniquePath = newPath;
+    let counter = 1;
+    while (await this.model.exists({ path: uniquePath, _id: { $ne: doc._id } })) {
+      uniquePath = `${newPath}-${counter}`;
+      counter++;
+    }
+
+    updatedFields.path = uniquePath;
+    this.setUpdate(updatedFields);
+  }
+  next();
+});
+
 courseSchema.index({ code: 1 }, { sparse: true });
 courseSchema.index({ titleEn: 1 });
 courseSchema.index({ titleSi: 1 }, { sparse: true });

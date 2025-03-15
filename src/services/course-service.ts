@@ -4,12 +4,13 @@ import DocumentStatus from "../enums/document-status";
 import Course from "../interfaces/i-course";
 import CourseModel from "../models/course-model";
 import AppError from "../errors/app-error";
-import { mapDocumentsToCourses, mapDocumentsToCourseViews, mapDocumentToCourse } from "../mappers/course-mapper";
+import { mapDocumentsToCourses, mapDocumentsToCourseViews, mapDocumentToCourse, mapDocumentToCourseView } from "../mappers/course-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import CourseView from "../interfaces/i-course-view";
 import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
+import CourseDocument from "../documents/course-document";
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
@@ -102,6 +103,39 @@ export const getCourse = async (courseId: string): Promise<Course> => {
   }
 }
 
+export const getCourseByPath = async (lang: string, coursePath: string): Promise<CourseView> => {
+  const commonFields = {
+    year: 1,
+    code: 1,
+    credits: 1,
+    mode: 1,
+    path: 1,
+    status: 1,
+    deleted: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    __v: 1,
+  };
+  const langFields = {
+    [`title${capitalizeLang(lang)}`]: 1,
+    [`subtitle${capitalizeLang(lang)}`]: 1,
+    [`description${capitalizeLang(lang)}`]: 1,
+    [`location${capitalizeLang(lang)}`]: 1,
+  };
+  const projection = { ...commonFields, ...langFields };
+
+  const courseDoc = await CourseModel.findOne(
+    { path: coursePath },
+    projection
+  ) as CourseDocument & Record<string, any>;
+
+  if (!courseDoc) {
+    throw new AppError(`Course cannot be found for path: ${coursePath}`, 400);
+  }
+
+  return mapDocumentToCourseView(lang, courseDoc);
+}
+
 export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
     _id: courseId,
@@ -138,7 +172,6 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
         subtitleEn: courseDto.subtitleEn,
         descriptionEn: courseDto.descriptionEn,
         locationEn: courseDto.locationEn,
-        path: courseDto.path,
       },
       $inc: { __v: 1 }
     },
@@ -244,6 +277,7 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
 
   const deletedTitleEn = `${courseDoc.titleEn}-DELETED-${uuidv4()}`;
   const deletedTitleSi = `${courseDoc.titleSi}-DELETED-${uuidv4()}`;
+  const deletedPath = `${courseDoc.path}-DELETED-${uuidv4()}`;
 
   const updatedCourseDoc = await CourseModel.findByIdAndUpdate(
     courseId,
@@ -251,6 +285,7 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
       $set: {
         titleEn: deletedTitleEn,
         titleSi: deletedTitleSi,
+        path: deletedPath,
         deleted: true,
       },
       $inc: { __v: 1 }
