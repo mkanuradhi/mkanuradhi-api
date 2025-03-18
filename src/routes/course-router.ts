@@ -46,4 +46,7 @@ courseRoute.get('/:courseId/quizzes/:id', quizController.getQuiz);
 // Update quiz data
 courseRoute.patch('/:courseId/quizzes/:id', validateObjectId, quizController.updateQuiz);
 
+// Toggle status of a quiz
+courseRoute.patch('/:courseId/quizzes/:id/toggle', validateObjectId, quizController.toggleQuizActivation);
+
 export default courseRoute;

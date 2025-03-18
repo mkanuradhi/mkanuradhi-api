@@ -1,4 +1,4 @@
-import { CreateQuizDto, UpdateQuizDto } from "../dtos/quiz-dto";
+import { ActivationQuizDto, CreateQuizDto, UpdateQuizDto } from "../dtos/quiz-dto";
 import Quiz from "../interfaces/i-quiz";
 import QuizModel from "../models/quiz-model";
 import CourseModel from "../models/course-model";
@@ -7,6 +7,7 @@ import logger from "../config/logger-config";
 import { mapDocumentsToQuizzes, mapDocumentToQuiz } from "../mappers/quiz-mapper";
 import CourseDocument from "../documents/course-document";
 import { validatePaginationDetails, validateQuizAvailableDates } from "../validators/common-validator";
+import DocumentStatus from "../enums/document-status";
 
 export const createQuiz = async (courseId: string, quizDto: CreateQuizDto): Promise<Quiz> => {
   const courseDoc =await validateCourse(courseId);
@@ -168,6 +169,37 @@ export const updateQuiz = async (courseId: string, quizId: string, quizDto: Upda
   }
 
   logger.info(`Quiz updated for ID: ${quizId}`);
+  return mapDocumentToQuiz(updatedQuizDoc);
+}
+
+export const toggleQuizActivation = async (courseId: string, quizId: string, quizDto: ActivationQuizDto): Promise<Quiz> => {
+  await validateCourse(courseId);
+
+  const existingQuizDoc = await QuizModel.findOne({
+    _id: quizId,
+    courseId,
+    deleted: false,
+  });
+  if (!existingQuizDoc) {
+      throw new AppError(`Cannot find the quiz with ID: ${quizId}. Unable to toggle the status of the quiz.`, 400);
+  }
+
+  const updatedQuizDoc = await QuizModel.findByIdAndUpdate(
+    quizId,
+    { 
+      $set: {
+        status: quizDto.status,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedQuizDoc) {
+      throw new AppError('Failed to toggle the status of the quiz document.', 500);
+  }
+
+  logger.info(`Status updated for the quiz ID: ${quizId}`);
   return mapDocumentToQuiz(updatedQuizDoc);
 }
 

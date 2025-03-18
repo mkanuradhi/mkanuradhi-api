@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateQuizDto, UpdateQuizDto } from "../dtos/quiz-dto";
+import { ActivationQuizDto, CreateQuizDto, UpdateQuizDto } from "../dtos/quiz-dto";
 import * as quizService from "../services/quiz-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Quiz from "../interfaces/i-quiz";
@@ -77,5 +77,20 @@ export const updateQuiz = asyncErrorHandler( async (req: Request, res: Response,
   };
   
   const updatedQuiz = await quizService.updateQuiz(courseId, quizId, quizDto);
+  res.status(200).json(updatedQuiz);
+});
+
+export const toggleQuizActivation = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const courseId = req.params.courseId;
+  const quizId = req.params.id;
+  const {
+    status,
+  } = req.body;
+
+  const quizDto: ActivationQuizDto = {
+    status,
+  };
+  
+  const updatedQuiz = await quizService.toggleQuizActivation(courseId, quizId, quizDto);
   res.status(200).json(updatedQuiz);
 });
