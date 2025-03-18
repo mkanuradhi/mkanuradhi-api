@@ -1,5 +1,6 @@
 import { model, Schema, Types } from "mongoose";
 import QuizDocument from "../documents/quiz-document";
+import DocumentStatus from "../enums/document-status";
 
 const quizSchema = new Schema<QuizDocument>(
   {
@@ -15,8 +16,15 @@ const quizSchema = new Schema<QuizDocument>(
     },
     duration: {
       type: Number,
-      required: [true, "Duration is required."],
       min: 1
+    },
+    availableFrom: {
+      type: Date,
+      trim: true,
+    },
+    availableUntil: {
+      type: Date,
+      trim: true,
     },
     courseId: {
       type: Schema.Types.ObjectId,
@@ -28,6 +36,18 @@ const quizSchema = new Schema<QuizDocument>(
         },
         message: "Invalid Course ID format. Please provide a valid MongoDB ObjectId."
       }
+    },
+    status: {
+      type: String,
+      enum: {
+        values: Object.values(DocumentStatus),
+        message: 'Quiz status `{VALUE}` is not valid.',
+      },
+      default: DocumentStatus.INACTIVE,
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
