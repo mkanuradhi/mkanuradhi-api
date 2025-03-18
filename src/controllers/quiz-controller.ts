@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateQuizDto } from "../dtos/quiz-dto";
+import { CreateQuizDto, UpdateQuizDto } from "../dtos/quiz-dto";
 import * as quizService from "../services/quiz-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Quiz from "../interfaces/i-quiz";
@@ -52,4 +52,30 @@ export const getQuiz = asyncErrorHandler( async (req: Request, res: Response, ne
   const quizId = req.params.id;
   const quiz = await quizService.getQuiz(courseId, quizId);
   res.status(200).json(quiz);
+});
+
+export const updateQuiz = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const courseId = req.params.courseId;
+  const quizId = req.params.id;
+
+  const {
+    titleEn,
+    titleSi,
+    duration,
+    availableFrom,
+    availableUntil,
+    v
+  } = req.body;
+
+  const quizDto: UpdateQuizDto = {
+    titleEn,
+    titleSi,
+    duration,
+    availableFrom,
+    availableUntil,
+    v
+  };
+  
+  const updatedQuiz = await quizService.updateQuiz(courseId, quizId, quizDto);
+  res.status(200).json(updatedQuiz);
 });

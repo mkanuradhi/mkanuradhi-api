@@ -43,4 +43,7 @@ courseRoute.get('/:courseId/quizzes', quizController.getQuizzes);
 // Fetch quiz
 courseRoute.get('/:courseId/quizzes/:id', quizController.getQuiz);
 
+// Update quiz data
+courseRoute.patch('/:courseId/quizzes/:id', validateObjectId, quizController.updateQuiz);
+
 export default courseRoute;

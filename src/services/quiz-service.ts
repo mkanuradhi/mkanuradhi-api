@@ -1,4 +1,4 @@
-import { CreateQuizDto } from "../dtos/quiz-dto";
+import { CreateQuizDto, UpdateQuizDto } from "../dtos/quiz-dto";
 import Quiz from "../interfaces/i-quiz";
 import QuizModel from "../models/quiz-model";
 import CourseModel from "../models/course-model";
@@ -120,6 +120,55 @@ export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> =
   } else {
     throw new AppError(`A quiz with id: ${quizId} cannot be found for the course: ${courseDoc.titleEn}`, 400);
   }
+}
+
+export const updateQuiz = async (courseId: string, quizId: string, quizDto: UpdateQuizDto): Promise<Quiz> => {
+  const courseDoc = await validateCourse(courseId);
+  validateQuizAvailableDates(quizDto.availableFrom, quizDto.availableUntil);
+
+  const existingQuizDoc = await QuizModel.findOne({
+    _id: quizId,
+    courseId,
+    deleted: false,
+  });
+  if (!existingQuizDoc) {
+      throw new AppError(`Cannot find the quiz with ID: ${quizId}. Unable to update the quiz.`, 400);
+  }
+  if (existingQuizDoc.__v !== quizDto.v) {
+    throw new AppError(`Quiz has been modified by another process. Please refresh and try again.`, 409);
+  }
+
+  const existingQuizDocsWithTitle = await QuizModel.find({
+    _id: { $ne: quizId },
+    courseId: courseId,
+    titleEn: quizDto.titleEn.trim(),
+    deleted: false,
+  });
+  if (existingQuizDocsWithTitle && existingQuizDocsWithTitle.length > 0) {
+    throw new AppError(`Existing quiz found with the title: ${quizDto.titleEn} for the course: ${courseDoc.titleEn}`, 400);
+  }
+
+  const updatedQuizDoc = await QuizModel.findByIdAndUpdate(
+    quizId,
+    { 
+      $set: {
+        titleEn: quizDto.titleEn,
+        titleSi: quizDto.titleSi,
+        duration: quizDto.duration,
+        availableFrom: quizDto.availableFrom,
+        availableUntil: quizDto.availableUntil,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedQuizDoc) {
+      throw new AppError('Failed to update quiz document.', 500);
+  }
+
+  logger.info(`Quiz updated for ID: ${quizId}`);
+  return mapDocumentToQuiz(updatedQuizDoc);
 }
 
 const validateCourse = async (courseId: string): Promise<CourseDocument> => {
