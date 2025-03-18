@@ -1,10 +1,8 @@
-import { DEFAULT_LOCALE, LANG_EN, LANG_SI, LOCALE_EN, LOCALE_SI } from "../constants/common-vars";
 import CourseDocument from "../documents/course-document";
 import Course from "../interfaces/i-course";
 import CourseView from "../interfaces/i-course-view";
 import { capitalizeLang } from "../utils/common-util";
 import { mapDocument, mapDocuments } from "./generic-mapper";
-
 
 export const mapDocumentToCourse = (doc: CourseDocument): Course => {
   return mapDocument(doc) as Course;

@@ -1,5 +1,6 @@
 import express from 'express';
 import * as courseController from '../controllers/course-controller';
+import * as quizController from '../controllers/quiz-controller';
 import validateObjectId from '../middleware/validate-objectid';
 
 const courseRoute = express.Router();
@@ -10,7 +11,7 @@ courseRoute.get('/search', courseController.searchCourses);
 // Add a new course (en text data)
 courseRoute.post('/', courseController.createCourseEn);
 
-// Fetch all course
+// Fetch all courses
 courseRoute.get('/', courseController.getCourses);
 
 // Fetch a specific course by ID
@@ -30,5 +31,16 @@ courseRoute.patch('/:id/toggle', validateObjectId, courseController.toggleCourse
 
 // Delete a course
 courseRoute.delete('/:id', validateObjectId, courseController.deleteCourse);
+
+// ----------------------------------- quizzes -----------------------------------
+
+// Add a new quiz
+courseRoute.post('/:courseId/quizzes', quizController.createQuiz);
+
+// Fetch all course quizzes
+courseRoute.get('/:courseId/quizzes', quizController.getQuizzes);
+
+// Fetch quiz
+courseRoute.get('/:courseId/quizzes/:id', quizController.getQuiz);
 
 export default courseRoute;
