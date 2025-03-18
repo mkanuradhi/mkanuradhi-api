@@ -94,3 +94,10 @@ export const toggleQuizActivation = asyncErrorHandler( async (req: Request, res:
   const updatedQuiz = await quizService.toggleQuizActivation(courseId, quizId, quizDto);
   res.status(200).json(updatedQuiz);
 });
+
+export const deleteQuiz = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const courseId = req.params.courseId;
+  const quizId = req.params.id;
+  await quizService.deleteQuiz(courseId, quizId);
+  res.status(204).json();
+});

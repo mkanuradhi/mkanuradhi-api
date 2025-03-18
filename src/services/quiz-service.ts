@@ -7,6 +7,7 @@ import logger from "../config/logger-config";
 import { mapDocumentsToQuizzes, mapDocumentToQuiz } from "../mappers/quiz-mapper";
 import CourseDocument from "../documents/course-document";
 import { validatePaginationDetails, validateQuizAvailableDates } from "../validators/common-validator";
+import { v4 as uuidv4 } from 'uuid';
 import DocumentStatus from "../enums/document-status";
 
 export const createQuiz = async (courseId: string, quizDto: CreateQuizDto): Promise<Quiz> => {
@@ -199,8 +200,63 @@ export const toggleQuizActivation = async (courseId: string, quizId: string, qui
       throw new AppError('Failed to toggle the status of the quiz document.', 500);
   }
 
+  if (quizDto.status === DocumentStatus.INACTIVE) {
+    await CourseModel.updateOne(
+      { _id: courseId },
+      { $pull: { quizzes: { id: quizId } } }
+    );
+  } else if (quizDto.status === DocumentStatus.ACTIVE) {
+    await CourseModel.updateOne(
+      { _id: courseId },
+      { 
+        $push: {
+          quizzes: {
+            id: quizId,
+            titleEn: updatedQuizDoc.titleEn,
+            titleSi: updatedQuizDoc.titleSi
+          }
+        }
+      },
+    );
+  }
+
   logger.info(`Status updated for the quiz ID: ${quizId}`);
   return mapDocumentToQuiz(updatedQuizDoc);
+}
+
+export const deleteQuiz = async (courseId: string, quizId: string): Promise<void> => {
+  const quizDoc = await QuizModel.findOne({ 
+    _id: quizId,
+    courseId,
+    deleted: false,
+  });
+  if (!quizDoc) {
+    throw new AppError(`Cannot find a quiz with ID '${quizId}' or it is already deleted.`, 404);
+  }
+
+  const deletedTitleEn = `${quizDoc.titleEn}-DELETED-${uuidv4()}`.substring(0, 200);
+  const deletedTitleSi = `${quizDoc.titleSi}-DELETED-${uuidv4()}`.substring(0, 200);
+
+  const updatedQuizDoc = await QuizModel.findByIdAndUpdate(
+    quizId,
+    {
+      $set: {
+        titleEn: deletedTitleEn,
+        titleSi: deletedTitleSi,
+        deleted: true,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedQuizDoc) {
+    throw new AppError('Failed to delete quiz document.', 500);
+  }
+
+  await CourseModel.updateOne(
+    { _id: courseId },
+    { $pull: { quizzes: { id: quizId } } }
+  );
 }
 
 const validateCourse = async (courseId: string): Promise<CourseDocument> => {

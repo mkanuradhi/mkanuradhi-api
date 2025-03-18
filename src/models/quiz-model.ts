@@ -2,17 +2,21 @@ import { model, Schema, Types } from "mongoose";
 import QuizDocument from "../documents/quiz-document";
 import DocumentStatus from "../enums/document-status";
 
+const MAX_TITLE_LENGTH = 200;
+
 const quizSchema = new Schema<QuizDocument>(
   {
     titleEn: {
       type: String,
       required: [true, "Title in English is required."],
       trim: true,
+      maxLength: [MAX_TITLE_LENGTH, `Title in English cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
     titleSi: {
       type: String,
       required: [true, "Title in Sinhala is required."],
       trim: true,
+      maxLength: [MAX_TITLE_LENGTH, `Title in Sinhala cannot exceed ${MAX_TITLE_LENGTH} characters.`],
     },
     duration: {
       type: Number,
