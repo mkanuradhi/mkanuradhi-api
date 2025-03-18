@@ -88,6 +88,7 @@ export const getCourse = async (courseId: string): Promise<Course> => {
       descriptionSi: 1,
       locationSi: 1,
       path: 1,
+      quizzes: 1,
       status: 1,
       deleted: 1,
       createdAt: 1,
