@@ -27,3 +27,25 @@ export const validateDocId = (id: string): boolean => {
   }
   return true;
 }
+
+export const validateQuizAvailableDates = (availableFrom?: Date | string, availableUntil?: Date | string): void => {
+  if (availableFrom) {
+    const from = new Date(availableFrom);
+    if (isNaN(from.getTime())) {
+      throw new AppError("availableFrom is not a valid date", 400);
+    }
+  }
+  if (availableUntil) {
+    const until = new Date(availableUntil);
+    if (isNaN(until.getTime())) {
+      throw new AppError("availableUntil is not a valid date", 400);
+    }
+  }
+  if (availableFrom && availableUntil) {
+    const from = new Date(availableFrom);
+    const until = new Date(availableUntil);
+    if (from >= until) {
+      throw new AppError("availableFrom must be earlier than availableUntil", 400);
+    }
+  }
+}

@@ -6,10 +6,11 @@ import AppError from "../errors/app-error";
 import logger from "../config/logger-config";
 import { mapDocumentsToQuizzes, mapDocumentToQuiz } from "../mappers/quiz-mapper";
 import CourseDocument from "../documents/course-document";
-import { validatePaginationDetails } from "../validators/common-validator";
+import { validatePaginationDetails, validateQuizAvailableDates } from "../validators/common-validator";
 
 export const createQuiz = async (courseId: string, quizDto: CreateQuizDto): Promise<Quiz> => {
-  await validateCourse(courseId);
+  const courseDoc =await validateCourse(courseId);
+  validateQuizAvailableDates(quizDto.availableFrom, quizDto.availableUntil);
 
   const session = await QuizModel.startSession();
 
@@ -23,7 +24,7 @@ export const createQuiz = async (courseId: string, quizDto: CreateQuizDto): Prom
     }).session(session);
 
     if (existingQuizDoc) {
-        throw new AppError(`Existing quiz found for the title: ${quizDto.titleEn} and for the course: ${courseId}`, 400);
+        throw new AppError(`Existing quiz found with title: '${quizDto.titleEn}' for the course: '${courseDoc.titleEn}'`, 400);
     }
 
     const [quizDoc] = await QuizModel.create([{
@@ -95,6 +96,8 @@ export const getQuizzes = async (courseId: string, page: number, size: number): 
 }
 
 export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> => {
+  const courseDoc = await validateCourse(courseId);
+
   const quizDoc = await QuizModel.findById(
     quizId, 
     { 
@@ -112,10 +115,10 @@ export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> =
     }
   );
 
-  if (quizDoc) {
+  if (quizDoc && quizDoc.courseId.toString() === courseId) {
     return mapDocumentToQuiz(quizDoc);
   } else {
-    throw new AppError(`Quiz cannot be found for id: ${quizId}`, 400);
+    throw new AppError(`A quiz with id: ${quizId} cannot be found for the course: ${courseDoc.titleEn}`, 400);
   }
 }
 
