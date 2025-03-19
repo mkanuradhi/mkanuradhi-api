@@ -29,6 +29,14 @@ export const mapDocumentToCourseView = (lang: string, doc: CourseDocument): Cour
   delete courseView[`description${langSuffix}`];
   delete courseView[`location${langSuffix}`];
 
+  // Map the quizzes array if it exists
+  if (courseView.quizzes && Array.isArray(courseView.quizzes)) {
+    courseView.quizzes = courseView.quizzes.map((quiz: any) => ({
+      id: quiz.id,
+      title: quiz[`title${langSuffix}`],
+    }));
+  }
+
   return courseView;
 };
 

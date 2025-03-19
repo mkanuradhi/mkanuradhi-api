@@ -123,7 +123,11 @@ export const getCourseByPath = async (lang: string, coursePath: string): Promise
     [`description${capitalizeLang(lang)}`]: 1,
     [`location${capitalizeLang(lang)}`]: 1,
   };
-  const projection = { ...commonFields, ...langFields };
+  const quizLangFields = {
+    "quizzes.id": 1,
+    [`quizzes.title${capitalizeLang(lang)}`]: 1,
+  };
+  const projection = { ...commonFields, ...langFields, ...quizLangFields };
 
   const courseDoc = await CourseModel.findOne(
     { path: coursePath },
