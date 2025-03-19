@@ -169,6 +169,16 @@ export const updateQuiz = async (courseId: string, quizId: string, quizDto: Upda
       throw new AppError('Failed to update quiz document.', 500);
   }
 
+  // Update the quiz summary in the course's quizzes array in one atomic operation.
+  await CourseModel.updateOne(
+    { _id: courseId, "quizzes.id": quizId },
+    { $set: {
+        "quizzes.$.titleEn": updatedQuizDoc.titleEn,
+        "quizzes.$.titleSi": updatedQuizDoc.titleSi,
+      }
+    }
+  );
+
   logger.info(`Quiz updated for ID: ${quizId}`);
   return mapDocumentToQuiz(updatedQuizDoc);
 }
