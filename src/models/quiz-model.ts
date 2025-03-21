@@ -47,7 +47,7 @@ const quizSchema = new Schema<QuizDocument>(
         values: Object.values(DocumentStatus),
         message: 'Quiz status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.INACTIVE,
+      default: DocumentStatus.ACTIVE,
     },
     deleted: {
       type: Boolean,
