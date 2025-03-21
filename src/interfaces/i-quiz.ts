@@ -5,6 +5,8 @@ interface Quiz {
   titleEn: string;
   titleSi: string;
   duration: number;
+  availableFrom: Date;
+  availableUntil: Date;
   courseId: string;
   status: DocumentStatus;
   deleted: boolean;
