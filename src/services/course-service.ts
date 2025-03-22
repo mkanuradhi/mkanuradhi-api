@@ -88,6 +88,7 @@ export const getCourse = async (courseId: string): Promise<Course> => {
       descriptionSi: 1,
       locationSi: 1,
       path: 1,
+      quizzes: 1,
       status: 1,
       deleted: 1,
       createdAt: 1,
@@ -122,7 +123,11 @@ export const getCourseByPath = async (lang: string, coursePath: string): Promise
     [`description${capitalizeLang(lang)}`]: 1,
     [`location${capitalizeLang(lang)}`]: 1,
   };
-  const projection = { ...commonFields, ...langFields };
+  const quizLangFields = {
+    "quizzes.id": 1,
+    [`quizzes.title${capitalizeLang(lang)}`]: 1,
+  };
+  const projection = { ...commonFields, ...langFields, ...quizLangFields };
 
   const courseDoc = await CourseModel.findOne(
     { path: coursePath },

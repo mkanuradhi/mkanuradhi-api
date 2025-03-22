@@ -1,7 +1,7 @@
 import DeliveryMode from "../enums/delivery-mode";
 import DocumentStatus from "../enums/document-status";
 
-interface CourseQuiz {
+interface CourseViewQuiz {
   id: string;
   title: string;
 }
@@ -17,7 +17,7 @@ interface CourseView {
   description: string;
   location: string;
   path: string;
-  quizzes: CourseQuiz[];
+  quizzes: CourseViewQuiz[];
   status: DocumentStatus;
   deleted: boolean;
   createdAt: Date;

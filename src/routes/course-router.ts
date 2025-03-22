@@ -43,4 +43,13 @@ courseRoute.get('/:courseId/quizzes', quizController.getQuizzes);
 // Fetch quiz
 courseRoute.get('/:courseId/quizzes/:id', quizController.getQuiz);
 
+// Update quiz data
+courseRoute.patch('/:courseId/quizzes/:id', validateObjectId, quizController.updateQuiz);
+
+// Toggle status of a quiz
+courseRoute.patch('/:courseId/quizzes/:id/toggle', validateObjectId, quizController.toggleQuizActivation);
+
+// Delete a quiz
+courseRoute.delete('/:courseId/quizzes/:id', validateObjectId, quizController.deleteQuiz);
+
 export default courseRoute;
