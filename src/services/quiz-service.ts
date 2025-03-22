@@ -195,6 +195,11 @@ export const toggleQuizActivation = async (courseId: string, quizId: string, qui
       throw new AppError(`Cannot find the quiz with ID: ${quizId}. Unable to toggle the status of the quiz.`, 400);
   }
 
+  if (existingQuizDoc.status === quizDto.status) { // No change in status
+    logger.info(`No change in status. Status was not updated for the quiz ID: ${quizId}`);
+    return mapDocumentToQuiz(existingQuizDoc);
+  }
+
   const updatedQuizDoc = await QuizModel.findByIdAndUpdate(
     quizId,
     { 
