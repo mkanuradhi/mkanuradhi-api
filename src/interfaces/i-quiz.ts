@@ -1,5 +1,15 @@
 import DocumentStatus from "../enums/document-status";
 
+interface McqChoice {
+  text: string;
+}
+
+interface QuizMcq {
+  id: string;
+  question: string;
+  choices: McqChoice[];
+}
+
 interface Quiz {
   id: string;
   titleEn: string;
@@ -8,6 +18,7 @@ interface Quiz {
   availableFrom: Date;
   availableUntil: Date;
   courseId: string;
+  mcqs: QuizMcq[];
   status: DocumentStatus;
   deleted: boolean;
   createdAt: Date;

@@ -1,10 +1,14 @@
 import { model, Schema, Types } from "mongoose";
 import McqDocument from "../documents/mcq-document";
 
-const choiceSchema = new Schema(
+const MIN_QUESTION_LENGTH = 3;
+const MAX_QUESTION_LENGTH = 2000;
+
+const MAX_EXPLANATION_LENGTH = 3000;
+
+const mcqChoiceSchema = new Schema(
   {
-    textEn: { type: String, required: true },
-    textSi: { type: String, required: true },
+    text: { type: String, required: true },
     isCorrect: { type: Boolean, required: true },
   },
   { _id: false }
@@ -12,26 +16,28 @@ const choiceSchema = new Schema(
 
 const mcqSchema = new Schema<McqDocument>(
   {
-    questionEn: {
+    question: {
       type: String,
-      required: [true, "Question in English is required."],
+      required: [true, "Question is required."],
       trim: true,
-    },
-    questionSi: {
-      type: String,
-      required: [true, "Question in Sinhala is required."],
-      trim: true,
+      minLength: [MIN_QUESTION_LENGTH, `Question must be minimum ${MIN_QUESTION_LENGTH} characters long.`],
+      maxLength: [MAX_QUESTION_LENGTH, `Question cannot exceed ${MAX_QUESTION_LENGTH} characters.`],
     },
     choices: {
-      type: [choiceSchema],
+      type: [mcqChoiceSchema],
       required: [true, "Choices are required."],
-      minlength: 1,
+      minlength: 2,
       validate: {
         validator: function (val: any[]) {
-          return Array.isArray(val) && val.length > 0;
+          return Array.isArray(val) && val.length > 1;
         },
-        message: "At least one choice is required"
+        message: "At least two choices are required"
       }
+    },
+    solutionExplanation: {
+      type: String,
+      trim: true,
+      maxLength: [MAX_EXPLANATION_LENGTH, `Solution explanation cannot exceed ${MAX_EXPLANATION_LENGTH} characters.`],
     },
     quizId: {
       type: Schema.Types.ObjectId,
@@ -43,6 +49,10 @@ const mcqSchema = new Schema<McqDocument>(
         },
         message: "Invalid Quiz ID format. Please provide a valid MongoDB ObjectId."
       }
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

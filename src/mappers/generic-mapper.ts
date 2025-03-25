@@ -5,7 +5,7 @@ const mapDocument = <T extends BaseDocument>(doc: T): Record<string, any> => {
     versionKey: false, // Exclude `__v` from the output
     virtuals: true, // Include virtual fields
     transform: (_, ret) => {
-      ret.id = ret.id || ret._id.toString();
+      ret.id = ret.id || (ret._id ? ret._id.toString() : undefined);
       delete ret._id;
       return ret;
     }

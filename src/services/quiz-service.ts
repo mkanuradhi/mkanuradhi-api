@@ -109,6 +109,7 @@ export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> =
       availableFrom: 1,
       availableUntil: 1,
       courseId: 1,
+      mcqs: 1,
       status: 1,
       deleted: 1,
       createdAt: 1,

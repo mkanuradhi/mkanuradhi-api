@@ -2,16 +2,16 @@ import { Types } from "mongoose";
 import BaseDocument from "./base-document";
 
 export interface Choice {
-  textEn: string;
-  textSi: string;
+  text: string;
   isCorrect: boolean;
 }
 
 interface McqDocument extends BaseDocument {
-  questionEn: string;
-  questionSi: string;
+  question: string;
   choices: Choice[];
+  solutionExplanation: string;
   quizId: Types.ObjectId | string;
+  deleted: boolean;
 }
 
 export default McqDocument;
