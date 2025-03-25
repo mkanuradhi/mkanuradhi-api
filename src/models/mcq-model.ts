@@ -1,5 +1,6 @@
 import { model, Schema, Types } from "mongoose";
 import McqDocument from "../documents/mcq-document";
+import DocumentStatus from "../enums/document-status";
 
 const MIN_QUESTION_LENGTH = 3;
 const MAX_QUESTION_LENGTH = 2000;
@@ -49,6 +50,14 @@ const mcqSchema = new Schema<McqDocument>(
         },
         message: "Invalid Quiz ID format. Please provide a valid MongoDB ObjectId."
       }
+    },
+    status: {
+      type: String,
+      enum: {
+        values: Object.values(DocumentStatus),
+        message: 'Quiz status `{VALUE}` is not valid.',
+      },
+      default: DocumentStatus.ACTIVE,
     },
     deleted: {
       type: Boolean,

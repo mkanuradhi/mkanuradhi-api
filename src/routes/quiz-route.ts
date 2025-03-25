@@ -6,4 +6,10 @@ const mcqRoute = express.Router();
 // Add a new mcq
 mcqRoute.post('/:quizId/mcqs', mcqController.createMcq);
 
+// Fetch all mcqs for a quiz
+mcqRoute.get('/:quizId/mcqs', mcqController.getMcqs);
+
+// Fetch mcq
+mcqRoute.get('/:quizId/mcqs/:id', mcqController.getMcq);
+
 export default mcqRoute;

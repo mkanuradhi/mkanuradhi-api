@@ -5,7 +5,8 @@ import QuizModel from "../models/quiz-model";
 import AppError from "../errors/app-error";
 import QuizDocument from "../documents/quiz-document";
 import McqModel from "../models/mcq-model";
-import { mapDocumentToMcq } from "../mappers/mcq-mapper";
+import { validatePaginationDetails } from "../validators/common-validator";
+import { mapDocumentsToMcqs, mapDocumentToMcq } from "../mappers/mcq-mapper";
 
 export const createMcq = async (quizId: string, mcqDto: CreateMcqDto): Promise<Mcq> => {
   const quizDoc = await validateQuiz(quizId);
@@ -59,6 +60,53 @@ export const createMcq = async (quizId: string, mcqDto: CreateMcqDto): Promise<M
     }
   } finally {
     session.endSession();
+  }
+}
+
+export const getMcqs = async (quizId: string, page: number, size: number): Promise<{ items: Mcq[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+  const totalCount = await McqModel.countDocuments({ quizId, deleted: false });
+  const mcqDocs = await McqModel
+    .find(
+      {
+        quizId,
+        deleted: false,
+      }, 
+      {
+        question: 1, 
+        choices: 1,
+      })
+    .skip(page * size)
+    .limit(size);
+
+  return {
+    items: mapDocumentsToMcqs(mcqDocs),
+    totalCount
+  };
+}
+
+export const getMcq = async (quizId: string, mcqId: string): Promise<Mcq> => {
+  const quizDoc = await validateQuiz(quizId);
+
+  const mcqDoc = await McqModel.findById(
+    mcqId, 
+    { 
+      question: 1,
+      choices: 1,
+      solutionExplanation: 1,
+      quizId: 1,
+      status: 1,
+      deleted: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      __v: 1
+    }
+  );
+
+  if (mcqDoc && mcqDoc.quizId.toString() === quizId) {
+    return mapDocumentToMcq(mcqDoc);
+  } else {
+    throw new AppError(`A mcq with id: ${mcqId} cannot be found for the quiz: ${quizDoc.titleEn}`, 400);
   }
 }
 

@@ -1,3 +1,5 @@
+import DocumentStatus from "../enums/document-status";
+
 interface McqChoice {
   text: string;
   isCorrect: boolean;
@@ -9,6 +11,7 @@ interface Mcq {
   choices: McqChoice[];
   solutionExplanation: string;
   quizId: string;
+  status: DocumentStatus;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date;

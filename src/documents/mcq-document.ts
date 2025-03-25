@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import BaseDocument from "./base-document";
+import DocumentStatus from "../enums/document-status";
 
 export interface Choice {
   text: string;
@@ -11,6 +12,7 @@ interface McqDocument extends BaseDocument {
   choices: Choice[];
   solutionExplanation: string;
   quizId: Types.ObjectId | string;
+  status: DocumentStatus;
   deleted: boolean;
 }
 
