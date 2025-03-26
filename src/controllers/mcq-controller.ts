@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateMcqDto } from "../dtos/mcq-dto";
+import { ActivationMcqDto, CreateMcqDto, UpdateMcqDto } from "../dtos/mcq-dto";
 import * as mcqService from "../services/mcq-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Mcq from "../interfaces/i-mcq";
@@ -48,4 +48,41 @@ export const getMcq = asyncErrorHandler( async (req: Request, res: Response, nex
   const mcqId = req.params.id;
   const mcq = await mcqService.getMcq(quizId, mcqId);
   res.status(200).json(mcq);
+});
+
+export const updateMcq = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const quizId = req.params.quizId;
+  const mcqId = req.params.id;
+
+  const {
+    question,
+    choices,
+    solutionExplanation,
+    v
+  } = req.body;
+
+  const mcqDto: UpdateMcqDto = {
+    question,
+    choices,
+    solutionExplanation,
+    v
+  };
+  
+  const updatedMcq = await mcqService.updateMcq(quizId, mcqId, mcqDto);
+  res.status(200).json(updatedMcq);
+});
+
+export const toggleMcqActivation = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const quizId = req.params.quizId;
+  const mcqId = req.params.id;
+  const {
+    status,
+  } = req.body;
+
+  const mcqDto: ActivationMcqDto = {
+    status,
+  };
+  
+  const updatedMcq = await mcqService.toggleMcqActivation(quizId, mcqId, mcqDto);
+  res.status(200).json(updatedMcq);
 });
