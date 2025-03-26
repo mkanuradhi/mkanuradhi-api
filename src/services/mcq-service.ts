@@ -8,6 +8,7 @@ import McqModel from "../models/mcq-model";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { mapDocumentsToMcqs, mapDocumentToMcq } from "../mappers/mcq-mapper";
 import DocumentStatus from "../enums/document-status";
+import { v4 as uuidv4 } from 'uuid';
 
 export const createMcq = async (quizId: string, mcqDto: CreateMcqDto): Promise<Mcq> => {
   const quizDoc = await validateQuiz(quizId);
@@ -209,6 +210,39 @@ export const toggleMcqActivation = async (quizId: string, mcqId: string, mcqDto:
 
   logger.info(`Status updated for the mcq ID: ${mcqId}`);
   return mapDocumentToMcq(updatedMcqDoc);
+}
+
+export const deleteMcq = async (quizId: string, mcqId: string): Promise<void> => {
+  const mcqDoc = await McqModel.findOne({ 
+    _id: mcqId,
+    quizId,
+    deleted: false,
+  });
+  if (!mcqDoc) {
+    throw new AppError(`Cannot find a mcq with ID '${mcqId}' or it is already deleted.`, 404);
+  }
+
+  const deletedQuestion = `${mcqDoc.question}-DELETED-${uuidv4()}`.substring(0, 200);
+
+  const updatedMcqDoc = await McqModel.findByIdAndUpdate(
+    mcqId,
+    {
+      $set: {
+        question: deletedQuestion,
+        deleted: true,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedMcqDoc) {
+    throw new AppError('Failed to delete mcq document.', 500);
+  }
+
+  await QuizModel.updateOne(
+    { _id: quizId },
+    { $pull: { mcqs: { id: mcqId } } }
+  );
 }
 
 const validateQuiz = async (quizId: string): Promise<QuizDocument> => {

@@ -86,3 +86,10 @@ export const toggleMcqActivation = asyncErrorHandler( async (req: Request, res: 
   const updatedMcq = await mcqService.toggleMcqActivation(quizId, mcqId, mcqDto);
   res.status(200).json(updatedMcq);
 });
+
+export const deleteMcq = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const quizId = req.params.quizId;
+  const mcqId = req.params.id;
+  await mcqService.deleteMcq(quizId, mcqId);
+  res.status(204).json();
+});

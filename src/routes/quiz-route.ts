@@ -19,4 +19,7 @@ mcqRoute.patch('/:quizId/mcqs/:id', validateObjectId, mcqController.updateMcq);
 // Toggle status of a mcq
 mcqRoute.patch('/:quizId/mcqs/:id/toggle', validateObjectId, mcqController.toggleMcqActivation);
 
+// Delete a mcq
+mcqRoute.delete('/:quizId/mcqs/:id', validateObjectId, mcqController.deleteMcq);
+
 export default mcqRoute;
