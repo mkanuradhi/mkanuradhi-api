@@ -6,7 +6,7 @@ const MAX_TITLE_LENGTH = 200;
 
 const quizMcqSchema = new Schema(
   {
-    id: { type: Schema.Types.ObjectId, required: true },
+    id: { type: Schema.Types.ObjectId, required: true, ref: 'Mcq' },
   },
   { _id: false }
 );

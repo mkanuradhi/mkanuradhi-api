@@ -2,6 +2,7 @@ import DocumentStatus from "../enums/document-status";
 
 interface McqChoice {
   text: string;
+  isCorrect: boolean;
 }
 
 interface QuizMcq {
