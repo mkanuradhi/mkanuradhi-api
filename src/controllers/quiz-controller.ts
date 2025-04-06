@@ -54,6 +54,13 @@ export const getQuiz = asyncErrorHandler( async (req: Request, res: Response, ne
   res.status(200).json(quiz);
 });
 
+export const getQuizByCoursePathAndId = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const coursePath = req.params.coursePath;
+  const quizId = req.params.id;
+  const quiz = await quizService.getQuizByCoursePathAndId(coursePath, quizId);
+  res.status(200).json(quiz);
+});
+
 export const updateQuiz = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const courseId = req.params.courseId;
   const quizId = req.params.id;

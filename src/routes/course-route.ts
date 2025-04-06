@@ -43,6 +43,9 @@ courseRoute.get('/:courseId/quizzes', quizController.getQuizzes);
 // Fetch quiz
 courseRoute.get('/:courseId/quizzes/:id', quizController.getQuiz);
 
+// Fetch quiz by course path and id
+courseRoute.get('/path/:coursePath/quizzes/:id', quizController.getQuizByCoursePathAndId);
+
 // Update quiz data
 courseRoute.patch('/:courseId/quizzes/:id', validateObjectId, quizController.updateQuiz);
 

@@ -125,6 +125,41 @@ export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> =
   }
 }
 
+export const getQuizByCoursePathAndId = async (coursePath: string, quizId: string): Promise<Quiz> => {
+  const courseDoc = await CourseModel.findOne(
+    { path: coursePath },
+    { _id: 1 }
+  ) as CourseDocument;
+
+  const quizDoc = await QuizModel.findOne(
+    { 
+      _id: quizId,
+      courseId: courseDoc._id,
+      deleted: false
+    }, 
+    { 
+      titleEn: 1,
+      titleSi: 1,
+      duration: 1,
+      availableFrom: 1,
+      availableUntil: 1,
+      courseId: 1,
+      mcqs: 1,
+      status: 1,
+      deleted: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      __v: 1
+    }
+  );
+
+  if (quizDoc) {
+    return mapDocumentToQuiz(quizDoc);
+  } else {
+    throw new AppError(`A quiz with id: ${quizId} cannot be found for the course path: ${coursePath}`, 400);
+  }
+}
+
 export const updateQuiz = async (courseId: string, quizId: string, quizDto: UpdateQuizDto): Promise<Quiz> => {
   const courseDoc = await validateCourse(courseId);
   validateQuizAvailableDates(quizDto.availableFrom, quizDto.availableUntil);
