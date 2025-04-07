@@ -97,6 +97,39 @@ export const getQuizzes = async (courseId: string, page: number, size: number): 
   };
 }
 
+export const getQuizzesByCoursePath = async (coursePath: string, page: number, size: number): Promise<{ items: Quiz[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+
+  const courseDoc = await CourseModel.findOne(
+    { path: coursePath },
+    { _id: 1 }
+  ) as CourseDocument;
+
+  const totalCount = await QuizModel.countDocuments({ courseId: courseDoc._id, deleted: false });
+  const quizDocs = await QuizModel
+    .find(
+      {
+        courseId: courseDoc._id,
+        deleted: false,
+      }, 
+      {
+        titleEn: 1, 
+        titleSi: 1,
+        duration: 1,
+        availableFrom: 1,
+        availableUntil: 1,
+        status: 1,
+      })
+    .sort({ year: -1 })
+    .skip(page * size)
+    .limit(size);
+
+  return {
+    items: mapDocumentsToQuizzes(quizDocs),
+    totalCount
+  };
+}
+
 export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> => {
   const courseDoc = await validateCourse(courseId);
 

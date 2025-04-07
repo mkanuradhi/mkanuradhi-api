@@ -37,8 +37,11 @@ courseRoute.delete('/:id', validateObjectId, courseController.deleteCourse);
 // Add a new quiz
 courseRoute.post('/:courseId/quizzes', quizController.createQuiz);
 
-// Fetch all course quizzes
+// Fetch all quizzes
 courseRoute.get('/:courseId/quizzes', quizController.getQuizzes);
+
+// Fetch all quizzes by course path
+courseRoute.get('/path/:coursePath/quizzes', quizController.getQuizzesByCoursePath);
 
 // Fetch quiz
 courseRoute.get('/:courseId/quizzes/:id', quizController.getQuiz);
