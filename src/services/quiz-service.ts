@@ -110,6 +110,7 @@ export const getQuizzesByCoursePath = async (coursePath: string, page: number, s
     .find(
       {
         courseId: courseDoc._id,
+        status: DocumentStatus.ACTIVE,
         deleted: false,
       }, 
       {
