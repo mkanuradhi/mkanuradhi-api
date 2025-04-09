@@ -13,6 +13,7 @@ export interface ActivationMcqDto {
 export interface CreateMcqDto {
   question: string;
   choices: McqChoice[];
+  isMultiSelect: boolean;
   solutionExplanation: string;
 }
 

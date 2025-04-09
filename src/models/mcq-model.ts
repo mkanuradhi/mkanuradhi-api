@@ -35,6 +35,10 @@ const mcqSchema = new Schema<McqDocument>(
         message: "At least two choices are required"
       }
     },
+    isMultiSelect: {
+      type: Boolean,
+      default: false,
+    },
     solutionExplanation: {
       type: String,
       trim: true,

@@ -10,6 +10,7 @@ export interface Choice {
 interface McqDocument extends BaseDocument {
   question: string;
   choices: Choice[];
+  isMultiSelect: boolean;
   solutionExplanation: string;
   quizId: Types.ObjectId | string;
   status: DocumentStatus;

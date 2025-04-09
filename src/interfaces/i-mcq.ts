@@ -9,6 +9,7 @@ interface Mcq {
   id: string;
   question: string;
   choices: McqChoice[];
+  isMultiSelect: boolean;
   solutionExplanation: string;
   quizId: string;
   status: DocumentStatus;

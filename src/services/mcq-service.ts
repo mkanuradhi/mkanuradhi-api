@@ -28,9 +28,17 @@ export const createMcq = async (quizId: string, mcqDto: CreateMcqDto): Promise<M
         throw new AppError(`Existing MCQ found with question: '${mcqDto.question}' for the quiz: '${quizDoc.titleEn}'`, 400);
     }
 
+    let isMultiSelect = mcqDto.isMultiSelect ?? true;
+    if (mcqDto.isMultiSelect === false) {
+      if (mcqDto.choices) {
+        isMultiSelect = mcqDto.choices.filter(c => c.isCorrect).length > 1;
+      }
+    }
+
     const [mcqDoc] = await McqModel.create([{
       question: mcqDto.question,
       choices: mcqDto.choices,
+      isMultiSelect,
       solutionExplanation: mcqDto.solutionExplanation,
       quizId,
     }], { session });
@@ -77,6 +85,7 @@ export const getMcqs = async (quizId: string, page: number, size: number): Promi
       {
         question: 1, 
         choices: 1,
+        isMultiSelect: 1,
       })
     .skip(page * size)
     .limit(size);
@@ -95,6 +104,7 @@ export const getMcq = async (quizId: string, mcqId: string): Promise<Mcq> => {
     { 
       question: 1,
       choices: 1,
+      isMultiSelect: 1,
       solutionExplanation: 1,
       quizId: 1,
       status: 1,
@@ -137,12 +147,20 @@ export const updateMcq = async (quizId: string, mcqId: string, mcqDto: UpdateMcq
     throw new AppError(`Existing mcq found with the question: ${mcqDto.question} for the quiz: ${quizDoc.titleEn}`, 400);
   }
 
+  let isMultiSelect = mcqDto.isMultiSelect ?? true;
+  if (mcqDto.isMultiSelect === false) {
+    if (mcqDto.choices) {
+      isMultiSelect = mcqDto.choices.filter(c => c.isCorrect).length > 1;
+    }
+  }
+
   const updatedMcqDoc = await McqModel.findByIdAndUpdate(
     mcqId,
     { 
       $set: {
         question: mcqDto.question,
         choices: mcqDto.choices,
+        isMultiSelect,
         solutionExplanation: mcqDto.solutionExplanation,
       },
       $inc: { __v: 1 }
