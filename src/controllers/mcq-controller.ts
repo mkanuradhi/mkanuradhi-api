@@ -10,12 +10,14 @@ export const createMcq = asyncErrorHandler( async (req: Request, res: Response, 
   const {
     question,
     choices,
+    isMultiSelect,
     solutionExplanation,
   } = req.body;
 
   const mcqDto: CreateMcqDto = {
     question,
     choices,
+    isMultiSelect,
     solutionExplanation,
   };
   const addedQuiz = await mcqService.createMcq(quizId, mcqDto);
@@ -57,6 +59,7 @@ export const updateMcq = asyncErrorHandler( async (req: Request, res: Response, 
   const {
     question,
     choices,
+    isMultiSelect,
     solutionExplanation,
     v
   } = req.body;
@@ -64,6 +67,7 @@ export const updateMcq = asyncErrorHandler( async (req: Request, res: Response, 
   const mcqDto: UpdateMcqDto = {
     question,
     choices,
+    isMultiSelect,
     solutionExplanation,
     v
   };

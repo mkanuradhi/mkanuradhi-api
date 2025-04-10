@@ -9,6 +9,7 @@ import { validatePaginationDetails } from "../validators/common-validator";
 import { mapDocumentsToMcqs, mapDocumentToMcq } from "../mappers/mcq-mapper";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
+import { Choice } from "../documents/mcq-document";
 
 export const createMcq = async (quizId: string, mcqDto: CreateMcqDto): Promise<Mcq> => {
   const quizDoc = await validateQuiz(quizId);
@@ -27,6 +28,8 @@ export const createMcq = async (quizId: string, mcqDto: CreateMcqDto): Promise<M
     if (existingMcqDoc) {
         throw new AppError(`Existing MCQ found with question: '${mcqDto.question}' for the quiz: '${quizDoc.titleEn}'`, 400);
     }
+
+    validateChoices(mcqDto.choices);
 
     let isMultiSelect = mcqDto.isMultiSelect ?? true;
     if (mcqDto.isMultiSelect === false) {
@@ -146,6 +149,8 @@ export const updateMcq = async (quizId: string, mcqId: string, mcqDto: UpdateMcq
   if (existingMcqDocsWithQuestion && existingMcqDocsWithQuestion.length > 0) {
     throw new AppError(`Existing mcq found with the question: ${mcqDto.question} for the quiz: ${quizDoc.titleEn}`, 400);
   }
+
+  validateChoices(mcqDto.choices);
 
   let isMultiSelect = mcqDto.isMultiSelect ?? true;
   if (mcqDto.isMultiSelect === false) {
@@ -272,4 +277,27 @@ const validateQuiz = async (quizId: string): Promise<QuizDocument> => {
     throw new AppError(`Cannot find course with ID '${quizId}'`, 404);
   }
   return quizDoc;
+}
+
+const validateChoices = (choices: Choice[]): Choice[] => {
+  if (!Array.isArray(choices) || choices.length < 2) {
+    throw new AppError(`MCQ must have at least two choices`, 400);
+  }
+
+  const trimmedChoices = choices.map(choice => ({
+    text: choice.text?.trim(),
+    isCorrect: choice.isCorrect,
+  }));
+
+  const hasEmptyText = trimmedChoices.some(c => !c.text);
+  if (hasEmptyText) {
+    throw new AppError(`All choices must have non-empty text`, 400);
+  }
+
+  const correctChoices = trimmedChoices.filter(c => c.isCorrect);
+  if (correctChoices.length < 1) {
+    throw new AppError(`MCQ must have at least one correct choice`, 400);
+  }
+
+  return trimmedChoices;
 }
