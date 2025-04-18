@@ -45,6 +45,27 @@ export const getMcqs = asyncErrorHandler( async (req: Request, res: Response, ne
   res.status(200).json(result);
 });
 
+export const getActiveMcqs = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const quizId = req.params.quizId;
+  const page = parseInt(req.query.page as string) || 0;
+  const size = Math.min(parseInt(req.query.size as string) || 50, 100);
+
+  const { items, totalCount } = await mcqService.getActiveMcqs(quizId, page, size);
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
+
+  const result: PaginatedResult<Mcq> = {
+    items,
+    pagination: {
+      totalCount,
+      totalPages,
+      currentPage: page,
+      currentPageSize: items.length,
+    },
+  };
+
+  res.status(200).json(result);
+});
+
 export const getMcq = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const quizId = req.params.quizId;
   const mcqId = req.params.id;

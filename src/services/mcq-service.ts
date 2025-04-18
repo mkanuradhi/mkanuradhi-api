@@ -99,6 +99,30 @@ export const getMcqs = async (quizId: string, page: number, size: number): Promi
   };
 }
 
+export const getActiveMcqs = async (quizId: string, page: number, size: number): Promise<{ items: Mcq[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+  const totalCount = await McqModel.countDocuments({ quizId, deleted: false });
+  const mcqDocs = await McqModel
+    .find(
+      {
+        quizId,
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+      }, 
+      {
+        question: 1, 
+        choices: 1,
+        isMultiSelect: 1,
+      })
+    .skip(page * size)
+    .limit(size);
+
+  return {
+    items: mapDocumentsToMcqs(mcqDocs),
+    totalCount
+  };
+}
+
 export const getMcq = async (quizId: string, mcqId: string): Promise<Mcq> => {
   const quizDoc = await validateQuiz(quizId);
 

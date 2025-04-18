@@ -10,6 +10,9 @@ mcqRoute.post('/:quizId/mcqs', mcqController.createMcq);
 // Fetch all mcqs for a quiz
 mcqRoute.get('/:quizId/mcqs', mcqController.getMcqs);
 
+// Fetch active mcqs for a quiz
+mcqRoute.get('/:quizId/mcqs/active', mcqController.getActiveMcqs);
+
 // Fetch mcq
 mcqRoute.get('/:quizId/mcqs/:id', mcqController.getMcq);
 
