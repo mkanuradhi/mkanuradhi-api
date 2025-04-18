@@ -119,6 +119,7 @@ export const getQuizzesByCoursePath = async (coursePath: string, page: number, s
         duration: 1,
         availableFrom: 1,
         availableUntil: 1,
+        mcqs: 1,
         status: 1,
       })
     .sort({ year: -1 })
