@@ -113,6 +113,7 @@ export const getActiveMcqs = async (quizId: string, page: number, size: number):
         question: 1, 
         choices: 1,
         isMultiSelect: 1,
+        solutionExplanation: 1,
       })
     .skip(page * size)
     .limit(size);
