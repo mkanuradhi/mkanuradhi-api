@@ -1,17 +1,20 @@
 import { Types } from "mongoose";
 import BaseDocument from "./base-document";
+import DocumentStatus from "../enums/document-status";
 
 export interface Choice {
-  textEn: string;
-  textSi: string;
+  text: string;
   isCorrect: boolean;
 }
 
 interface McqDocument extends BaseDocument {
-  questionEn: string;
-  questionSi: string;
+  question: string;
   choices: Choice[];
+  isMultiSelect: boolean;
+  solutionExplanation: string;
   quizId: Types.ObjectId | string;
+  status: DocumentStatus;
+  deleted: boolean;
 }
 
 export default McqDocument;

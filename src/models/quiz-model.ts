@@ -4,6 +4,13 @@ import DocumentStatus from "../enums/document-status";
 
 const MAX_TITLE_LENGTH = 200;
 
+const quizMcqSchema = new Schema(
+  {
+    id: { type: Schema.Types.ObjectId, required: true, ref: 'Mcq' },
+  },
+  { _id: false }
+);
+
 const quizSchema = new Schema<QuizDocument>(
   {
     titleEn: {
@@ -40,6 +47,10 @@ const quizSchema = new Schema<QuizDocument>(
         },
         message: "Invalid Course ID format. Please provide a valid MongoDB ObjectId."
       }
+    },
+    mcqs: {
+      type: [quizMcqSchema],
+      default: [],
     },
     status: {
       type: String,

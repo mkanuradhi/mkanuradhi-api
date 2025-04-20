@@ -97,6 +97,41 @@ export const getQuizzes = async (courseId: string, page: number, size: number): 
   };
 }
 
+export const getQuizzesByCoursePath = async (coursePath: string, page: number, size: number): Promise<{ items: Quiz[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+
+  const courseDoc = await CourseModel.findOne(
+    { path: coursePath },
+    { _id: 1 }
+  ) as CourseDocument;
+
+  const totalCount = await QuizModel.countDocuments({ courseId: courseDoc._id, deleted: false });
+  const quizDocs = await QuizModel
+    .find(
+      {
+        courseId: courseDoc._id,
+        status: DocumentStatus.ACTIVE,
+        deleted: false,
+      }, 
+      {
+        titleEn: 1, 
+        titleSi: 1,
+        duration: 1,
+        availableFrom: 1,
+        availableUntil: 1,
+        mcqs: 1,
+        status: 1,
+      })
+    .sort({ year: -1 })
+    .skip(page * size)
+    .limit(size);
+
+  return {
+    items: mapDocumentsToQuizzes(quizDocs),
+    totalCount
+  };
+}
+
 export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> => {
   const courseDoc = await validateCourse(courseId);
 
@@ -109,6 +144,7 @@ export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> =
       availableFrom: 1,
       availableUntil: 1,
       courseId: 1,
+      mcqs: 1,
       status: 1,
       deleted: 1,
       createdAt: 1,
@@ -121,6 +157,41 @@ export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> =
     return mapDocumentToQuiz(quizDoc);
   } else {
     throw new AppError(`A quiz with id: ${quizId} cannot be found for the course: ${courseDoc.titleEn}`, 400);
+  }
+}
+
+export const getQuizByCoursePathAndId = async (coursePath: string, quizId: string): Promise<Quiz> => {
+  const courseDoc = await CourseModel.findOne(
+    { path: coursePath },
+    { _id: 1 }
+  ) as CourseDocument;
+
+  const quizDoc = await QuizModel.findOne(
+    { 
+      _id: quizId,
+      courseId: courseDoc._id,
+      deleted: false
+    }, 
+    { 
+      titleEn: 1,
+      titleSi: 1,
+      duration: 1,
+      availableFrom: 1,
+      availableUntil: 1,
+      courseId: 1,
+      mcqs: 1,
+      status: 1,
+      deleted: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      __v: 1
+    }
+  );
+
+  if (quizDoc) {
+    return mapDocumentToQuiz(quizDoc);
+  } else {
+    throw new AppError(`A quiz with id: ${quizId} cannot be found for the course path: ${coursePath}`, 400);
   }
 }
 
