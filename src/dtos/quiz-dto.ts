@@ -8,6 +8,8 @@ export interface ActivationQuizDto {
 export interface CreateQuizDto {
   titleEn: string;
   titleSi: string;
+  descriptionEn: string;
+  descriptionSi: string;
   duration?: number;
   availableFrom?: Date;
   availableUntil?: Date;
