@@ -3,6 +3,7 @@ import QuizDocument from "../documents/quiz-document";
 import DocumentStatus from "../enums/document-status";
 
 const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 800;
 
 const quizMcqSchema = new Schema(
   {
@@ -24,6 +25,18 @@ const quizSchema = new Schema<QuizDocument>(
       required: [true, "Title in Sinhala is required."],
       trim: true,
       maxLength: [MAX_TITLE_LENGTH, `Title in Sinhala cannot exceed ${MAX_TITLE_LENGTH} characters.`],
+    },
+    descriptionEn: {
+      type: String,
+      required: [true, "Description in English is required."],
+      trim: true,
+      maxLength: [MAX_DESCRIPTION_LENGTH, `Description in English cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.`],
+    },
+    descriptionSi: {
+      type: String,
+      required: [true, "Description in Sinhala is required."],
+      trim: true,
+      maxLength: [MAX_DESCRIPTION_LENGTH, `Description in Sinhala cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.`],
     },
     duration: {
       type: Number,

@@ -32,6 +32,8 @@ export const createQuiz = async (courseId: string, quizDto: CreateQuizDto): Prom
     const [quizDoc] = await QuizModel.create([{
       titleEn: quizDto.titleEn,
       titleSi: quizDto.titleSi,
+      descriptionEn: quizDto.descriptionEn,
+      descriptionSi: quizDto.descriptionSi,
       duration: quizDto.duration,
       availableFrom: quizDto.availableFrom,
       availableUntil: quizDto.availableUntil,
@@ -140,6 +142,8 @@ export const getQuiz = async (courseId: string, quizId: string): Promise<Quiz> =
     { 
       titleEn: 1,
       titleSi: 1,
+      descriptionEn: 1, 
+      descriptionSi: 1,
       duration: 1,
       availableFrom: 1,
       availableUntil: 1,
@@ -175,6 +179,8 @@ export const getQuizByCoursePathAndId = async (coursePath: string, quizId: strin
     { 
       titleEn: 1,
       titleSi: 1,
+      descriptionEn: 1, 
+      descriptionSi: 1,
       duration: 1,
       availableFrom: 1,
       availableUntil: 1,
@@ -227,6 +233,8 @@ export const updateQuiz = async (courseId: string, quizId: string, quizDto: Upda
       $set: {
         titleEn: quizDto.titleEn,
         titleSi: quizDto.titleSi,
+        descriptionEn: quizDto.descriptionEn, 
+        descriptionSi: quizDto.descriptionSi,
         duration: quizDto.duration,
         availableFrom: quizDto.availableFrom,
         availableUntil: quizDto.availableUntil,

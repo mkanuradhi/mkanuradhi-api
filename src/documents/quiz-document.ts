@@ -9,6 +9,8 @@ interface QuizMcq {
 interface QuizDocument extends BaseDocument {
   titleEn: string;
   titleSi: string;
+  descriptionEn: string;
+  descriptionSi: string;
   duration: number; // Duration in minutes
   availableFrom: Date;
   availableUntil: Date;
