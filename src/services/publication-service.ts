@@ -3,10 +3,12 @@ import Publication from "../interfaces/i-publication";
 import { CreatePublicationDto } from "../dtos/publication-dto";
 import PublicationModel from "../models/publication-model";
 import AppError from "../errors/app-error";
-import { mapDocumentToPublication } from "../mappers/publication-mapper";
+import { mapDocumentsToPublications, mapDocumentToPublication } from "../mappers/publication-mapper";
+import { validatePaginationDetails } from "../validators/common-validator";
+import DocumentStatus from "../enums/document-status";
 
 
-const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
+export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
   const session = await PublicationModel.startSession();
 
   try {
@@ -49,6 +51,46 @@ const createPublication = async (publicationDto: CreatePublicationDto): Promise<
   }
 }
 
-export {
-  createPublication,
+export const getPublications = async (page: number, size: number): Promise<{ items: Publication[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+  const totalCount = await PublicationModel.countDocuments({ deleted: false });
+  const publicationDocs = await PublicationModel
+    .find(
+      {
+        deleted: false,
+      }, 
+      {
+        type: 1,
+        year: 1,
+        description: 1, 
+        url: 1,
+        venue: 1,
+        bibtex: 1,
+        status: 1,
+      })
+    .sort({ year: -1 })
+    .skip(page * size)
+    .limit(size);
+
+  return {
+    items: mapDocumentsToPublications(publicationDocs),
+    totalCount
+  };
+}
+
+export const getGroupedPublications = async (): Promise<Record<string, Publication[]>> => {
+  const allDocs = await PublicationModel.find(
+    { deleted: false, status: DocumentStatus.ACTIVE }
+  ).sort(
+    { year: -1 }
+  );
+
+  const grouped: Record<string, Publication[]> = {};
+  for (const doc of allDocs) {
+    const type = doc.type;
+    if (!grouped[type]) grouped[type] = [];
+    grouped[type].push(mapDocumentToPublication(doc));
+  }
+
+  return grouped;
 };

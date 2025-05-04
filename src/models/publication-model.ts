@@ -33,7 +33,6 @@ const publicationSchema = new Schema<PublicationDocument>(
     description: {
       type: String,
       trim: true,
-      unique: true,
       required: [true, 'Description is required.'],
       minLength: [MIN_DESCRIPTION_LENGTH, `Publication description must be minimum ${MIN_DESCRIPTION_LENGTH} characters long.`],
       maxLength: [MAX_DESCRIPTION_LENGTH, `Publication description cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.`]

@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
 import { CreatePublicationDto } from "../dtos/publication-dto";
 import * as publicationService from "../services/publication-service";
+import PaginatedResult from "../interfaces/i-paginated-result";
+import Publication from "../interfaces/i-publication";
 
 
 export const createPublication = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
@@ -24,4 +26,29 @@ export const createPublication = asyncErrorHandler( async (req: Request, res: Re
   };
   const addedPublication = await publicationService.createPublication(publicationDto);
   res.status(201).json(addedPublication);
+});
+
+export const getPublications = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const page = parseInt(req.query.page as string) || 0;
+  const size = Math.min(parseInt(req.query.size as string) || 10, 200);
+
+  const { items, totalCount } = await publicationService.getPublications(page, size);
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
+
+  const result: PaginatedResult<Publication> = {
+    items,
+    pagination: {
+      totalCount,
+      totalPages,
+      currentPage: page,
+      currentPageSize: items.length,
+    },
+  };
+
+  res.status(200).json(result);
+});
+
+export const getGroupedPublications = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const result = await publicationService.getGroupedPublications();
+  res.status(200).json(result);
 });
