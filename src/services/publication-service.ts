@@ -1,6 +1,6 @@
 import logger from "../config/logger-config";
 import Publication from "../interfaces/i-publication";
-import { CreatePublicationDto } from "../dtos/publication-dto";
+import { CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
 import PublicationModel from "../models/publication-model";
 import AppError from "../errors/app-error";
 import { mapDocumentsToPublications, mapDocumentToPublication } from "../mappers/publication-mapper";
@@ -128,4 +128,50 @@ export const getPublicationById = async (publicationId: string): Promise<Publica
   } else {
     throw new AppError(`A publication with id: ${publicationId} cannot be found`, 400);
   }
+}
+
+export const updatePublication = async (publicationId: string, publicationDto: UpdatePublicationDto): Promise<Publication> => {
+  const existingPublicationDoc = await PublicationModel.findOne({
+    _id: publicationId,
+    deleted: false,
+  });
+  if (!existingPublicationDoc) {
+      throw new AppError(`Cannot find the publication with ID: ${publicationId}. Unable to update the publication.`, 400);
+  }
+  if (existingPublicationDoc.__v !== publicationDto.v) {
+    throw new AppError(`Publication has been modified by another process. Please refresh and try again.`, 409);
+  }
+
+  const existingPublicationDocsWithSameData = await PublicationModel.find({
+    _id: { $ne: publicationId },
+    year: publicationDto.year,
+    description: publicationDto.description.trim(),
+    deleted: false,
+  });
+  if (existingPublicationDocsWithSameData && existingPublicationDocsWithSameData.length > 0) {
+    throw new AppError(`Existing publication found with the description: ${publicationDto.description} for the year: ${publicationDto.year}`, 400);
+  }
+
+  const updatedPublicationDoc = await PublicationModel.findByIdAndUpdate(
+    publicationId,
+    { 
+      $set: {
+        type: publicationDto.type,
+        year: publicationDto.year,
+        description: publicationDto.description,
+        url: publicationDto.url,
+        venue: publicationDto.venue,
+        bibtex: publicationDto.bibtex,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedPublicationDoc) {
+      throw new AppError('Failed to update publication document.', 500);
+  }
+
+  logger.info(`Publication updated for ID: ${publicationId}`);
+  return mapDocumentToPublication(updatedPublicationDoc);
 }

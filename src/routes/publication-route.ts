@@ -1,5 +1,6 @@
 import express from 'express';
 import * as publicationController from '../controllers/publication-controller';
+import validateObjectId from '../middleware/validate-objectid';
 
 const publicationRoute = express.Router();
 
@@ -14,5 +15,8 @@ publicationRoute.get('/grouped', publicationController.getGroupedPublications);
 
 // Get publication by id
 publicationRoute.get('/:id', publicationController.getPublicationById);
+
+// Update publication
+publicationRoute.patch('/:id', validateObjectId, publicationController.updatePublication);
 
 export default publicationRoute;

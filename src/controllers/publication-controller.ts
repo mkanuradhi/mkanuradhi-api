@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreatePublicationDto } from "../dtos/publication-dto";
+import { CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
 import * as publicationService from "../services/publication-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Publication from "../interfaces/i-publication";
@@ -57,4 +57,31 @@ export const getPublicationById = asyncErrorHandler( async (req: Request, res: R
   const publicationId = req.params.id;
   const publication = await publicationService.getPublicationById(publicationId);
   res.status(200).json(publication);
+});
+
+export const updatePublication = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const publicationId = req.params.id;
+
+  const {
+    type,
+    year,
+    description,
+    url,
+    venue,
+    bibtex,
+    v
+  } = req.body;
+
+  const publicationDto: UpdatePublicationDto = {
+    type,
+    year,
+    description,
+    url,
+    venue,
+    bibtex,
+    v
+  };
+  
+  const updatedPublication = await publicationService.updatePublication(publicationId, publicationDto);
+  res.status(200).json(updatedPublication);
 });
