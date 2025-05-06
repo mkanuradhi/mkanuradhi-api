@@ -12,4 +12,7 @@ publicationRoute.get('/', publicationController.getPublications);
 // Get all publications grouped by type
 publicationRoute.get('/grouped', publicationController.getGroupedPublications);
 
+// Get publication by id
+publicationRoute.get('/:id', publicationController.getPublicationById);
+
 export default publicationRoute;

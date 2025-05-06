@@ -52,3 +52,9 @@ export const getGroupedPublications = asyncErrorHandler( async (req: Request, re
   const result = await publicationService.getGroupedPublications();
   res.status(200).json(result);
 });
+
+export const getPublicationById = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const publicationId = req.params.id;
+  const publication = await publicationService.getPublicationById(publicationId);
+  res.status(200).json(publication);
+});

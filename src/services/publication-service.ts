@@ -64,8 +64,6 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
         year: 1,
         description: 1, 
         url: 1,
-        venue: 1,
-        bibtex: 1,
         status: 1,
       })
     .sort({ year: -1 })
@@ -79,11 +77,23 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
 }
 
 export const getGroupedPublications = async (): Promise<Record<string, Publication[]>> => {
-  const allDocs = await PublicationModel.find(
-    { deleted: false, status: DocumentStatus.ACTIVE }
-  ).sort(
-    { year: -1 }
-  );
+  const allDocs = await PublicationModel
+    .find(
+      { 
+        deleted: false, 
+        status: DocumentStatus.ACTIVE
+      },
+      {
+        type: 1,
+        year: 1,
+        description: 1, 
+        url: 1,
+        venue: 1,
+        bibtex: 1,
+      }
+    ).sort(
+      { year: -1 }
+    );
 
   const grouped: Record<string, Publication[]> = {};
   for (const doc of allDocs) {
@@ -94,3 +104,28 @@ export const getGroupedPublications = async (): Promise<Record<string, Publicati
 
   return grouped;
 };
+
+export const getPublicationById = async (publicationId: string): Promise<Publication> => {
+  const publicationDoc = await PublicationModel.findById(
+    publicationId, 
+    { 
+      type: 1,
+      year: 1,
+      description: 1, 
+      url: 1,
+      venue: 1,
+      bibtex: 1,
+      status: 1,
+      deleted: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      __v: 1
+    }
+  );
+
+  if (publicationDoc) {
+    return mapDocumentToPublication(publicationDoc);
+  } else {
+    throw new AppError(`A publication with id: ${publicationId} cannot be found`, 400);
+  }
+}
