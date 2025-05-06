@@ -22,5 +22,7 @@ publicationRoute.patch('/:id', validateObjectId, publicationController.updatePub
 // Activate or deactivate a publication
 publicationRoute.patch('/:id/toggle', validateObjectId, publicationController.togglePublicationActivation);
 
+// Delete a publication
+publicationRoute.delete('/:id', validateObjectId, publicationController.deletePublication);
 
 export default publicationRoute;

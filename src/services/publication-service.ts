@@ -6,6 +6,7 @@ import AppError from "../errors/app-error";
 import { mapDocumentsToPublications, mapDocumentToPublication } from "../mappers/publication-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
+import { v4 as uuidv4 } from 'uuid';
 
 
 export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
@@ -202,4 +203,31 @@ export const togglePublicationActivation = async (publicationId: string, publica
 
   logger.info(`Publication updated for status for ID: ${publicationId}`);
   return mapDocumentToPublication(updatedPublicationDoc);
+}
+
+export const deletePublication = async (publicationId: string): Promise<void> => {
+  const publicationDoc = await PublicationModel.findOne({ 
+    _id: publicationId,
+    deleted: false,
+  });
+  if (!publicationDoc) {
+    throw new AppError(`Cannot find the publication with ID '${publicationId}' or it is already deleted.`, 404);
+  }
+
+  const deletedDescription = `${publicationDoc.description}-DELETED-${uuidv4()}`;
+
+  const updatedPublicationDoc = await PublicationModel.findByIdAndUpdate(
+    publicationId,
+    {
+      $set: {
+        description: deletedDescription,
+        deleted: true,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedPublicationDoc) {
+    throw new AppError('Failed to delete publication document.', 500);
+  }
 }

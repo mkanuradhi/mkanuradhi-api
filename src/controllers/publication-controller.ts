@@ -99,3 +99,9 @@ export const togglePublicationActivation = asyncErrorHandler( async (req: Reques
   const updatedPublication = await publicationService.togglePublicationActivation(publicationId, publicationDto);
   res.status(200).json(updatedPublication);
 });
+
+export const deletePublication = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const publicationId = req.params.id;
+  await publicationService.deletePublication(publicationId);
+  res.status(204).json();
+});
