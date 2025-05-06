@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
+import { ActivationPublicationDto, CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
 import * as publicationService from "../services/publication-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Publication from "../interfaces/i-publication";
@@ -83,5 +83,19 @@ export const updatePublication = asyncErrorHandler( async (req: Request, res: Re
   };
   
   const updatedPublication = await publicationService.updatePublication(publicationId, publicationDto);
+  res.status(200).json(updatedPublication);
+});
+
+export const togglePublicationActivation = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const publicationId = req.params.id;
+  const {
+    status,
+  } = req.body;
+
+  const publicationDto: ActivationPublicationDto = {
+    status,
+  };
+  
+  const updatedPublication = await publicationService.togglePublicationActivation(publicationId, publicationDto);
   res.status(200).json(updatedPublication);
 });

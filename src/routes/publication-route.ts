@@ -19,4 +19,8 @@ publicationRoute.get('/:id', publicationController.getPublicationById);
 // Update publication
 publicationRoute.patch('/:id', validateObjectId, publicationController.updatePublication);
 
+// Activate or deactivate a publication
+publicationRoute.patch('/:id/toggle', validateObjectId, publicationController.togglePublicationActivation);
+
+
 export default publicationRoute;

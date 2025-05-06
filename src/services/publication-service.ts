@@ -1,6 +1,6 @@
 import logger from "../config/logger-config";
 import Publication from "../interfaces/i-publication";
-import { CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
+import { ActivationPublicationDto, CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
 import PublicationModel from "../models/publication-model";
 import AppError from "../errors/app-error";
 import { mapDocumentsToPublications, mapDocumentToPublication } from "../mappers/publication-mapper";
@@ -173,5 +173,33 @@ export const updatePublication = async (publicationId: string, publicationDto: U
   }
 
   logger.info(`Publication updated for ID: ${publicationId}`);
+  return mapDocumentToPublication(updatedPublicationDoc);
+}
+
+export const togglePublicationActivation = async (publicationId: string, publicationDto: ActivationPublicationDto): Promise<Publication> => {
+  const existingPublicationDoc = await PublicationModel.findOne({
+    _id: publicationId,
+    deleted: false,
+  });
+  if (!existingPublicationDoc) {
+      throw new AppError(`Cannot find the publication with ID: ${publicationId}. Unable to update the publication.`, 400);
+  }
+
+  const updatedPublicationDoc = await PublicationModel.findByIdAndUpdate(
+    publicationId,
+    { 
+      $set: {
+        status: publicationDto.status,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedPublicationDoc) {
+      throw new AppError('Failed to update publication document.', 500);
+  }
+
+  logger.info(`Publication updated for status for ID: ${publicationId}`);
   return mapDocumentToPublication(updatedPublicationDoc);
 }
