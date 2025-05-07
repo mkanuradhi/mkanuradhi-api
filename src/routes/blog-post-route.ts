@@ -2,6 +2,8 @@ import express from 'express';
 import * as blogPostController from '../controllers/blog-post-controller';
 import validateObjectId from '../middleware/validate-objectid';
 import upload from '../middleware/file-upload';
+import requireAuthenticated from '../middleware/require-authenticated';
+import Role from '../enums/role';
 
 const blogPostRoute = express.Router();
 
@@ -21,7 +23,7 @@ blogPostRoute.get('/id/:id', validateObjectId, blogPostController.getBlogPost);
 blogPostRoute.get('/path/:path', blogPostController.getBlogPostByPath);
 
 // Update blog post text data (partial update only for en text data)
-blogPostRoute.patch('/:id/en', validateObjectId, blogPostController.updateBlogPostTextEn);
+blogPostRoute.patch('/:id/en', requireAuthenticated([Role.ADMIN]), validateObjectId, blogPostController.updateBlogPostTextEn);
 
 // Update blog post si text data (partial update only for si text data)
 blogPostRoute.patch('/:id/si', validateObjectId, blogPostController.updateBlogPostTextSi);

@@ -14,6 +14,7 @@ import notFoundHandler from './middleware/not-found-handler';
 import errorHandler from './middleware/error-handler';
 import homeRoute from './routes/home-route';
 import mongoose from 'mongoose';
+import { clerkMiddleware } from '@clerk/express'
 
 const validateEnvVariables = (): void => {
   const requiredEnvVars = ["PORT", "DB_URI"];
@@ -36,6 +37,8 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   credentials: true
 }
+
+app.use(clerkMiddleware());
 
 app.use(cors(corsOptions));
 app.use(limiter);
