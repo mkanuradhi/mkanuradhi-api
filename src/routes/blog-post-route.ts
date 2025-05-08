@@ -11,7 +11,7 @@ const blogPostRoute = express.Router();
 blogPostRoute.get('/search', blogPostController.searchBlogPosts);
 
 // Add a new blog post (en text data)
-blogPostRoute.post('/', blogPostController.createBlogPostTextEn);
+blogPostRoute.post('/', requireAuthenticated([Role.ADMIN]), blogPostController.createBlogPostTextEn);
 
 // Fetch all blog post
 blogPostRoute.get('/', blogPostController.getBlogPosts);
@@ -26,19 +26,19 @@ blogPostRoute.get('/path/:path', blogPostController.getBlogPostByPath);
 blogPostRoute.patch('/:id/en', requireAuthenticated([Role.ADMIN]), validateObjectId, blogPostController.updateBlogPostTextEn);
 
 // Update blog post si text data (partial update only for si text data)
-blogPostRoute.patch('/:id/si', validateObjectId, blogPostController.updateBlogPostTextSi);
+blogPostRoute.patch('/:id/si', validateObjectId, requireAuthenticated([Role.ADMIN]), blogPostController.updateBlogPostTextSi);
 
 // Update the primary image for a blog post
-blogPostRoute.patch('/:id/primary-image', upload.single('primaryImage'), blogPostController.uploadPrimaryImage);
+blogPostRoute.patch('/:id/primary-image', requireAuthenticated([Role.ADMIN]), upload.single('primaryImage'), blogPostController.uploadPrimaryImage);
 
 // Update the images for a blog post
-blogPostRoute.patch('/:id/images', upload.array('images', 5), blogPostController.uploadImages);
+blogPostRoute.patch('/:id/images', requireAuthenticated([Role.ADMIN]), upload.array('images', 5), blogPostController.uploadImages);
 
 // Publish or unpublish a blog post
-blogPostRoute.patch('/:id/toggle', validateObjectId, blogPostController.toggleBlogPostActivation);
+blogPostRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, blogPostController.toggleBlogPostActivation);
 
 // Delete a blog post
-blogPostRoute.delete('/:id', validateObjectId, blogPostController.deleteBlogPost);
+blogPostRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, blogPostController.deleteBlogPost);
 
 
 export default blogPostRoute;
