@@ -37,7 +37,7 @@ courseRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId,
 // ----------------------------------- quizzes -----------------------------------
 
 // Add a new quiz
-courseRoute.post('/:courseId/quizzes', quizController.createQuiz);
+courseRoute.post('/:courseId/quizzes', requireAuthenticated([Role.ADMIN]), quizController.createQuiz);
 
 // Fetch all quizzes
 courseRoute.get('/:courseId/quizzes', quizController.getQuizzes);
@@ -52,12 +52,12 @@ courseRoute.get('/:courseId/quizzes/:id', quizController.getQuiz);
 courseRoute.get('/path/:coursePath/quizzes/:id', quizController.getQuizByCoursePathAndId);
 
 // Update quiz data
-courseRoute.patch('/:courseId/quizzes/:id', validateObjectId, quizController.updateQuiz);
+courseRoute.patch('/:courseId/quizzes/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, quizController.updateQuiz);
 
 // Toggle status of a quiz
-courseRoute.patch('/:courseId/quizzes/:id/toggle', validateObjectId, quizController.toggleQuizActivation);
+courseRoute.patch('/:courseId/quizzes/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, quizController.toggleQuizActivation);
 
 // Delete a quiz
-courseRoute.delete('/:courseId/quizzes/:id', validateObjectId, quizController.deleteQuiz);
+courseRoute.delete('/:courseId/quizzes/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, quizController.deleteQuiz);
 
 export default courseRoute;
