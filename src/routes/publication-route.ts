@@ -17,7 +17,7 @@ publicationRoute.get('/grouped', publicationController.getGroupedPublications);
 publicationRoute.get('/:id', publicationController.getPublicationById);
 
 // Update publication
-publicationRoute.patch('/:id', validateObjectId, publicationController.updatePublication);
+publicationRoute.put('/:id', validateObjectId, publicationController.updatePublication);
 
 // Activate or deactivate a publication
 publicationRoute.patch('/:id/toggle', validateObjectId, publicationController.togglePublicationActivation);

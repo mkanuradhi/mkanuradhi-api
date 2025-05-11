@@ -22,7 +22,7 @@ export const createPublication = async (publicationDto: CreatePublicationDto): P
     }).session(session);
 
     if (existingPublicationDoc) {
-      throw new AppError(`Existing publication title: ${publicationDto.title} found for the year: ${publicationDto.year}`, 400);
+      throw new AppError(`Existing publication title: ${publicationDto.title}, found for the year: ${publicationDto.year}`, 400);
     }
 
     const [publicationDoc] = await PublicationModel.create([{
@@ -75,7 +75,12 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
         source: 1,
         authors: 1,
         publicationStatus: 1,
-        url: 1,
+        tags: 1,
+        paperUrl: 1,
+        pdfUrl: 1,
+        doiUrl: 1,
+	      arxivUrl: 1,
+        bibtex: 1,
         status: 1,
       })
     .sort({ year: -1 })
@@ -98,9 +103,16 @@ export const getGroupedPublications = async (): Promise<Record<string, Publicati
       {
         type: 1,
         year: 1,
+        title: 1,
         description: 1, 
-        url: 1,
-        venue: 1,
+        source: 1,
+        authors: 1,
+        publicationStatus: 1,
+        tags: 1,
+        paperUrl: 1,
+        pdfUrl: 1,
+        doiUrl: 1,
+	      arxivUrl: 1,
         bibtex: 1,
       }
     ).sort(
@@ -124,8 +136,14 @@ export const getPublicationById = async (publicationId: string): Promise<Publica
       type: 1,
       year: 1,
       description: 1, 
-      url: 1,
-      venue: 1,
+      source: 1,
+      authors: 1,
+      publicationStatus: 1,
+      tags: 1,
+      paperUrl: 1,
+      pdfUrl: 1,
+      doiUrl: 1,
+      arxivUrl: 1,
       bibtex: 1,
       status: 1,
       deleted: 1,
@@ -184,7 +202,7 @@ export const updatePublication = async (publicationId: string, publicationDto: U
       },
       $inc: { __v: 1 }
     },
-    { new: true }
+    { new: true, runValidators: true }
   );
 
   if (!updatedPublicationDoc) {
@@ -212,7 +230,7 @@ export const togglePublicationActivation = async (publicationId: string, publica
       },
       $inc: { __v: 1 }
     },
-    { new: true }
+    { new: true, runValidators: true }
   );
 
   if (!updatedPublicationDoc) {
