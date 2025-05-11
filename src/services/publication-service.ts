@@ -14,23 +14,30 @@ export const createPublication = async (publicationDto: CreatePublicationDto): P
 
   try {
     session.startTransaction();
-    
+
     const existingPublicationDoc = await PublicationModel.findOne({
       year: publicationDto.year,
-      description: publicationDto.description.trim(),
+      title: publicationDto.title?.trim(),
       deleted: false
     }).session(session);
 
     if (existingPublicationDoc) {
-      throw new AppError(`Existing publication found for the description: ${publicationDto.description}`, 400);
+      throw new AppError(`Existing publication title: ${publicationDto.title} found for the year: ${publicationDto.year}`, 400);
     }
 
     const [publicationDoc] = await PublicationModel.create([{
       type: publicationDto.type,
       year: publicationDto.year,
+      title: publicationDto.title,
       description: publicationDto.description,
-      url: publicationDto.url,
-      venue: publicationDto.venue,
+      source: publicationDto.source,
+      authors: publicationDto.authors,
+      publicationStatus: publicationDto.publicationStatus,
+      tags: publicationDto.tags,
+      paperUrl: publicationDto.paperUrl,
+      pdfUrl: publicationDto.pdfUrl,
+      doiUrl: publicationDto.doiUrl,
+      arxivUrl: publicationDto.arxivUrl,
       bibtex: publicationDto.bibtex,
     }], { session });
 
@@ -63,7 +70,11 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
       {
         type: 1,
         year: 1,
+        title: 1,
         description: 1, 
+        source: 1,
+        authors: 1,
+        publicationStatus: 1,
         url: 1,
         status: 1,
       })
@@ -146,11 +157,11 @@ export const updatePublication = async (publicationId: string, publicationDto: U
   const existingPublicationDocsWithSameData = await PublicationModel.find({
     _id: { $ne: publicationId },
     year: publicationDto.year,
-    description: publicationDto.description.trim(),
+    title: publicationDto.title.trim(),
     deleted: false,
   });
   if (existingPublicationDocsWithSameData && existingPublicationDocsWithSameData.length > 0) {
-    throw new AppError(`Existing publication found with the description: ${publicationDto.description} for the year: ${publicationDto.year}`, 400);
+    throw new AppError(`Existing publication found with the title: ${publicationDto.title} for the year: ${publicationDto.year}`, 400);
   }
 
   const updatedPublicationDoc = await PublicationModel.findByIdAndUpdate(
@@ -159,9 +170,16 @@ export const updatePublication = async (publicationId: string, publicationDto: U
       $set: {
         type: publicationDto.type,
         year: publicationDto.year,
+        title: publicationDto.title,
         description: publicationDto.description,
-        url: publicationDto.url,
-        venue: publicationDto.venue,
+        source: publicationDto.source,
+        authors: publicationDto.authors,
+        publicationStatus: publicationDto.publicationStatus,
+        tags: publicationDto.tags,
+        paperUrl: publicationDto.paperUrl,
+        pdfUrl: publicationDto.pdfUrl,
+        doiUrl: publicationDto.doiUrl,
+        arxivUrl: publicationDto.arxivUrl,
         bibtex: publicationDto.bibtex,
       },
       $inc: { __v: 1 }

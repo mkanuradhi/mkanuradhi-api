@@ -10,18 +10,32 @@ export const createPublication = asyncErrorHandler( async (req: Request, res: Re
   const {
     type,
     year,
+    title,
     description,
-    url,
-    venue,
+    source,
+    authors,
+    publicationStatus,
+    tags,
+    paperUrl,
+    pdfUrl,
+    doiUrl,
+    arxivUrl,
     bibtex,
   } = req.body;
 
   const publicationDto: CreatePublicationDto = {
     type,
     year,
+    title,
     description,
-    url,
-    venue,
+    source,
+    authors,
+    publicationStatus,
+    tags,
+    paperUrl,
+    pdfUrl,
+    doiUrl,
+    arxivUrl,
     bibtex,
   };
   const addedPublication = await publicationService.createPublication(publicationDto);
@@ -65,9 +79,16 @@ export const updatePublication = asyncErrorHandler( async (req: Request, res: Re
   const {
     type,
     year,
+    title,
     description,
-    url,
-    venue,
+    source,
+    authors,
+    publicationStatus,
+    tags,
+    paperUrl,
+    pdfUrl,
+    doiUrl,
+    arxivUrl,
     bibtex,
     v
   } = req.body;
@@ -75,9 +96,16 @@ export const updatePublication = asyncErrorHandler( async (req: Request, res: Re
   const publicationDto: UpdatePublicationDto = {
     type,
     year,
+    title,
     description,
-    url,
-    venue,
+    source,
+    authors,
+    publicationStatus,
+    tags,
+    paperUrl,
+    pdfUrl,
+    doiUrl,
+    arxivUrl,
     bibtex,
     v
   };
