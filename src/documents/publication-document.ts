@@ -17,7 +17,7 @@ interface PublicationDocument extends BaseDocument {
   authors: PublicationAuthor[];
   publicationStatus: PublicationStatus;
   tags: string[];
-	paperUrl?: string;
+	publicationUrl?: string;
 	pdfUrl?: string;
 	doiUrl?: string;
 	arxivUrl?: string;

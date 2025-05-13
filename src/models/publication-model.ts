@@ -9,13 +9,13 @@ const MIN_YEAR = 2010;
 const MAX_YEAR = 2040;
 
 const MIN_TITLE_LENGTH = 5;
-const MAX_TITLE_LENGTH = 300;
+const MAX_TITLE_LENGTH = 350;
 
 const MAX_DESCRIPTION_LENGTH = 1000;
 
 const MAX_URL_LENGTH = 300;
 
-const MAX_BIBTEX_LENGTH = 1000;
+const MAX_BIBTEX_LENGTH = 4000;
 
 const safeTrim = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value.trim() : undefined;
@@ -84,10 +84,10 @@ const publicationSchema = new Schema<PublicationDocument>(
       },
       default: [],
     },
-    paperUrl: {
+    publicationUrl: {
       type: String,
       set: safeTrim,
-      maxLength: [MAX_URL_LENGTH, `Paper URL cannot exceed ${MAX_URL_LENGTH} characters.`]
+      maxLength: [MAX_URL_LENGTH, `Publication URL cannot exceed ${MAX_URL_LENGTH} characters.`]
     },
     pdfUrl: {
       type: String,

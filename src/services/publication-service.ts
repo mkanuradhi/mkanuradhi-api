@@ -34,7 +34,7 @@ export const createPublication = async (publicationDto: CreatePublicationDto): P
       authors: publicationDto.authors,
       publicationStatus: publicationDto.publicationStatus,
       tags: publicationDto.tags,
-      paperUrl: publicationDto.paperUrl,
+      publicationUrl: publicationDto.publicationUrl,
       pdfUrl: publicationDto.pdfUrl,
       doiUrl: publicationDto.doiUrl,
       arxivUrl: publicationDto.arxivUrl,
@@ -76,7 +76,7 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
         authors: 1,
         publicationStatus: 1,
         tags: 1,
-        paperUrl: 1,
+        publicationUrl: 1,
         pdfUrl: 1,
         doiUrl: 1,
 	      arxivUrl: 1,
@@ -109,7 +109,7 @@ export const getGroupedPublications = async (): Promise<Record<string, Publicati
         authors: 1,
         publicationStatus: 1,
         tags: 1,
-        paperUrl: 1,
+        publicationUrl: 1,
         pdfUrl: 1,
         doiUrl: 1,
 	      arxivUrl: 1,
@@ -140,7 +140,7 @@ export const getPublicationById = async (publicationId: string): Promise<Publica
       authors: 1,
       publicationStatus: 1,
       tags: 1,
-      paperUrl: 1,
+      publicationUrl: 1,
       pdfUrl: 1,
       doiUrl: 1,
       arxivUrl: 1,
@@ -194,7 +194,7 @@ export const updatePublication = async (publicationId: string, publicationDto: U
         authors: publicationDto.authors,
         publicationStatus: publicationDto.publicationStatus,
         tags: publicationDto.tags,
-        paperUrl: publicationDto.paperUrl,
+        publicationUrl: publicationDto.publicationUrl,
         pdfUrl: publicationDto.pdfUrl,
         doiUrl: publicationDto.doiUrl,
         arxivUrl: publicationDto.arxivUrl,
@@ -250,13 +250,13 @@ export const deletePublication = async (publicationId: string): Promise<void> =>
     throw new AppError(`Cannot find the publication with ID '${publicationId}' or it is already deleted.`, 404);
   }
 
-  const deletedDescription = `${publicationDoc.description}-DELETED-${uuidv4()}`;
+  const deletedTitle = `${publicationDoc.title}-DELETED-${uuidv4()}`;
 
   const updatedPublicationDoc = await PublicationModel.findByIdAndUpdate(
     publicationId,
     {
       $set: {
-        description: deletedDescription,
+        title: deletedTitle,
         deleted: true,
       },
       $inc: { __v: 1 }
@@ -266,4 +266,5 @@ export const deletePublication = async (publicationId: string): Promise<void> =>
   if (!updatedPublicationDoc) {
     throw new AppError('Failed to delete publication document.', 500);
   }
+  logger.info(`Publication deleted for id: ${publicationId}`);
 }

@@ -21,7 +21,7 @@ export interface CreatePublicationDto {
 	authors: PublicationAuthorDto[]; // authors list
 	publicationStatus: PublicationStatus;
 	tags: string[]; // ex: Q1 / Q2 / Best paper 
-	paperUrl: string; // paper url
+	publicationUrl: string; // publication url
 	pdfUrl: string; // pdf url
 	doiUrl: string; // doi url
 	arxivUrl: string; // arXiv url
