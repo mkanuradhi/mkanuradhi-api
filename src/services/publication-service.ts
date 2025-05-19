@@ -38,6 +38,7 @@ export const createPublication = async (publicationDto: CreatePublicationDto): P
       pdfUrl: publicationDto.pdfUrl,
       doiUrl: publicationDto.doiUrl,
       arxivUrl: publicationDto.arxivUrl,
+      abstract: publicationDto.abstract,
       bibtex: publicationDto.bibtex,
     }], { session });
 
@@ -80,6 +81,7 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
         pdfUrl: 1,
         doiUrl: 1,
 	      arxivUrl: 1,
+        abstract: 1,
         bibtex: 1,
         status: 1,
       })
@@ -113,6 +115,7 @@ export const getGroupedPublications = async (): Promise<Record<string, Publicati
         pdfUrl: 1,
         doiUrl: 1,
 	      arxivUrl: 1,
+        abstract: 1,
         bibtex: 1,
       }
     ).sort(
@@ -144,6 +147,7 @@ export const getPublicationById = async (publicationId: string): Promise<Publica
       pdfUrl: 1,
       doiUrl: 1,
       arxivUrl: 1,
+      abstract: 1,
       bibtex: 1,
       status: 1,
       deleted: 1,
@@ -198,6 +202,7 @@ export const updatePublication = async (publicationId: string, publicationDto: U
         pdfUrl: publicationDto.pdfUrl,
         doiUrl: publicationDto.doiUrl,
         arxivUrl: publicationDto.arxivUrl,
+        abstract: publicationDto.abstract,
         bibtex: publicationDto.bibtex,
       },
       $inc: { __v: 1 }

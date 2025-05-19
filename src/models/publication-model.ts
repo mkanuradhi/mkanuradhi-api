@@ -15,6 +15,7 @@ const MAX_DESCRIPTION_LENGTH = 1000;
 
 const MAX_URL_LENGTH = 300;
 
+const MAX_ABSTRACT_LENGTH = 3000;
 const MAX_BIBTEX_LENGTH = 4000;
 
 const safeTrim = (value: unknown): string | undefined => {
@@ -103,6 +104,11 @@ const publicationSchema = new Schema<PublicationDocument>(
       type: String,
       set: safeTrim,
       maxLength: [MAX_URL_LENGTH, `arXiv URL cannot exceed ${MAX_URL_LENGTH} characters.`]
+    },
+    abstract: {
+      type: String,
+      trim: safeTrim,
+      maxlength: [MAX_ABSTRACT_LENGTH, `Abstract cannot exceed ${MAX_ABSTRACT_LENGTH} characters.`]
     },
     bibtex: {
       type: String,

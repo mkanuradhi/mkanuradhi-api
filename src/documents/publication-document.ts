@@ -21,6 +21,7 @@ interface PublicationDocument extends BaseDocument {
 	pdfUrl?: string;
 	doiUrl?: string;
 	arxivUrl?: string;
+  abstract?: string;
   bibtex?: string;
   status: DocumentStatus;
   deleted: boolean;

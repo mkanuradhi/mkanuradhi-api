@@ -25,6 +25,7 @@ export interface CreatePublicationDto {
 	pdfUrl: string; // pdf url
 	doiUrl: string; // doi url
 	arxivUrl: string; // arXiv url
+	abstract: string;
 	bibtex: string;
 }
 

@@ -20,6 +20,7 @@ export const createPublication = asyncErrorHandler( async (req: Request, res: Re
     pdfUrl,
     doiUrl,
     arxivUrl,
+    abstract,
     bibtex,
   } = req.body;
 
@@ -36,6 +37,7 @@ export const createPublication = asyncErrorHandler( async (req: Request, res: Re
     pdfUrl,
     doiUrl,
     arxivUrl,
+    abstract,
     bibtex,
   };
   const addedPublication = await publicationService.createPublication(publicationDto);
@@ -89,6 +91,7 @@ export const updatePublication = asyncErrorHandler( async (req: Request, res: Re
     pdfUrl,
     doiUrl,
     arxivUrl,
+    abstract,
     bibtex,
     v
   } = req.body;
@@ -106,6 +109,7 @@ export const updatePublication = asyncErrorHandler( async (req: Request, res: Re
     pdfUrl,
     doiUrl,
     arxivUrl,
+    abstract,
     bibtex,
     v
   };
