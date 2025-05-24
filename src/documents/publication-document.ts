@@ -12,7 +12,6 @@ interface PublicationDocument extends BaseDocument {
   type: PublicationType;
   year: number;
   title: string;
-  description: string;
   source: string;
   authors: PublicationAuthor[];
   publicationStatus: PublicationStatus;
@@ -20,7 +19,7 @@ interface PublicationDocument extends BaseDocument {
 	publicationUrl?: string;
 	pdfUrl?: string;
 	doiUrl?: string;
-	arxivUrl?: string;
+	preprintUrl?: string;
   abstract?: string;
   bibtex?: string;
   status: DocumentStatus;

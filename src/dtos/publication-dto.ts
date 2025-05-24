@@ -16,7 +16,6 @@ export interface CreatePublicationDto {
   type: PublicationType;
 	year: number;
 	title: string;
-	description: string; // any related detail
   source: string; // journal name of an article / book name of a book chapter / event and location of a conference
 	authors: PublicationAuthorDto[]; // authors list
 	publicationStatus: PublicationStatus;
@@ -24,7 +23,7 @@ export interface CreatePublicationDto {
 	publicationUrl: string; // publication url
 	pdfUrl: string; // pdf url
 	doiUrl: string; // doi url
-	arxivUrl: string; // arXiv url
+	preprintUrl: string; // preprint url. ex: arxiv url or similar
 	abstract: string;
 	bibtex: string;
 }

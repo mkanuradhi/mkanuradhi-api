@@ -11,12 +11,12 @@ const MAX_YEAR = 2040;
 const MIN_TITLE_LENGTH = 5;
 const MAX_TITLE_LENGTH = 350;
 
-const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_SOURCE_LENGTH = 2000;
 
-const MAX_URL_LENGTH = 300;
+const MAX_URL_LENGTH = 400;
 
-const MAX_ABSTRACT_LENGTH = 3000;
-const MAX_BIBTEX_LENGTH = 4000;
+const MAX_ABSTRACT_LENGTH = 5000;
+const MAX_BIBTEX_LENGTH = 5000;
 
 const safeTrim = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value.trim() : undefined;
@@ -53,15 +53,10 @@ const publicationSchema = new Schema<PublicationDocument>(
       minLength: [MIN_TITLE_LENGTH, `Publication title must be minimum ${MIN_TITLE_LENGTH} characters long.`],
       maxLength: [MAX_TITLE_LENGTH, `Publication title cannot exceed ${MAX_TITLE_LENGTH} characters.`]
     },
-    description: {
-      type: String,
-      set: safeTrim,
-      maxLength: [MAX_DESCRIPTION_LENGTH, `Publication description cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.`]
-    },
     source: {
       type: String,
       set: safeTrim,
-      maxLength: [MAX_DESCRIPTION_LENGTH, `Publication source cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.`]
+      maxLength: [MAX_SOURCE_LENGTH, `Publication source cannot exceed ${MAX_SOURCE_LENGTH} characters.`]
     },
     authors: {
       type: [publicationAuthorSchema],
@@ -100,10 +95,10 @@ const publicationSchema = new Schema<PublicationDocument>(
       set: safeTrim,
       maxLength: [MAX_URL_LENGTH, `DOI URL cannot exceed ${MAX_URL_LENGTH} characters.`]
     },
-    arxivUrl: {
+    preprintUrl: {
       type: String,
       set: safeTrim,
-      maxLength: [MAX_URL_LENGTH, `arXiv URL cannot exceed ${MAX_URL_LENGTH} characters.`]
+      maxLength: [MAX_URL_LENGTH, `Preprint URL cannot exceed ${MAX_URL_LENGTH} characters.`]
     },
     abstract: {
       type: String,
@@ -149,7 +144,7 @@ publicationSchema.pre('validate', async function (next) {
 });
 
 publicationSchema.index({ type: 1, year: -1 });
-publicationSchema.index({ title: 'text', description: 'text', source: 'text' });
+publicationSchema.index({ title: 'text', source: 'text' });
 
 const PublicationModel = model<PublicationDocument>('Publication', publicationSchema);
 
