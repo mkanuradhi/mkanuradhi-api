@@ -6,6 +6,7 @@ import PublicationStatus from "../enums/publication-status";
 interface PublicationAuthor {
   name: string;
   isMe: boolean;
+  corresponding: boolean;
 }
 
 interface PublicationDocument extends BaseDocument {

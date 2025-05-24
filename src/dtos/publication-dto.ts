@@ -5,7 +5,8 @@ import { VersionDto } from "./base-dto";
 
 interface PublicationAuthorDto {
   name: string;
-  isMe?: boolean; 
+  isMe?: boolean;
+	corresponding?: boolean;
 }
 
 export interface ActivationPublicationDto {

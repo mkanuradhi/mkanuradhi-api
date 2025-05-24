@@ -26,6 +26,7 @@ const publicationAuthorSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
     isMe: { type: Boolean, required: true },
+    corresponding: { type: Boolean, default: false },
   },
   { _id: false }
 );

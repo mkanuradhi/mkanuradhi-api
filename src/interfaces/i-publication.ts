@@ -5,6 +5,7 @@ import PublicationType from "../enums/publication-type";
 interface PublicationAuthor {
   name: string;
   isMe: boolean;
+  corresponding: boolean;
 }
 
 interface Publication {
@@ -12,7 +13,6 @@ interface Publication {
   type: PublicationType;
   year: number;
   title: string;
-  description: string;
   source: string;
 	authors: PublicationAuthor[];
 	publicationStatus: PublicationStatus;
@@ -20,7 +20,8 @@ interface Publication {
 	publicationUrl: string;
 	pdfUrl: string;
 	doiUrl: string;
-	arxivUrl: string;
+	preprintUrl: string;
+  abstract: string;
   bibtex: string;
   status: DocumentStatus;
   deleted: boolean;
