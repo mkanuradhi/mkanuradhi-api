@@ -83,7 +83,7 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
         bibtex: 1,
         status: 1,
       })
-    .sort({ year: -1 })
+    .sort({ year: -1, updatedAt: -1 })
     .skip(page * size)
     .limit(size);
 
