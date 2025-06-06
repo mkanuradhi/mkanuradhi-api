@@ -5,6 +5,8 @@ import { VersionDto } from "./base-dto";
 
 interface PublicationAuthorDto {
   name: string;
+	affiliation?: string;
+  profileUrl?: string;
   isMe?: boolean;
 	corresponding?: boolean;
 }

@@ -5,6 +5,8 @@ import PublicationStatus from "../enums/publication-status";
 
 interface PublicationAuthor {
   name: string;
+  affiliation: string;
+  profileUrl: string;
   isMe: boolean;
   corresponding: boolean;
 }

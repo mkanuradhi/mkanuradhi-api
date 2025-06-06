@@ -11,6 +11,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
   const session = await PublicationModel.startSession();
+  console.log('----------------------------aff: ', publicationDto.authors[0].affiliation);
+  console.log('----------------------------url: ', publicationDto.authors[0].profileUrl);
+  console.log('----------------------------nam: ', publicationDto.authors[0].name);
 
   try {
     session.startTransaction();

@@ -4,6 +4,8 @@ import PublicationType from "../enums/publication-type";
 
 interface PublicationAuthor {
   name: string;
+  affiliation: string;
+  profileUrl: string;
   isMe: boolean;
   corresponding: boolean;
 }

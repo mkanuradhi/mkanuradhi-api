@@ -25,6 +25,8 @@ const safeTrim = (value: unknown): string | undefined => {
 const publicationAuthorSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+    affiliation: { type: String, required: false, trim: true },
+    profileUrl: { type: String, required: false, trim: true },
     isMe: { type: Boolean, required: true },
     corresponding: { type: Boolean, default: false },
   },
