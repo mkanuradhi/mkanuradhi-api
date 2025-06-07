@@ -6,6 +6,7 @@ import emailRoute from './routes/email-route';
 import blogPostRoute from './routes/blog-post-route';
 import courseRoute from './routes/course-route';
 import quizRoute from './routes/quiz-route';
+import publicationRoute from './routes/publication-route';
 import logger from './config/logger-config';
 import limiter from './config/rate-limit-config';
 import RequestLogger from './middleware/request-logger';
@@ -13,6 +14,7 @@ import notFoundHandler from './middleware/not-found-handler';
 import errorHandler from './middleware/error-handler';
 import homeRoute from './routes/home-route';
 import mongoose from 'mongoose';
+import { clerkMiddleware } from '@clerk/express'
 
 const validateEnvVariables = (): void => {
   const requiredEnvVars = ["PORT", "DB_URI"];
@@ -36,6 +38,8 @@ const corsOptions = {
   credentials: true
 }
 
+app.use(clerkMiddleware());
+
 app.use(cors(corsOptions));
 app.use(limiter);
 app.use(RequestLogger);
@@ -46,6 +50,7 @@ app.use('/email', emailRoute);
 app.use('/blog-posts', blogPostRoute);
 app.use('/courses', courseRoute);
 app.use('/quizzes', quizRoute);
+app.use('/publications', publicationRoute);
 
 // handling errors
 app.use(notFoundHandler);
