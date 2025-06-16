@@ -28,7 +28,7 @@ interface PublicationDocument extends BaseDocument {
   abstract?: string;
   bibtex?: string;
   ris?: string;
-  publishedDate?: Date;
+  publishedDate?: Date | null;
   status: DocumentStatus;
   deleted: boolean;
 }

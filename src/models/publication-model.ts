@@ -135,8 +135,9 @@ const publicationSchema = new Schema<PublicationDocument>(
     },
     publishedDate: {
       type: Date,
+      default: null,
       set: (value: Date | string | undefined) => {
-        if (!value) return undefined;
+        if (!value) return null;
         const date = new Date(value);
         return new Date(date.getFullYear(), date.getMonth(), date.getDate()); // remove the time part
       },
