@@ -83,6 +83,16 @@ const publicationSchema = new Schema<PublicationDocument>(
       },
       default: [],
     },
+    keywords: {
+      type: [String],
+      set: (keywords?: string[]): string[] => {
+        if (!Array.isArray(keywords)) return [];
+        return keywords
+          .filter((t): t is string => typeof t === 'string')
+          .map(t => t.trim());
+      },
+      default: [],
+    },
     publicationUrl: {
       type: String,
       set: safeTrim,
@@ -103,6 +113,11 @@ const publicationSchema = new Schema<PublicationDocument>(
       set: safeTrim,
       maxLength: [MAX_URL_LENGTH, `Preprint URL cannot exceed ${MAX_URL_LENGTH} characters.`]
     },
+    slidesUrl: {
+      type: String,
+      set: safeTrim,
+      maxLength: [MAX_URL_LENGTH, `Slides URL cannot exceed ${MAX_URL_LENGTH} characters.`]
+    },
     abstract: {
       type: String,
       trim: safeTrim,
@@ -112,6 +127,19 @@ const publicationSchema = new Schema<PublicationDocument>(
       type: String,
       set: safeTrim,
       maxLength: [MAX_BIBTEX_LENGTH, `Bibtex cannot exceed ${MAX_BIBTEX_LENGTH} characters.`]
+    },
+    ris: {
+      type: String,
+      set: safeTrim,
+      maxLength: [MAX_BIBTEX_LENGTH, `RIS cannot exceed ${MAX_BIBTEX_LENGTH} characters.`]
+    },
+    publishedDate: {
+      type: Date,
+      set: (value: Date | string | undefined) => {
+        if (!value) return undefined;
+        const date = new Date(value);
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate()); // remove the time part
+      },
     },
     status: {
       type: String,

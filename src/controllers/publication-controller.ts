@@ -15,12 +15,16 @@ export const createPublication = asyncErrorHandler( async (req: Request, res: Re
     authors,
     publicationStatus,
     tags,
+    keywords,
     publicationUrl,
     pdfUrl,
     doiUrl,
     preprintUrl,
+    slidesUrl,
     abstract,
     bibtex,
+    ris,
+    publishedDate,
   } = req.body;
 
   const publicationDto: CreatePublicationDto = {
@@ -31,12 +35,16 @@ export const createPublication = asyncErrorHandler( async (req: Request, res: Re
     authors,
     publicationStatus,
     tags,
+    keywords,
     publicationUrl,
     pdfUrl,
     doiUrl,
     preprintUrl,
+    slidesUrl,
     abstract,
     bibtex,
+    ris,
+    publishedDate,
   };
   const addedPublication = await publicationService.createPublication(publicationDto);
   res.status(201).json(addedPublication);
@@ -84,12 +92,16 @@ export const updatePublication = asyncErrorHandler( async (req: Request, res: Re
     authors,
     publicationStatus,
     tags,
+    keywords,
     publicationUrl,
     pdfUrl,
     doiUrl,
     preprintUrl,
+    slidesUrl,
     abstract,
     bibtex,
+    ris,
+    publishedDate,
     v
   } = req.body;
 
@@ -101,12 +113,16 @@ export const updatePublication = asyncErrorHandler( async (req: Request, res: Re
     authors,
     publicationStatus,
     tags,
+    keywords,
     publicationUrl,
     pdfUrl,
     doiUrl,
     preprintUrl,
+    slidesUrl,
     abstract,
     bibtex,
+    ris,
+    publishedDate,
     v
   };
   

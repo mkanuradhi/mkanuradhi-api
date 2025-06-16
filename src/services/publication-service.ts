@@ -11,9 +11,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
   const session = await PublicationModel.startSession();
-  console.log('----------------------------aff: ', publicationDto.authors[0].affiliation);
-  console.log('----------------------------url: ', publicationDto.authors[0].profileUrl);
-  console.log('----------------------------nam: ', publicationDto.authors[0].name);
 
   try {
     session.startTransaction();
@@ -36,12 +33,16 @@ export const createPublication = async (publicationDto: CreatePublicationDto): P
       authors: publicationDto.authors,
       publicationStatus: publicationDto.publicationStatus,
       tags: publicationDto.tags,
+      keywords: publicationDto.keywords,
       publicationUrl: publicationDto.publicationUrl,
       pdfUrl: publicationDto.pdfUrl,
       doiUrl: publicationDto.doiUrl,
       preprintUrl: publicationDto.preprintUrl,
+      slidesUrl: publicationDto.slidesUrl,
       abstract: publicationDto.abstract,
       bibtex: publicationDto.bibtex,
+      ris: publicationDto.ris,
+      publishedDate: publicationDto.publishedDate,
     }], { session });
 
     await session.commitTransaction();
@@ -78,12 +79,16 @@ export const getPublications = async (page: number, size: number): Promise<{ ite
         authors: 1,
         publicationStatus: 1,
         tags: 1,
+        keywords: 1,
         publicationUrl: 1,
         pdfUrl: 1,
         doiUrl: 1,
-	      preprintUrl: 1,
+        preprintUrl: 1,
+        slidesUrl: 1,
         abstract: 1,
         bibtex: 1,
+        ris: 1,
+        publishedDate: 1,
         status: 1,
       })
     .sort({ year: -1, updatedAt: -1 })
@@ -111,12 +116,16 @@ export const getGroupedPublications = async (): Promise<Record<string, Publicati
         authors: 1,
         publicationStatus: 1,
         tags: 1,
+        keywords: 1,
         publicationUrl: 1,
         pdfUrl: 1,
         doiUrl: 1,
-	      preprintUrl: 1,
+        preprintUrl: 1,
+        slidesUrl: 1,
         abstract: 1,
         bibtex: 1,
+        ris: 1,
+        publishedDate: 1,
       }
     ).sort(
       { year: -1 }
@@ -143,12 +152,16 @@ export const getPublicationById = async (publicationId: string): Promise<Publica
       authors: 1,
       publicationStatus: 1,
       tags: 1,
+      keywords: 1,
       publicationUrl: 1,
       pdfUrl: 1,
       doiUrl: 1,
       preprintUrl: 1,
+      slidesUrl: 1,
       abstract: 1,
       bibtex: 1,
+      ris: 1,
+      publishedDate: 1,
       status: 1,
       deleted: 1,
       createdAt: 1,
@@ -197,12 +210,16 @@ export const updatePublication = async (publicationId: string, publicationDto: U
         authors: publicationDto.authors,
         publicationStatus: publicationDto.publicationStatus,
         tags: publicationDto.tags,
+        keywords: publicationDto.keywords,
         publicationUrl: publicationDto.publicationUrl,
         pdfUrl: publicationDto.pdfUrl,
         doiUrl: publicationDto.doiUrl,
         preprintUrl: publicationDto.preprintUrl,
+        slidesUrl: publicationDto.slidesUrl,
         abstract: publicationDto.abstract,
         bibtex: publicationDto.bibtex,
+        ris: publicationDto.ris,
+        publishedDate: publicationDto.publishedDate,
       },
       $inc: { __v: 1 }
     },

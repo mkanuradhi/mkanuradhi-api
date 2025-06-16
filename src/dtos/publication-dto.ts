@@ -5,10 +5,10 @@ import { VersionDto } from "./base-dto";
 
 interface PublicationAuthorDto {
   name: string;
-	affiliation?: string;
+  affiliation?: string;
   profileUrl?: string;
   isMe?: boolean;
-	corresponding?: boolean;
+  corresponding?: boolean;
 }
 
 export interface ActivationPublicationDto {
@@ -23,12 +23,16 @@ export interface CreatePublicationDto {
 	authors: PublicationAuthorDto[]; // authors list
 	publicationStatus: PublicationStatus;
 	tags: string[]; // ex: Q1 / Q2 / Best paper 
+	keywords: string[]; // ex: keywords of the publication
 	publicationUrl: string; // publication url
 	pdfUrl: string; // pdf url
 	doiUrl: string; // doi url
 	preprintUrl: string; // preprint url. ex: arxiv url or similar
+	slidesUrl: string; // slides url
 	abstract: string;
 	bibtex: string;
+	ris: string; // Research Information Systems
+	publishedDate: Date; // publication date in the journal or book or conference
 }
 
 export interface UpdatePublicationDto extends CreatePublicationDto, VersionDto {
