@@ -19,12 +19,16 @@ interface PublicationDocument extends BaseDocument {
   authors: PublicationAuthor[];
   publicationStatus: PublicationStatus;
   tags: string[];
-	publicationUrl?: string;
-	pdfUrl?: string;
-	doiUrl?: string;
-	preprintUrl?: string;
+  keywords: string[];
+  publicationUrl?: string;
+  pdfUrl?: string;
+  doiUrl?: string;
+  preprintUrl?: string;
+  slidesUrl?: string;
   abstract?: string;
   bibtex?: string;
+  ris?: string;
+  publishedDate?: Date | null;
   status: DocumentStatus;
   deleted: boolean;
 }
