@@ -120,7 +120,7 @@ const publicationSchema = new Schema<PublicationDocument>(
     },
     abstract: {
       type: String,
-      trim: safeTrim,
+      set: safeTrim,
       maxlength: [MAX_ABSTRACT_LENGTH, `Abstract cannot exceed ${MAX_ABSTRACT_LENGTH} characters.`]
     },
     bibtex: {
