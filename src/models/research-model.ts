@@ -50,7 +50,6 @@ const researchSchema = new Schema<ResearchDocument>(
     },
     completedYear: {
       type: Number,
-      required: [true, 'Completed year is required.'],
       min: [MIN_YEAR, `Completed year must be a valid year greater than ${MIN_YEAR}`],
       max: [MAX_YEAR, `Completed year must be a valid year less than ${MAX_YEAR}`]
     },
