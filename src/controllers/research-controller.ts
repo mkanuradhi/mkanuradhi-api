@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateResearchDto } from "../dtos/research-dto";
+import { CreateResearchDto, UpdateResearchDto } from "../dtos/research-dto";
 import * as researchService from "../services/research-service";
 import Research from "../interfaces/i-research";
 import PaginatedResult from "../interfaces/i-paginated-result";
@@ -73,4 +73,53 @@ export const getResearchById = asyncErrorHandler( async (req: Request, res: Resp
   const researchId = req.params.id;
   const research = await researchService.getResearchById(researchId);
   res.status(200).json(research);
+});
+
+export const updateResearch = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const researchId = req.params.id;
+
+  const {
+    type,
+    degree,
+    completedYear,
+    title,
+    location,
+    abstract,
+    supervisors,
+    keywords,
+    thesisUrl,
+    githubUrl,
+    slidesUrl,
+    studentName,
+    supervisionStatus,
+    registrationNumber,
+    startedDate,
+    completedDate,
+    isMine,
+    v
+  } = req.body;
+
+  const researchDto: UpdateResearchDto = {
+    type,
+    degree,
+    completedYear,
+    title,
+    location,
+    abstract,
+    supervisors,
+    keywords,
+    thesisUrl,
+    githubUrl,
+    slidesUrl,
+    studentName,
+    supervisionStatus,
+    registrationNumber,
+    startedDate,
+    completedDate,
+    isMine,
+    v
+  };
+  
+  const updatedResearch = await researchService.updateResearch(researchId, researchDto);
+  res.status(200).json(updatedResearch);
 });
