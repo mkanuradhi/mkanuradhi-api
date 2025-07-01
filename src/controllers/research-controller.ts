@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateResearchDto, UpdateResearchDto } from "../dtos/research-dto";
+import { ActivationResearchDto, CreateResearchDto, UpdateResearchDto } from "../dtos/research-dto";
 import * as researchService from "../services/research-service";
 import Research from "../interfaces/i-research";
 import PaginatedResult from "../interfaces/i-paginated-result";
@@ -121,5 +121,19 @@ export const updateResearch = asyncErrorHandler( async (req: Request, res: Respo
   };
   
   const updatedResearch = await researchService.updateResearch(researchId, researchDto);
+  res.status(200).json(updatedResearch);
+});
+
+export const toggleResearchActivation = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const researchId = req.params.id;
+  const {
+    status,
+  } = req.body;
+
+  const researchDto: ActivationResearchDto = {
+    status,
+  };
+  
+  const updatedResearch = await researchService.toggleResearchActivation(researchId, researchDto);
   res.status(200).json(updatedResearch);
 });

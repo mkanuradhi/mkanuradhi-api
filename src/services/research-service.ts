@@ -1,4 +1,4 @@
-import { CreateResearchDto, UpdateResearchDto } from "../dtos/research-dto";
+import { ActivationResearchDto, CreateResearchDto, UpdateResearchDto } from "../dtos/research-dto";
 import AppError from "../errors/app-error";
 import Research from "../interfaces/i-research";
 import ResearchModel from "../models/research-model";
@@ -188,5 +188,33 @@ export const updateResearch = async (researchId: string, researchDto: UpdateRese
   }
 
   logger.info(`Research updated for ID: ${researchId}`);
+  return mapDocumentToResearch(updatedResearchDoc);
+}
+
+export const toggleResearchActivation = async (researchId: string, researchDto: ActivationResearchDto): Promise<Research> => {
+  const existingResearchDoc = await ResearchModel.findOne({
+    _id: researchId,
+    deleted: false,
+  });
+  if (!existingResearchDoc) {
+      throw new AppError(`Cannot find the research with ID: ${researchId}. Unable to update the research.`, 400);
+  }
+
+  const updatedResearchDoc = await ResearchModel.findByIdAndUpdate(
+    researchId,
+    { 
+      $set: {
+        status: researchDto.status,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true, runValidators: true }
+  );
+
+  if (!updatedResearchDoc) {
+      throw new AppError('Failed to update research document.', 500);
+  }
+
+  logger.info(`Research updated for status for ID: ${researchId}`);
   return mapDocumentToResearch(updatedResearchDoc);
 }
