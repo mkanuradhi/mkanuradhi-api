@@ -5,6 +5,7 @@ import ResearchModel from "../models/research-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToResearches, mapDocumentToResearch } from "../mappers/research-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
+import { v4 as uuidv4 } from 'uuid';
 
 export const createResearch = async (researchDto: CreateResearchDto): Promise<Research> => {
   const session = await ResearchModel.startSession();
@@ -217,4 +218,32 @@ export const toggleResearchActivation = async (researchId: string, researchDto: 
 
   logger.info(`Research updated for status for ID: ${researchId}`);
   return mapDocumentToResearch(updatedResearchDoc);
+}
+
+export const deleteResearch = async (researchId: string): Promise<void> => {
+  const researchDoc = await ResearchModel.findOne({ 
+    _id: researchId,
+    deleted: false,
+  });
+  if (!researchDoc) {
+    throw new AppError(`Cannot find the research with ID '${researchId}' or it is already deleted.`, 404);
+  }
+
+  const deletedTitle = `${researchDoc.title}-DELETED-${uuidv4()}`;
+
+  const updatedResearchDoc = await ResearchModel.findByIdAndUpdate(
+    researchId,
+    {
+      $set: {
+        title: deletedTitle,
+        deleted: true,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedResearchDoc) {
+    throw new AppError('Failed to delete research document.', 500);
+  }
+  logger.info(`Research deleted for id: ${researchId}`);
 }

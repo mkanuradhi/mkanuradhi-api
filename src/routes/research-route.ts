@@ -19,4 +19,7 @@ researchRoute.put('/:id', validateObjectId, researchController.updateResearch);
 // Activate or deactivate a research
 researchRoute.patch('/:id/toggle', validateObjectId, researchController.toggleResearchActivation);
 
+// Delete a research
+researchRoute.delete('/:id', validateObjectId, researchController.deleteResearch);
+
 export default researchRoute;

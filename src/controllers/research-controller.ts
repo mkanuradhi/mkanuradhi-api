@@ -137,3 +137,9 @@ export const toggleResearchActivation = asyncErrorHandler( async (req: Request, 
   const updatedResearch = await researchService.toggleResearchActivation(researchId, researchDto);
   res.status(200).json(updatedResearch);
 });
+
+export const deleteResearch = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const researchId = req.params.id;
+  await researchService.deleteResearch(researchId);
+  res.status(204).json();
+});
