@@ -9,4 +9,7 @@ researchRoute.post('/', researchController.createResearch);
 // Fetch all research
 researchRoute.get('/', researchController.getResearches);
 
+// Get research by id
+researchRoute.get('/:id', researchController.getResearchById);
+
 export default researchRoute;

@@ -68,3 +68,9 @@ export const getResearches = asyncErrorHandler( async (req: Request, res: Respon
 
   res.status(200).json(result);
 });
+
+export const getResearchById = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const researchId = req.params.id;
+  const research = await researchService.getResearchById(researchId);
+  res.status(200).json(research);
+});

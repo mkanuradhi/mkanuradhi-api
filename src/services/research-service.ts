@@ -97,3 +97,39 @@ export const getResearches = async (page: number, size: number): Promise<{ items
     totalCount
   };
 }
+
+export const getResearchById = async (researchId: string): Promise<Research> => {
+  const researchDoc = await ResearchModel.findById(
+    researchId, 
+    { 
+      type: 1,
+      degree: 1,
+      completedYear: 1,
+      title: 1,
+      location: 1,
+      abstract: 1,
+      supervisors: 1,
+      keywords: 1,
+      thesisUrl: 1,
+      githubUrl: 1,
+      slidesUrl: 1,
+      studentName: 1,
+      supervisionStatus: 1,
+      registrationNumber: 1,
+      startedDate: 1,
+      completedDate: 1,
+      isMine: 1,
+      status: 1,
+      deleted: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      __v: 1
+    }
+  );
+
+  if (researchDoc) {
+    return mapDocumentToResearch(researchDoc);
+  } else {
+    throw new AppError(`A research with id: ${researchId} cannot be found`, 400);
+  }
+}
