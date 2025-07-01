@@ -6,4 +6,7 @@ const researchRoute = express.Router();
 // Add a new research
 researchRoute.post('/', researchController.createResearch);
 
+// Fetch all research
+researchRoute.get('/', researchController.getResearches);
+
 export default researchRoute;
