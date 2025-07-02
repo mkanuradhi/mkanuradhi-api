@@ -2,12 +2,14 @@ import DocumentStatus from "../enums/document-status";
 import { VersionDto } from "./base-dto";
 import DegreeType from "../enums/degree-type";
 import SupervisionStatus from "../enums/supervision-status";
+import SupervisorRole from "../enums/supervisor-role";
 
 interface ResearchSupervisorDto {
   name: string;
   affiliation?: string;
   profileUrl?: string;
   isMe?: boolean;
+  role?: SupervisorRole;
 }
 
 export interface ActivationResearchDto {

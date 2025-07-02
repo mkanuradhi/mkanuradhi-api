@@ -4,6 +4,7 @@ import AppError from "../errors/app-error";
 import ResearchDocument from "../documents/research-document";
 import DegreeType from "../enums/degree-type";
 import SupervisionStatus from "../enums/supervision-status";
+import SupervisorRole from "../enums/supervisor-role";
 
 const MIN_YEAR = 2010;
 const MAX_YEAR = 2040;
@@ -27,6 +28,14 @@ const researchSupervisorSchema = new Schema(
     affiliation: { type: String, required: false, trim: true },
     profileUrl: { type: String, required: false, trim: true },
     isMe: { type: Boolean, required: true },
+    role: {
+      type: String,
+      enum: {
+        values: Object.values(SupervisorRole),
+        message: 'Supervisor role `{VALUE}` is not valid.',
+      },
+      required: true
+    },
   },
   { _id: false }
 );
