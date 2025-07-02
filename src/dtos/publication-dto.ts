@@ -9,6 +9,7 @@ interface PublicationAuthorDto {
   profileUrl?: string;
   isMe?: boolean;
   corresponding?: boolean;
+	equallyContributed?: boolean;
 }
 
 export interface ActivationPublicationDto {

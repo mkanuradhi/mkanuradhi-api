@@ -9,6 +9,7 @@ interface PublicationAuthor {
   profileUrl: string;
   isMe: boolean;
   corresponding: boolean;
+  equallyContributed: boolean;
 }
 
 interface PublicationDocument extends BaseDocument {

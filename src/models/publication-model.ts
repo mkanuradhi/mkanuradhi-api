@@ -29,6 +29,7 @@ const publicationAuthorSchema = new Schema(
     profileUrl: { type: String, required: false, trim: true },
     isMe: { type: Boolean, required: true },
     corresponding: { type: Boolean, default: false },
+    equallyContributed: { type: Boolean, default: false },
   },
   { _id: false }
 );
