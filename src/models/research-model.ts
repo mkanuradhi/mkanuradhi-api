@@ -59,6 +59,12 @@ const researchSchema = new Schema<ResearchDocument>(
     },
     completedYear: {
       type: Number,
+      default: null,
+      set: (value: number | string | undefined) => {
+        if (value === '' || value === undefined || value === null) return null;
+        const num = typeof value === 'string' ? parseInt(value) : value;
+        return isNaN(num) ? null : num;
+      },
       min: [MIN_YEAR, `Completed year must be a valid year greater than ${MIN_YEAR}`],
       max: [MAX_YEAR, `Completed year must be a valid year less than ${MAX_YEAR}`]
     },
