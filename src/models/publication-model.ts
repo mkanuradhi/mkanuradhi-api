@@ -29,6 +29,7 @@ const publicationAuthorSchema = new Schema(
     profileUrl: { type: String, required: false, trim: true },
     isMe: { type: Boolean, required: true },
     corresponding: { type: Boolean, default: false },
+    equallyContributed: { type: Boolean, default: false },
   },
   { _id: false }
 );
@@ -120,7 +121,7 @@ const publicationSchema = new Schema<PublicationDocument>(
     },
     abstract: {
       type: String,
-      trim: safeTrim,
+      set: safeTrim,
       maxlength: [MAX_ABSTRACT_LENGTH, `Abstract cannot exceed ${MAX_ABSTRACT_LENGTH} characters.`]
     },
     bibtex: {

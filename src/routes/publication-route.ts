@@ -1,11 +1,13 @@
 import express from 'express';
 import * as publicationController from '../controllers/publication-controller';
 import validateObjectId from '../middleware/validate-objectid';
+import requireAuthenticated from '../middleware/require-authenticated';
+import Role from '../enums/role';
 
 const publicationRoute = express.Router();
 
 // Add a new publication
-publicationRoute.post('/', publicationController.createPublication);
+publicationRoute.post('/', requireAuthenticated([Role.ADMIN]), publicationController.createPublication);
 
 // Fetch all publications
 publicationRoute.get('/', publicationController.getPublications);
@@ -17,12 +19,12 @@ publicationRoute.get('/grouped', publicationController.getGroupedPublications);
 publicationRoute.get('/:id', publicationController.getPublicationById);
 
 // Update publication
-publicationRoute.put('/:id', validateObjectId, publicationController.updatePublication);
+publicationRoute.put('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, publicationController.updatePublication);
 
 // Activate or deactivate a publication
-publicationRoute.patch('/:id/toggle', validateObjectId, publicationController.togglePublicationActivation);
+publicationRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, publicationController.togglePublicationActivation);
 
 // Delete a publication
-publicationRoute.delete('/:id', validateObjectId, publicationController.deletePublication);
+publicationRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, publicationController.deletePublication);
 
 export default publicationRoute;
