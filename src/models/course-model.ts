@@ -3,6 +3,7 @@ import CourseDocument from "../documents/course-document";
 import { sanitizeString } from "../utils/common-util";
 import DocumentStatus from "../enums/document-status";
 import DeliveryMode from "../enums/delivery-mode";
+import DegreeType from "../enums/degree-type";
 
 const MAX_CODE_LENGTH = 20;
 const MAX_TITLE_LENGTH = 150;
@@ -26,6 +27,14 @@ const courseSchema = new Schema<CourseDocument>(
       required: [true, "Year is required."],
       min: [2010, "Year must be a valid four-digit number."],
       max: [2050, "Year must be a valid year."]
+    },
+    degreeType: {
+      type: String,
+      enum: {
+        values: Object.values(DegreeType),
+        message: 'Degree type `{VALUE}` is not valid.',
+      },
+      required: [true, 'Degree type is required.']
     },
     code: {
       type: String,

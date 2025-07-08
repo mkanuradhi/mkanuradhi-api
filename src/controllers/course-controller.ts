@@ -11,6 +11,7 @@ import { parseLangQueryParam, parseSearchParams } from "../utils/common-util";
 export const createCourseEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
     year,
+    degreeType,
     code,
     credits,
     mode,
@@ -23,6 +24,7 @@ export const createCourseEn = asyncErrorHandler( async (req: Request, res: Respo
 
   const courseEnDto: CreateCourseEnDto = {
     year,
+    degreeType,
     code,
     credits,
     mode,
@@ -73,6 +75,7 @@ export const updateCourseEn = asyncErrorHandler( async (req: Request, res: Respo
   const courseId = req.params.id;
   const {
     year,
+    degreeType,
     code,
     credits,
     mode,
@@ -86,6 +89,7 @@ export const updateCourseEn = asyncErrorHandler( async (req: Request, res: Respo
 
   const courseDto: UpdateCourseEnDto = {
     year,
+    degreeType,
     code,
     credits,
     mode,
