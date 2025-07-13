@@ -289,3 +289,76 @@ export const deletePublication = async (publicationId: string): Promise<void> =>
   }
   logger.info(`Publication deleted for id: ${publicationId}`);
 }
+
+export const getYearlyPublications = async (): Promise<{ year: string; count: number }[]> => {
+  const results = await PublicationModel.aggregate([
+    {
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        year: { $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: '$year',
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        year: { $toString: '$_id' },
+        count: 1,
+        _id: 0,
+      },
+    },
+    { $sort: { year: 1 } },
+  ]);
+
+  return results;
+};
+
+export const getYearlyPublicationsByType = async (): Promise<{ year: string; count: number }[]> => {
+  const rawResults = await PublicationModel.aggregate([
+    {
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        year: { $ne: null },
+        type: { $ne: null }
+      }
+    },
+    {
+      $group: {
+        _id: { year: '$year', type: '$type' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id.year',
+        types: {
+          $push: {
+            k: '$_id.type',
+            v: '$count'
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        year: { $toString: '$_id' },
+        data: { $arrayToObject: '$types' }
+      }
+    },
+    {
+      $replaceRoot: {
+        newRoot: { $mergeObjects: [{ year: '$year' }, '$data'] }
+      }
+    },
+    { $sort: { year: 1 } }
+  ]);
+
+  return rawResults;
+};

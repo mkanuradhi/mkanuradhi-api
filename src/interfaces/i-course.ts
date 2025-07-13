@@ -1,3 +1,4 @@
+import DegreeType from "../enums/degree-type";
 import DeliveryMode from "../enums/delivery-mode";
 import DocumentStatus from "../enums/document-status";
 
@@ -9,6 +10,7 @@ interface CourseQuiz {
 
 interface Course {
   id: string;
+  degreeType: DegreeType;
   year: number;
   code: string;
   credits: number;

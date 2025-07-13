@@ -27,4 +27,10 @@ publicationRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), valida
 // Delete a publication
 publicationRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, publicationController.deletePublication);
 
+// Get publications by year
+publicationRoute.get('/stats/yearly', publicationController.getYearlyPublications);
+
+// Get publications by yearly by type
+publicationRoute.get('/stats/yearly-by-type', publicationController.getYearlyPublicationsByType);
+
 export default publicationRoute;

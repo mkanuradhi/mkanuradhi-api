@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import BaseDocument from "./base-document";
 import DocumentStatus from "../enums/document-status";
 import DeliveryMode from "../enums/delivery-mode";
+import DegreeType from "../enums/degree-type";
 
 interface CourseQuiz {
   id: Types.ObjectId | string;
@@ -11,6 +12,7 @@ interface CourseQuiz {
 
 interface CourseDocument extends BaseDocument {
   year: number;
+  degreeType: DegreeType;
   code: string;
   credits: number;
   mode: DeliveryMode;

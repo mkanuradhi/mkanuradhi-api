@@ -11,10 +11,12 @@ import { SearchParamsDto } from "../dtos/search-params-dto";
 import CourseView from "../interfaces/i-course-view";
 import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
 import CourseDocument from "../documents/course-document";
+import DegreeType from "../enums/degree-type";
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
     year: courseDto.year,
+    degreeType: courseDto.degreeType,
     code: courseDto.code,
     titleEn: courseDto.titleEn.trim(),
     locationEn: courseDto.locationEn.trim(),
@@ -26,6 +28,7 @@ export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Cour
 
   const courseDoc = await CourseModel.create({
     year: courseDto.year,
+    degreeType: courseDto.degreeType,
     code: courseDto.code,
     credits: courseDto.credits,
     mode: courseDto.mode,
@@ -49,6 +52,7 @@ export const getCourses = async (page: number, size: number): Promise<{ items: C
       { deleted: false  }, 
       {
         year: 1,
+        degreeType: 1,
         code: 1,
         credits: 1,
         mode: 1,
@@ -76,6 +80,7 @@ export const getCourse = async (courseId: string): Promise<Course> => {
     courseId, 
     { 
       year: 1,
+      degreeType: 1,
       code: 1,
       credits: 1,
       mode: 1,
@@ -107,6 +112,7 @@ export const getCourse = async (courseId: string): Promise<Course> => {
 export const getCourseByPath = async (lang: string, coursePath: string): Promise<CourseView> => {
   const commonFields = {
     year: 1,
+    DegreeType: 1,
     code: 1,
     credits: 1,
     mode: 1,
@@ -156,6 +162,7 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
   const existingCourseDocsWithTitle = await CourseModel.find({
     _id: { $ne: courseId },
     year: courseDto.year,
+    degreeType: courseDto.degreeType,
     code: courseDto.code,
     titleEn: courseDto.titleEn.trim(),
     locationEn: courseDto.locationEn.trim(),
@@ -170,6 +177,7 @@ export const updateCourseEn = async (courseId: string, courseDto: UpdateCourseEn
     { 
       $set: {
         year: courseDto.year,
+        degreeType: courseDto.degreeType,
         code: courseDto.code,
         credits: courseDto.credits,
         mode: courseDto.mode,
