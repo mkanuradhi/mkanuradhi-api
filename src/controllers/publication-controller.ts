@@ -149,3 +149,13 @@ export const deletePublication = asyncErrorHandler( async (req: Request, res: Re
   await publicationService.deletePublication(publicationId);
   res.status(204).json();
 });
+
+export const getYearlyPublications = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const result = await publicationService.getYearlyPublications();
+  res.status(200).json(result);
+});
+
+export const getYearlyPublicationsByType = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const result = await publicationService.getYearlyPublicationsByType();
+  res.status(200).json(result);
+});
