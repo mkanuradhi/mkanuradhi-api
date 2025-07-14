@@ -7,6 +7,7 @@ import { mapDocumentsToPublications, mapDocumentToPublication } from "../mappers
 import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
+import PublicationType from "../enums/publication-type";
 
 
 export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
@@ -375,4 +376,33 @@ export const getYearlyPublicationsByType = async (): Promise<Record<string, numb
   ]);
 
   return results;
+};
+
+export const getPublicationsByType = async (): Promise<{ type: PublicationType; count: number }[]> => {
+  const raw = await PublicationModel.aggregate([
+    {
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        type: { $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: '$type',
+        count: { $sum: 1 },
+      },
+    },
+    { $project: { _id: 0, type: '$_id', count: 1 } },
+  ]);
+
+  const map = new Map<string, number>(
+    raw.map(({ type, count }) => [type as string, count]),
+  );
+
+  /* ensure EVERY enum value appears at least with count 0 */
+  return (Object.values(PublicationType) as PublicationType[]).map((type) => ({
+    type,
+    count: map.get(type) ?? 0,
+  }));
 };

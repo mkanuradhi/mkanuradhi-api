@@ -159,3 +159,8 @@ export const getYearlyPublicationsByType = asyncErrorHandler( async (req: Reques
   const result = await publicationService.getYearlyPublicationsByType();
   res.status(200).json(result);
 });
+
+export const getPublicationsByType = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const result = await publicationService.getPublicationsByType();
+  res.status(200).json(result);
+});
