@@ -7,6 +7,8 @@ import { mapDocumentsToPublications, mapDocumentToPublication } from "../mappers
 import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
+import PublicationType from "../enums/publication-type";
+import PublicationStatus from "../enums/publication-status";
 
 
 export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
@@ -296,20 +298,79 @@ export const getYearlyPublications = async (): Promise<{ year: string; count: nu
       $match: {
         deleted: false,
         status: DocumentStatus.ACTIVE,
-        year: { $ne: null },
+        year: { $type: 'number' },
       },
     },
     {
       $group: {
-        _id: '$year',
+        _id: '$year', // <- numeric year
         count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+    {
+      $densify: {
+        field: '_id',
+        range: { step: 1, bounds: 'full' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        year: { $toString: '$_id' },
+        count: { $ifNull: ['$count', 0] },
+      },
+    },
+  ]);
+
+  return results;
+};
+
+export const getYearlyPublicationsByType = async (): Promise<Record<string, number | string>[]> => {
+  const results = await PublicationModel.aggregate([
+    {
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        year: { $type: 'number' },
+        type: { $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: { year: '$year', type: '$type' },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { '_id.type': 1, '_id.year': 1 } },
+    {
+      $densify: {
+        field: '_id.year',
+        partitionByFields: ['_id.type'],
+        range: { step: 1, bounds: 'full' },
+      },
+    },
+    {
+      $set: { count: { $ifNull: ['$count', 0] } },
+    },
+    {
+      $group: {
+        _id: '$_id.year',
+        pairs: {
+          $push: { k: '$_id.type', v: '$count' },
+        },
       },
     },
     {
       $project: {
-        year: { $toString: '$_id' },
-        count: 1,
         _id: 0,
+        year: { $toString: '$_id' },
+        data: { $arrayToObject: '$pairs' },
+      },
+    },
+    {
+      $replaceRoot: {
+        newRoot: { $mergeObjects: [{ year: '$year' }, '$data'] },
       },
     },
     { $sort: { year: 1 } },
@@ -318,47 +379,59 @@ export const getYearlyPublications = async (): Promise<{ year: string; count: nu
   return results;
 };
 
-export const getYearlyPublicationsByType = async (): Promise<{ year: string; count: number }[]> => {
-  const rawResults = await PublicationModel.aggregate([
+export const getPublicationsByType = async (): Promise<{ type: PublicationType; count: number }[]> => {
+  const raw = await PublicationModel.aggregate([
     {
       $match: {
         deleted: false,
         status: DocumentStatus.ACTIVE,
-        year: { $ne: null },
-        type: { $ne: null }
-      }
+        type: { $ne: null },
+      },
     },
     {
       $group: {
-        _id: { year: '$year', type: '$type' },
-        count: { $sum: 1 }
-      }
+        _id: '$type',
+        count: { $sum: 1 },
+      },
     },
+    { $project: { _id: 0, type: '$_id', count: 1 } },
+  ]);
+
+  const map = new Map<string, number>(
+    raw.map(({ type, count }) => [type as string, count]),
+  );
+
+  /* ensure EVERY enum value appears at least with count 0 */
+  return (Object.values(PublicationType) as PublicationType[]).map((type) => ({
+    type,
+    count: map.get(type) ?? 0,
+  }));
+};
+
+export const getRecentPublications = async (limit: number = 5): Promise<Publication[]> => {
+  const results = await PublicationModel.aggregate([
     {
-      $group: {
-        _id: '$_id.year',
-        types: {
-          $push: {
-            k: '$_id.type',
-            v: '$count'
-          }
-        }
-      }
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        title: { $type: 'string' },
+        year: { $type: 'number' },
+        type: { $ne: null },
+        publicationStatus: PublicationStatus.PUBLISHED,
+      },
     },
+    { $sort: { year: -1, updatedAt: -1 } },
+    { $limit: limit },
     {
       $project: {
         _id: 0,
-        year: { $toString: '$_id' },
-        data: { $arrayToObject: '$types' }
-      }
+        type: 1,
+        year: 1,
+        title: 1,
+        publicationUrl: 1,
+      },
     },
-    {
-      $replaceRoot: {
-        newRoot: { $mergeObjects: [{ year: '$year' }, '$data'] }
-      }
-    },
-    { $sort: { year: 1 } }
   ]);
 
-  return rawResults;
+  return results;
 };
