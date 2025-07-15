@@ -164,3 +164,9 @@ export const getPublicationsByType = asyncErrorHandler( async (req: Request, res
   const result = await publicationService.getPublicationsByType();
   res.status(200).json(result);
 });
+
+export const getRecentPublications = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 5, 30);
+  const result = await publicationService.getRecentPublications(limit);
+  res.status(200).json(result);
+});

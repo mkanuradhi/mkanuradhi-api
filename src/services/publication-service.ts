@@ -8,6 +8,7 @@ import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import PublicationType from "../enums/publication-type";
+import PublicationStatus from "../enums/publication-status";
 
 
 export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
@@ -405,4 +406,32 @@ export const getPublicationsByType = async (): Promise<{ type: PublicationType; 
     type,
     count: map.get(type) ?? 0,
   }));
+};
+
+export const getRecentPublications = async (limit: number = 5): Promise<Publication[]> => {
+  const results = await PublicationModel.aggregate([
+    {
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        title: { $type: 'string' },
+        year: { $type: 'number' },
+        type: { $ne: null },
+        publicationStatus: PublicationStatus.PUBLISHED,
+      },
+    },
+    { $sort: { year: -1, updatedAt: -1 } },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 0,
+        type: 1,
+        year: 1,
+        title: 1,
+        publicationUrl: 1,
+      },
+    },
+  ]);
+
+  return results;
 };

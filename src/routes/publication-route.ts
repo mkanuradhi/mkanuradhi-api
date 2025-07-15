@@ -36,4 +36,7 @@ publicationRoute.get('/stats/yearly-by-type', publicationController.getYearlyPub
 // Get publications by type
 publicationRoute.get('/stats/by-type', publicationController.getPublicationsByType);
 
+// Get recent publications
+publicationRoute.get('/stats/recent', publicationController.getRecentPublications);
+
 export default publicationRoute;
