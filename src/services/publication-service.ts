@@ -299,6 +299,7 @@ export const getYearlyPublications = async (): Promise<{ year: string; count: nu
         deleted: false,
         status: DocumentStatus.ACTIVE,
         year: { $type: 'number' },
+        type: { $ne: null },
       },
     },
     {
@@ -350,15 +351,17 @@ export const getYearlyPublicationsByType = async (): Promise<Record<string, numb
         range: { step: 1, bounds: 'full' },
       },
     },
+    { $set: { count: { $ifNull: ['$count', 0] } } },
     {
-      $set: { count: { $ifNull: ['$count', 0] } },
+      $group: {
+        _id: { year: '$_id.year', type: '$_id.type' },
+        count: { $max: '$count' },      //  real count wins over 0
+      },
     },
     {
       $group: {
         _id: '$_id.year',
-        pairs: {
-          $push: { k: '$_id.type', v: '$count' },
-        },
+        pairs: { $push: { k: '$_id.type', v: '$count' } },
       },
     },
     {
@@ -369,9 +372,7 @@ export const getYearlyPublicationsByType = async (): Promise<Record<string, numb
       },
     },
     {
-      $replaceRoot: {
-        newRoot: { $mergeObjects: [{ year: '$year' }, '$data'] },
-      },
+      $replaceRoot: { newRoot: { $mergeObjects: [{ year: '$year' }, '$data'] } },
     },
     { $sort: { year: 1 } },
   ]);
