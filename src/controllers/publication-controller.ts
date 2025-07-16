@@ -170,3 +170,9 @@ export const getRecentPublications = asyncErrorHandler( async (req: Request, res
   const result = await publicationService.getRecentPublications(limit);
   res.status(200).json(result);
 });
+
+export const getKeywordFrequencies = asyncErrorHandler( async (_req: Request, res: Response, next: NextFunction) => {
+    const result = await publicationService.getKeywordFrequencies();
+    res.status(200).json(result);
+  }
+);
