@@ -39,4 +39,7 @@ publicationRoute.get('/stats/by-type', publicationController.getPublicationsByTy
 // Get recent publications
 publicationRoute.get('/stats/recent', publicationController.getRecentPublications);
 
+// Get keyword frequencies
+publicationRoute.get('/stats/keywords', publicationController.getKeywordFrequencies);
+
 export default publicationRoute;

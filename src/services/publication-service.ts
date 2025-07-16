@@ -436,3 +436,40 @@ export const getRecentPublications = async (limit: number = 5): Promise<Publicat
 
   return results;
 };
+
+export const getKeywordFrequencies = async (): Promise<{ keyword: string; count: number }[]> => {
+  const results = await PublicationModel.aggregate([
+    {
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        keywords: { $type: 'array', $ne: [] },
+      },
+    },
+    { $unwind: '$keywords' },
+    {
+      $set: {
+        keyword: {
+          $trim: { input: { $toLower: '$keywords' } },
+        },
+      },
+    },
+    { $match: { keyword: { $ne: '' } } },
+    {
+      $group: {
+        _id: '$keyword',
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { count: -1 } },
+    {
+      $project: {
+        _id: 0,
+        keyword: '$_id',
+        count: 1,
+      },
+    },
+  ]);
+
+  return results; // [{ keyword:"firefly algorithm", count:42 }, …]
+};
