@@ -1,5 +1,6 @@
 import logger from "../config/logger-config";
 import Publication from "../interfaces/i-publication";
+import { LabelValueStat, YearlyGroupStat } from "../interfaces/i-stat";
 import { ActivationPublicationDto, CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
 import PublicationModel from "../models/publication-model";
 import AppError from "../errors/app-error";
@@ -292,7 +293,7 @@ export const deletePublication = async (publicationId: string): Promise<void> =>
   logger.info(`Publication deleted for id: ${publicationId}`);
 }
 
-export const getYearlyPublications = async (): Promise<{ year: string; count: number }[]> => {
+export const getYearlyPublications = async (): Promise<LabelValueStat[]> => {
   const results = await PublicationModel.aggregate([
     {
       $match: {
@@ -318,8 +319,8 @@ export const getYearlyPublications = async (): Promise<{ year: string; count: nu
     {
       $project: {
         _id: 0,
-        year: { $toString: '$_id' },
-        count: { $ifNull: ['$count', 0] },
+        label: { $toString: '$_id' },
+        value: { $ifNull: ['$count', 0] },
       },
     },
   ]);
@@ -327,8 +328,8 @@ export const getYearlyPublications = async (): Promise<{ year: string; count: nu
   return results;
 };
 
-export const getYearlyPublicationsByType = async (): Promise<Record<string, number | string>[]> => {
-  const results = await PublicationModel.aggregate([
+export const getYearlyPublicationsByType = async (): Promise<YearlyGroupStat[]> => {
+  const results = await PublicationModel.aggregate<YearlyGroupStat>([
     {
       $match: {
         deleted: false,
@@ -380,7 +381,7 @@ export const getYearlyPublicationsByType = async (): Promise<Record<string, numb
   return results;
 };
 
-export const getPublicationsByType = async (): Promise<{ type: PublicationType; count: number }[]> => {
+export const getPublicationsByType = async (): Promise<LabelValueStat[]> => {
   const raw = await PublicationModel.aggregate([
     {
       $match: {
@@ -392,20 +393,20 @@ export const getPublicationsByType = async (): Promise<{ type: PublicationType; 
     {
       $group: {
         _id: '$type',
-        count: { $sum: 1 },
+        value: { $sum: 1 },
       },
     },
-    { $project: { _id: 0, type: '$_id', count: 1 } },
+    { $project: { _id: 0, label: '$_id', value: 1 } },
   ]);
 
   const map = new Map<string, number>(
-    raw.map(({ type, count }) => [type as string, count]),
+    raw.map(({ label, value }) => [label, value]),
   );
 
   /* ensure EVERY enum value appears at least with count 0 */
   return (Object.values(PublicationType) as PublicationType[]).map((type) => ({
-    type,
-    count: map.get(type) ?? 0,
+    label: type,
+    value: map.get(type) ?? 0,
   }));
 };
 
@@ -437,7 +438,7 @@ export const getRecentPublications = async (limit: number = 5): Promise<Publicat
   return results;
 };
 
-export const getKeywordFrequencies = async (): Promise<{ keyword: string; count: number }[]> => {
+export const getKeywordFrequencies = async (): Promise<LabelValueStat[]> => {
   const results = await PublicationModel.aggregate([
     {
       $match: {
@@ -458,18 +459,18 @@ export const getKeywordFrequencies = async (): Promise<{ keyword: string; count:
     {
       $group: {
         _id: '$keyword',
-        count: { $sum: 1 },
+        value: { $sum: 1 },
       },
     },
-    { $sort: { count: -1 } },
+    { $sort: { value: -1 } },
     {
       $project: {
         _id: 0,
-        keyword: '$_id',
-        count: 1,
+        label: '$_id',
+        value: 1,
       },
     },
   ]);
 
-  return results; // [{ keyword:"firefly algorithm", count:42 }, …]
+  return results; // [{ label:"firefly algorithm", value:42 }, …]
 };
