@@ -42,4 +42,7 @@ publicationRoute.get('/stats/recent', publicationController.getRecentPublication
 // Get keyword frequencies
 publicationRoute.get('/stats/keywords', publicationController.getKeywordFrequencies);
 
+// Get publication summary
+publicationRoute.get('/stats/summary', publicationController.getPublicationSummary);
+
 export default publicationRoute;

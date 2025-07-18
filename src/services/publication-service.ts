@@ -1,6 +1,6 @@
 import logger from "../config/logger-config";
 import Publication from "../interfaces/i-publication";
-import { LabelValueStat, YearlyGroupStat } from "../interfaces/i-stat";
+import { LabelValueStat, SummaryStat, YearlyGroupStat } from "../interfaces/i-stat";
 import { ActivationPublicationDto, CreatePublicationDto, UpdatePublicationDto } from "../dtos/publication-dto";
 import PublicationModel from "../models/publication-model";
 import AppError from "../errors/app-error";
@@ -473,4 +473,70 @@ export const getKeywordFrequencies = async (): Promise<LabelValueStat[]> => {
   ]);
 
   return results; // [{ label:"firefly algorithm", value:42 }, …]
+};
+
+export const getPublicationSummary = async (): Promise<SummaryStat> => {
+  const matchStage = {
+    deleted: false,
+    status : DocumentStatus.ACTIVE,
+  };
+
+  const [result] = await PublicationModel.aggregate<{
+    total:               { value: number }[];
+    byType:              LabelValueStat[];
+    byPublicationStatus: LabelValueStat[];
+  }>([
+    { $match: matchStage },
+
+    {
+      $facet: {
+        total: [{ $count: 'value' }],
+
+        byType: [
+          { $group: { _id: '$type', value: { $sum: 1 } } },
+          { $project: { _id: 0, label: '$_id', value: 1 } },
+        ],
+
+        byPublicationStatus: [
+          { $group: { _id: '$publicationStatus', value: { $sum: 1 } } },
+          { $project: { _id: 0, label: '$_id', value: 1 } },
+        ],
+      },
+    },
+  ]);
+
+  // post-process to ensure ALL enum values appear
+
+  // 1. Total
+  const stats: LabelValueStat[] = [
+    { label: 'Total', value: result.total[0]?.value ?? 0 },
+  ];
+
+  // 2.a By-type – guarantee every PublicationType enum key exists
+  const valueByType = new Map(result.byType.map(e => [e.label, e.value]));
+  const byType: LabelValueStat[] = (
+    Object.values(PublicationType) as PublicationType[]
+  ).map(label => ({
+    label,
+    value: valueByType.get(label) ?? 0,
+  }));
+
+  // 2.b By-status – guarantee every PublicationStatus enum key exists
+  const valueByStatus = new Map(
+    result.byPublicationStatus.map(e => [e.label, e.value]),
+  );
+  const byPublicationStatus: LabelValueStat[] = (
+    Object.values(PublicationStatus) as PublicationStatus[]
+  ).map(label => ({
+    label,
+    value: valueByStatus.get(label) ?? 0,
+  }));
+
+  return {
+    stats,
+    grouped: {
+      byType,
+      byPublicationStatus,
+    },
+  };
 };
