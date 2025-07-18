@@ -24,4 +24,7 @@ researchRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateO
 // Delete a research
 researchRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, researchController.deleteResearch);
 
+// Get research summary
+researchRoute.get('/stats/summary', researchController.getResearchSummary);
+
 export default researchRoute;

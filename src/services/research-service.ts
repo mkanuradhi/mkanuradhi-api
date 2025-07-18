@@ -6,6 +6,10 @@ import logger from "../config/logger-config";
 import { mapDocumentsToResearches, mapDocumentToResearch } from "../mappers/research-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
+import { LabelValueStat, SummaryStat } from "../interfaces/i-stat";
+import DocumentStatus from "../enums/document-status";
+import DegreeType from "../enums/degree-type";
+import SupervisionStatus from "../enums/supervision-status";
 
 export const createResearch = async (researchDto: CreateResearchDto): Promise<Research> => {
   const session = await ResearchModel.startSession();
@@ -247,3 +251,69 @@ export const deleteResearch = async (researchId: string): Promise<void> => {
   }
   logger.info(`Research deleted for id: ${researchId}`);
 }
+
+export const getResearchSummary = async (): Promise<SummaryStat> => {
+  const matchStage = {
+    deleted: false,
+    status : DocumentStatus.ACTIVE,
+  };
+
+  const [result] = await ResearchModel.aggregate<{
+    total:               { value: number }[];
+    byType:              LabelValueStat[];
+    bySupervisionStatus: LabelValueStat[];
+  }>([
+    { $match: matchStage },
+
+    {
+      $facet: {
+        total: [{ $count: 'value' }],
+
+        byType: [
+          { $group: { _id: '$type', value: { $sum: 1 } } },
+          { $project: { _id: 0, label: '$_id', value: 1 } },
+        ],
+
+        bySupervisionStatus: [
+          { $group: { _id: '$supervisionStatus', value: { $sum: 1 } } },
+          { $project: { _id: 0, label: '$_id', value: 1 } },
+        ],
+      },
+    },
+  ]);
+
+  // post-process to ensure ALL enum values appear
+
+  // 1. Total
+  const stats: LabelValueStat[] = [
+    { label: 'Total', value: result.total[0]?.value ?? 0 },
+  ];
+
+  // 2.a By-type – guarantee every DegreeType enum key exists
+  const valueByType = new Map(result.byType.map(e => [e.label, e.value]));
+  const byType: LabelValueStat[] = (
+    Object.values(DegreeType) as DegreeType[]
+  ).map(label => ({
+    label,
+    value: valueByType.get(label) ?? 0,
+  }));
+
+  // 2.b By-status – guarantee every SupervisionStatus enum key exists
+  const valueByStatus = new Map(
+    result.bySupervisionStatus.map(e => [e.label, e.value]),
+  );
+  const bySupervisionStatus: LabelValueStat[] = (
+    Object.values(SupervisionStatus) as SupervisionStatus[]
+  ).map(label => ({
+    label,
+    value: valueByStatus.get(label) ?? 0,
+  }));
+
+  return {
+    stats,
+    grouped: {
+      byType,
+      bySupervisionStatus,
+    },
+  };
+};

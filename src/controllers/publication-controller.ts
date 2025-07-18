@@ -176,3 +176,9 @@ export const getKeywordFrequencies = asyncErrorHandler( async (_req: Request, re
     res.status(200).json(result);
   }
 );
+
+export const getPublicationSummary = asyncErrorHandler( async (_req: Request, res: Response, next: NextFunction) => {
+    const result = await publicationService.getPublicationSummary();
+    res.status(200).json(result);
+  }
+);
