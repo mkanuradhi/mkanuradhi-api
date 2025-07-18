@@ -143,3 +143,9 @@ export const deleteResearch = asyncErrorHandler( async (req: Request, res: Respo
   await researchService.deleteResearch(researchId);
   res.status(204).json();
 });
+
+export const getResearchSummary = asyncErrorHandler( async (_req: Request, res: Response, next: NextFunction) => {
+    const result = await researchService.getResearchSummary();
+    res.status(200).json(result);
+  }
+);
