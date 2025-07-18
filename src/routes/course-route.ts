@@ -34,6 +34,9 @@ courseRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObj
 // Delete a course
 courseRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, courseController.deleteCourse);
 
+// Get course summary
+courseRoute.get('/stats/summary', courseController.getCourseSummary);
+
 // ----------------------------------- quizzes -----------------------------------
 
 // Add a new quiz

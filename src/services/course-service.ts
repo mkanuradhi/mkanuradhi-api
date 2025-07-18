@@ -12,6 +12,7 @@ import CourseView from "../interfaces/i-course-view";
 import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
 import CourseDocument from "../documents/course-document";
 import DegreeType from "../enums/degree-type";
+import { LabelValueStat, SummaryStat } from "../interfaces/i-stat";
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
@@ -361,4 +362,54 @@ const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
     case "oldest": return { year: 1 };
     default: return defaultSort;
   }
+};
+
+export const getCourseSummary = async (): Promise<SummaryStat> => {
+  const matchStage = {
+    deleted: false,
+    status : DocumentStatus.ACTIVE,
+  };
+
+  const [result] = await CourseModel.aggregate<{
+    total:               { value: number }[];
+    byType:              LabelValueStat[];
+    byPublicationStatus: LabelValueStat[];
+  }>([
+    { $match: matchStage },
+
+    {
+      $facet: {
+        total: [{ $count: 'value' }],
+
+        byType: [
+          { $group: { _id: '$degreeType', value: { $sum: 1 } } },
+          { $project: { _id: 0, label: '$_id', value: 1 } },
+        ],
+
+      },
+    },
+  ]);
+
+  // post-process to ensure ALL enum values appear
+
+  // 1. Total
+  const stats: LabelValueStat[] = [
+    { label: 'Total', value: result.total[0]?.value ?? 0 },
+  ];
+
+  // 2.a By-type – guarantee every DegreeType enum key exists
+  const valueByType = new Map(result.byType.map(e => [e.label, e.value]));
+  const byType: LabelValueStat[] = (
+    Object.values(DegreeType) as DegreeType[]
+  ).map(label => ({
+    label,
+    value: valueByType.get(label) ?? 0,
+  }));
+
+  return {
+    stats,
+    grouped: {
+      byType,
+    },
+  };
 };
