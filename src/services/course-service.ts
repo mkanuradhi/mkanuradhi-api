@@ -12,7 +12,7 @@ import CourseView from "../interfaces/i-course-view";
 import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
 import CourseDocument from "../documents/course-document";
 import DegreeType from "../enums/degree-type";
-import { LabelValueStat, SummaryStat } from "../interfaces/i-stat";
+import { LabelValueStat, SummaryStat, YearlyGroupStat } from "../interfaces/i-stat";
 
 export const createCourseEn = async (courseDto: CreateCourseEnDto): Promise<Course> => {
   const existingCourseDoc = await CourseModel.findOne({
@@ -412,4 +412,57 @@ export const getCourseSummary = async (): Promise<SummaryStat> => {
       byType,
     },
   };
+};
+
+export const getYearlyCoursesByType = async (): Promise<YearlyGroupStat[]> => {
+  const results = await CourseModel.aggregate<YearlyGroupStat>([
+    {
+      $match: {
+        deleted: false,
+        status: DocumentStatus.ACTIVE,
+        year: { $type: 'number' },
+        degreeType: { $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: { year: '$year', degreeType: '$degreeType' },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { '_id.degreeType': 1, '_id.year': 1 } },
+    {
+      $densify: {
+        field: '_id.year',
+        partitionByFields: ['_id.degreeType'],
+        range: { step: 1, bounds: 'full' },
+      },
+    },
+    { $set: { count: { $ifNull: ['$count', 0] } } },
+    {
+      $group: {
+        _id: { year: '$_id.year', degreeType: '$_id.degreeType' },
+        count: { $max: '$count' },      //  real count wins over 0
+      },
+    },
+    {
+      $group: {
+        _id: '$_id.year',
+        pairs: { $push: { k: '$_id.degreeType', v: '$count' } },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        year: { $toString: '$_id' },
+        data: { $arrayToObject: '$pairs' },
+      },
+    },
+    {
+      $replaceRoot: { newRoot: { $mergeObjects: [{ year: '$year' }, '$data'] } },
+    },
+    { $sort: { year: 1 } },
+  ]);
+
+  return results;
 };

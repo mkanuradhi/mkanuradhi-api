@@ -177,3 +177,8 @@ export const getCourseSummary = asyncErrorHandler( async (_req: Request, res: Re
     res.status(200).json(result);
   }
 );
+
+export const getYearlyCoursesByType = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const result = await courseService.getYearlyCoursesByType();
+  res.status(200).json(result);
+});
