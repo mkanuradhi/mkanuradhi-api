@@ -37,6 +37,9 @@ courseRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId,
 // Get course summary
 courseRoute.get('/stats/summary', courseController.getCourseSummary);
 
+// Get yearly courses by type
+courseRoute.get('/stats/yearly-by-type', courseController.getYearlyCoursesByType);
+
 // ----------------------------------- quizzes -----------------------------------
 
 // Add a new quiz
