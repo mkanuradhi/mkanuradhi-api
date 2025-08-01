@@ -1,0 +1,73 @@
+import { model, Schema } from "mongoose";
+import ContactMessageDocument from "../documents/contact-message-document";
+import DocumentStatus from "../enums/document-status";
+import AppError from "../errors/app-error";
+
+const MIN_NAME_LENGTH = 4;
+const MAX_NAME_LENGTH = 50;
+
+const MIN_EMAIL_LENGTH = 5;
+const MAX_EMAIL_LENGTH = 100;
+
+const MIN_MESSAGE_LENGTH = 10;
+const MAX_MESSAGE_LENGTH = 500;
+
+const contactMessageSchema = new Schema<ContactMessageDocument>(
+  {
+    name: {
+      type: String,
+      required: [true, 'Name is required.'],
+      trim: true,
+      minLength: [MIN_NAME_LENGTH, `Name must be minimum ${MIN_NAME_LENGTH} characters long.`],
+      maxLength: [MAX_NAME_LENGTH, `Name cannot exceed ${MAX_NAME_LENGTH} characters.`]
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required.'],
+      trim: true,
+      minLength: [MIN_EMAIL_LENGTH, `Email must be minimum ${MIN_EMAIL_LENGTH} characters long.`],
+      maxLength: [MAX_EMAIL_LENGTH, `Email cannot exceed ${MAX_EMAIL_LENGTH} characters.`]
+    },
+    message: {
+      type: String,
+      required: [true, 'Message is required.'],
+      trim: true,
+      minLength: [MIN_MESSAGE_LENGTH, `Message must be minimum ${MIN_MESSAGE_LENGTH} characters long.`],
+      maxLength: [MAX_MESSAGE_LENGTH, `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`]
+    },
+    status: {
+      type: String,
+      enum: {
+        values: Object.values(DocumentStatus),
+        message: 'Document status `{VALUE}` is not valid.',
+      },
+      default: DocumentStatus.ACTIVE,
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: '__v'
+  }
+);
+
+contactMessageSchema.set('toJSON', { virtuals: true });
+contactMessageSchema.set('toObject', { virtuals: true });
+
+contactMessageSchema.pre('validate', async function (next) {
+  // validate status
+  if (!Object.values(DocumentStatus).includes(this.status)) {
+    next(
+      new AppError(`Invalid status: '${this.status}'. Allowed values are: ${Object.values(DocumentStatus).join(', ')}.`, 400)
+    );
+  }
+
+  next();
+});
+
+const ContactMessageModel = model<ContactMessageDocument>('ContactMessage', contactMessageSchema);
+
+export default ContactMessageModel;

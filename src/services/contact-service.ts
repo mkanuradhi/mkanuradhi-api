@@ -1,21 +1,83 @@
 import { CreateContactMessageDto } from '../dtos/contact-message-dto';
+import ContactMessage from '../interfaces/i-contact-message';
 import logger from "../config/logger-config";
 import { sendEmail } from "./email-service";
 import { SendEmailDto } from '../dtos/email-dto';
+import { mapDocumentToContactMessage } from "../mappers/contact-message-mapper";
+import ContactMessageModel from "../models/contact-message-model";
+import AppError from '../errors/app-error';
 
-export const createContactMessage = async (contactMessage: CreateContactMessageDto): Promise<Object> => {
+export const createContactMessage = async (contactMessageDto: CreateContactMessageDto): Promise<ContactMessage> => {
+  validateContactMessage(contactMessageDto);
 
+  const session = await ContactMessageModel.startSession();
+
+  try {
+    session.startTransaction();
+
+    const [contactMessageDoc] = await ContactMessageModel.create([{
+      name: contactMessageDto.name,
+      email: contactMessageDto.email,
+      message: contactMessageDto.message,
+    }], { session });
+
+    await session.commitTransaction();
+
+    logger.info(`Contact Message created for ${contactMessageDto.name}`);
+
+    sendNotifyEmail(contactMessageDto);
+
+    return mapDocumentToContactMessage(contactMessageDoc);
+  } catch (error) {
+    await session.abortTransaction();
+    if (error instanceof AppError) {
+      throw error;
+    } else if (error instanceof Error) {
+      throw new AppError(`Contact message creation failed: ${error.message}`, 500);
+    } else {
+      throw new AppError("Contact message creation failed", 500);
+    }
+  } finally {
+    session.endSession();
+  }
+}
+
+const validateContactMessage = (contactMessageDto: CreateContactMessageDto): void => {
+  if (!contactMessageDto.name || !contactMessageDto.email || !contactMessageDto.message) {
+    throw new AppError(`Name, email, and message are required fields.`, 400);
+  }
+  if (contactMessageDto.name.length < 4) {
+    throw new AppError(`Name must be valid`, 400);
+  }
+  if (contactMessageDto.name.length > 30) {
+    throw new AppError(`Name is too long`, 400);
+  }
+  if (contactMessageDto.email.length < 5 || !contactMessageDto.email.includes('@')) {
+    throw new AppError(`Email must be valid`, 400);
+  }
+  if (contactMessageDto.email.length > 50) {
+    throw new AppError(`Email is too long`, 400);
+  }
+  if (contactMessageDto.message.length < 10) {
+    throw new AppError(`Message must be valid`, 400);
+  }
+  if (contactMessageDto.message.length > 400) {
+    throw new AppError(`Message is too long`, 400);
+  }
+}
+
+const sendNotifyEmail = async (contactMessageDto: CreateContactMessageDto): Promise<void> => {
   const htmlMessage = `
     <h2>You have received a new message from your website contact form.</h2>
-    <p><b>Name:</b> ${contactMessage.name}</p>
-    <p><b>Email:</b> ${contactMessage.email}</p>
+    <p><b>Name:</b> ${contactMessageDto.name}</p>
+    <p><b>Email:</b> ${contactMessageDto.email}</p>
     <p><b>Message:</b></p>
-    <p>${contactMessage.message}</p>
+    <p>${contactMessageDto.message}</p>
   `;
 
   const sendEmailDto: SendEmailDto = {
     to: process.env.EMAIL_NOTIFY || '',
-    subject: `New contact message from ${contactMessage.name}`,
+    subject: `Contact form submission from ${contactMessageDto.name}`,
     html: htmlMessage,
   };
 
@@ -23,6 +85,4 @@ export const createContactMessage = async (contactMessage: CreateContactMessageD
   sendEmail(sendEmailDto)
     .then(r => logger.info(`Email worker ok: ${r.ok}`))
     .catch(err => logger.error('Async email error', err));
-  
-  return {"msg": "success"};
 }

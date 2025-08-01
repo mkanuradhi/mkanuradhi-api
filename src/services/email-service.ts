@@ -6,7 +6,7 @@ import { EmailResult } from '../interfaces/i-email-result';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMIAL_ADDRESS,
+    user: process.env.EMAIL_ADDRESS,
     pass: process.env.EMAIL_APP_PASS,
   },
 });
@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (sendEmailDto: SendEmailDto): Promise<EmailResult> => {
 
   const mailOptions: nodemailer.SendMailOptions = {
-    from: process.env.EMIAL_ADDRESS,
+    from: process.env.EMAIL_ADDRESS,
     to: sendEmailDto.to,
     cc: sendEmailDto.cc,
     bcc: sendEmailDto.bcc,
