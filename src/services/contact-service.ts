@@ -6,8 +6,11 @@ import { SendEmailDto } from '../dtos/email-dto';
 import { mapDocumentToContactMessage } from "../mappers/contact-message-mapper";
 import ContactMessageModel from "../models/contact-message-model";
 import AppError from '../errors/app-error';
+import { verifyRecaptcha } from './recaptcha-service';
 
 export const createContactMessage = async (contactMessageDto: CreateContactMessageDto): Promise<ContactMessage> => {
+  await verifyRecaptcha(contactMessageDto.captchaToken);
+
   validateContactMessage(contactMessageDto);
 
   const session = await ContactMessageModel.startSession();
