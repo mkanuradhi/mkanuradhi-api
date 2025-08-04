@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import cors from 'cors';
 import express from 'express';
-import emailRoute from './routes/email-route';
+import contactRoute from './routes/contact-route';
 import blogPostRoute from './routes/blog-post-route';
 import courseRoute from './routes/course-route';
 import quizRoute from './routes/quiz-route';
@@ -47,7 +47,7 @@ app.use(RequestLogger);
 app.use(express.json());
 
 app.use('/', homeRoute);
-app.use('/email', emailRoute);
+app.use('/contact', contactRoute);
 app.use('/blog-posts', blogPostRoute);
 app.use('/courses', courseRoute);
 app.use('/quizzes', quizRoute);

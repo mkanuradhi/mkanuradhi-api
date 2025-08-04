@@ -1,39 +1,34 @@
 import logger from "../config/logger-config";
 import nodemailer from 'nodemailer';
+import { SendEmailDto } from '../dtos/email-dto';
+import { EmailResult } from '../interfaces/i-email-result';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMIAL_ADDRESS,
+    user: process.env.EMAIL_ADDRESS,
     pass: process.env.EMAIL_APP_PASS,
   },
 });
 
-const notifyMessage = async (name: string, email: string, message: string): Promise<Object> => {
+export const sendEmail = async (sendEmailDto: SendEmailDto): Promise<EmailResult> => {
 
-  const htmlMessage = `
-    <h2>You have received a new message from your website contact form.</h2>
-    <p><b>Name:</b> ${name}</p>
-    <p><b>Email:</b> ${email}</p>
-    <p><b>Message:</b></p>
-    <p>${message}</p>
-  `;
-
-  const mailOptions = {
-    from: process.env.EMIAL_ADDRESS,
-    to: process.env.EMAIL_NOTIFY,
-    subject: `Contact form submission from ${name}`,
-    html: htmlMessage,
+  const mailOptions: nodemailer.SendMailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: sendEmailDto.to,
+    cc: sendEmailDto.cc,
+    bcc: sendEmailDto.bcc,
+    subject: sendEmailDto.subject,
+    html: sendEmailDto.html,
+    text: sendEmailDto.text,
+    attachments: sendEmailDto.attachments || [],
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    logger.info(`Email sent: ${info.response}`);
+    return { ok: true, info };
   } catch (error) {
-    logger.info(`Error sending email: ${error}`);
+    logger.error(`Error sending email: ${error}`);
+    return { ok: false, error };
   }
-  
-  return {"msg": "success"};
 }
-
-export { notifyMessage };
