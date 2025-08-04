@@ -7,11 +7,14 @@ import { mapDocumentToContactMessage } from "../mappers/contact-message-mapper";
 import ContactMessageModel from "../models/contact-message-model";
 import AppError from '../errors/app-error';
 import { verifyRecaptcha } from './recaptcha-service';
+import { fetchIpInfo } from './ipapi-service';
 
 export const createContactMessage = async (contactMessageDto: CreateContactMessageDto): Promise<ContactMessage> => {
   await verifyRecaptcha(contactMessageDto.captchaToken);
 
   validateContactMessage(contactMessageDto);
+
+  const ipApiResponse = await fetchIpInfo(contactMessageDto.ipAddress || '');
 
   const session = await ContactMessageModel.startSession();
 
@@ -27,6 +30,10 @@ export const createContactMessage = async (contactMessageDto: CreateContactMessa
       timezone: contactMessageDto.timezone,
       language: contactMessageDto.language,
       ipAddress: contactMessageDto.ipAddress,
+      city: ipApiResponse.city,
+      country: ipApiResponse.countryName,
+      latitude: ipApiResponse.latitude,
+      longitude: ipApiResponse.longitude,
     }], { session });
 
     await session.commitTransaction();

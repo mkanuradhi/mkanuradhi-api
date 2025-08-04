@@ -67,6 +67,26 @@ const contactMessageSchema = new Schema<ContactMessageDocument>(
       trim: true,
       maxLength: [MAX_EMAIL_LENGTH, `IP address cannot exceed ${MAX_EMAIL_LENGTH} characters.`],
     },
+    city: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `City cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    country: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `Country cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    latitude: {
+      type: Number,
+      nullable: true,
+    },
+    longitude: {
+      type: Number,
+      nullable: true,
+    },
     status: {
       type: String,
       enum: {
