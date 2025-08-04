@@ -12,6 +12,8 @@ const MAX_EMAIL_LENGTH = 100;
 const MIN_MESSAGE_LENGTH = 10;
 const MAX_MESSAGE_LENGTH = 500;
 
+const MAX_USER_AGENT_LENGTH = 600;
+
 const contactMessageSchema = new Schema<ContactMessageDocument>(
   {
     name: {
@@ -34,6 +36,36 @@ const contactMessageSchema = new Schema<ContactMessageDocument>(
       trim: true,
       minLength: [MIN_MESSAGE_LENGTH, `Message must be minimum ${MIN_MESSAGE_LENGTH} characters long.`],
       maxLength: [MAX_MESSAGE_LENGTH, `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`]
+    },
+    userAgent: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_USER_AGENT_LENGTH, `User agent cannot exceed ${MAX_USER_AGENT_LENGTH} characters.`],
+    },
+    screen: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `Screen size cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    timezone: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_EMAIL_LENGTH, `Timezone cannot exceed ${MAX_EMAIL_LENGTH} characters.`],
+    },
+    language: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `Language cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    ipAddress: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_EMAIL_LENGTH, `IP address cannot exceed ${MAX_EMAIL_LENGTH} characters.`],
     },
     status: {
       type: String,

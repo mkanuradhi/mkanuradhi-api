@@ -22,6 +22,11 @@ export const createContactMessage = async (contactMessageDto: CreateContactMessa
       name: contactMessageDto.name,
       email: contactMessageDto.email,
       message: contactMessageDto.message,
+      userAgent: contactMessageDto.userAgent,
+      screen: contactMessageDto.screen,
+      timezone: contactMessageDto.timezone,
+      language: contactMessageDto.language,
+      ipAddress: contactMessageDto.ipAddress,
     }], { session });
 
     await session.commitTransaction();
