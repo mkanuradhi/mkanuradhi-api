@@ -14,6 +14,9 @@ interface ContactMessageDocument extends BaseDocument {
   country?: string;
   latitude?: number;
   longitude?: number;
+  browser?: string;
+  os?: string;
+  deviceType?: string;
   status: DocumentStatus;
   deleted: boolean;
 }

@@ -8,6 +8,8 @@ import ContactMessageModel from "../models/contact-message-model";
 import AppError from '../errors/app-error';
 import { verifyRecaptcha } from './recaptcha-service';
 import { fetchIpInfo } from './ipapi-service';
+import { ParsedUserAgent } from '../interfaces/i-parsed-user-agent';
+import { UAParser } from 'ua-parser-js';
 
 export const createContactMessage = async (contactMessageDto: CreateContactMessageDto): Promise<ContactMessage> => {
   await verifyRecaptcha(contactMessageDto.captchaToken);
@@ -15,6 +17,7 @@ export const createContactMessage = async (contactMessageDto: CreateContactMessa
   validateContactMessage(contactMessageDto);
 
   const ipApiResponse = await fetchIpInfo(contactMessageDto.ipAddress || '');
+  const parsedUserAgent = parseUserAgent(contactMessageDto.userAgent || '');
 
   const session = await ContactMessageModel.startSession();
 
@@ -34,6 +37,9 @@ export const createContactMessage = async (contactMessageDto: CreateContactMessa
       country: ipApiResponse.countryName,
       latitude: ipApiResponse.latitude,
       longitude: ipApiResponse.longitude,
+      browser: parsedUserAgent.browser,
+      os: parsedUserAgent.os,
+      deviceType: parsedUserAgent.deviceType,
     }], { session });
 
     await session.commitTransaction();
@@ -100,4 +106,20 @@ const sendNotifyEmail = async (contactMessageDto: CreateContactMessageDto): Prom
   sendEmail(sendEmailDto)
     .then(r => logger.info(`Email worker ok: ${r.ok}`))
     .catch(err => logger.error('Async email error', err));
+}
+
+const parseUserAgent = (userAgent: string): ParsedUserAgent => {
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
+
+  return {
+    browser: result.browser.name || 'Unknown',
+    browserVersion: result.browser.version || 'Unknown',
+    os: result.os.name || 'Unknown',
+    osVersion: result.os.version || 'Unknown',
+    deviceType: result.device.type || null,
+    deviceVendor: result.device.vendor || null,
+    deviceModel: result.device.model || null,
+    isBot: !!result.device.type,
+  };
 }
