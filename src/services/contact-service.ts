@@ -67,19 +67,19 @@ const validateContactMessage = (contactMessageDto: CreateContactMessageDto): voi
   if (!contactMessageDto.name || !contactMessageDto.email || !contactMessageDto.message) {
     throw new AppError(`Name, email, and message are required fields.`, 400);
   }
-  if (contactMessageDto.name.length < 4) {
+  if (contactMessageDto.name.length < 2 || !/^[a-zA-Z\s]+$/.test(contactMessageDto.name)) {
     throw new AppError(`Name must be valid`, 400);
   }
   if (contactMessageDto.name.length > 30) {
     throw new AppError(`Name is too long`, 400);
   }
-  if (contactMessageDto.email.length < 5 || !contactMessageDto.email.includes('@')) {
+  if (contactMessageDto.email.length < 4 || !contactMessageDto.email.includes('@')) {
     throw new AppError(`Email must be valid`, 400);
   }
   if (contactMessageDto.email.length > 50) {
     throw new AppError(`Email is too long`, 400);
   }
-  if (contactMessageDto.message.length < 10) {
+  if (contactMessageDto.message.length < 6) {
     throw new AppError(`Message must be valid`, 400);
   }
   if (contactMessageDto.message.length > 400) {
