@@ -10,6 +10,13 @@ interface ContactMessageDocument extends BaseDocument {
   timezone?: string;
   language?: string;
   ipAddress?: string;
+  city?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  browser?: string;
+  os?: string;
+  deviceType?: string;
   status: DocumentStatus;
   deleted: boolean;
 }

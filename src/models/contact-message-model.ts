@@ -4,7 +4,7 @@ import DocumentStatus from "../enums/document-status";
 import AppError from "../errors/app-error";
 
 const MIN_NAME_LENGTH = 4;
-const MAX_NAME_LENGTH = 50;
+const MAX_NAME_LENGTH = 80;
 
 const MIN_EMAIL_LENGTH = 5;
 const MAX_EMAIL_LENGTH = 100;
@@ -66,6 +66,44 @@ const contactMessageSchema = new Schema<ContactMessageDocument>(
       nullable: true,
       trim: true,
       maxLength: [MAX_EMAIL_LENGTH, `IP address cannot exceed ${MAX_EMAIL_LENGTH} characters.`],
+    },
+    city: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `City cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    country: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `Country cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    latitude: {
+      type: Number,
+      nullable: true,
+    },
+    longitude: {
+      type: Number,
+      nullable: true,
+    },
+    browser: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `Browser cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    os: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `Operating system cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    deviceType: {
+      type: String,
+      nullable: true,
+      trim: true,
+      maxLength: [MAX_NAME_LENGTH, `Device type cannot exceed ${MAX_NAME_LENGTH} characters.`],
     },
     status: {
       type: String,
