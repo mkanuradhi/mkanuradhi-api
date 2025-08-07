@@ -38,7 +38,7 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   credentials: true
 }
-
+app.set('trust proxy', 1);
 app.use(clerkMiddleware());
 
 app.use(cors(corsOptions));

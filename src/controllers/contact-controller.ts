@@ -18,7 +18,7 @@ export const createContactMessage = asyncErrorHandler( async (req: Request, res:
         language
       } = req.body;
 
-      const ipAddress = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress;
+      const ipAddress = req.ip;
 
       const contactMessageDto: CreateContactMessageDto = {
           name,
