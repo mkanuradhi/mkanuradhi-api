@@ -3,13 +3,13 @@ import ContactMessageDocument from "../documents/contact-message-document";
 import DocumentStatus from "../enums/document-status";
 import AppError from "../errors/app-error";
 
-const MIN_NAME_LENGTH = 4;
+const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 80;
 
-const MIN_EMAIL_LENGTH = 5;
+const MIN_EMAIL_LENGTH = 4;
 const MAX_EMAIL_LENGTH = 100;
 
-const MIN_MESSAGE_LENGTH = 10;
+const MIN_MESSAGE_LENGTH = 6;
 const MAX_MESSAGE_LENGTH = 500;
 
 const MAX_USER_AGENT_LENGTH = 600;
