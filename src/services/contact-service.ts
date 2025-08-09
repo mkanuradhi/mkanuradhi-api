@@ -1,15 +1,16 @@
 import { CreateContactMessageDto } from '../dtos/contact-message-dto';
-import ContactMessage from '../interfaces/i-contact-message';
+import ContactMessage, { FullContactMessage } from '../interfaces/i-contact-message';
 import logger from "../config/logger-config";
 import { sendEmail } from "./email-service";
 import { SendEmailDto } from '../dtos/email-dto';
-import { mapDocumentToContactMessage } from "../mappers/contact-message-mapper";
+import { mapDocumentsToFullContactMessages, mapDocumentToContactMessage } from "../mappers/contact-message-mapper";
 import ContactMessageModel from "../models/contact-message-model";
 import AppError from '../errors/app-error';
 import { verifyRecaptcha } from './recaptcha-service';
 import { fetchIpInfo } from './ipapi-service';
 import { ParsedUserAgent } from '../interfaces/i-parsed-user-agent';
 import { UAParser } from 'ua-parser-js';
+import { validatePaginationDetails } from '../validators/common-validator';
 
 export const createContactMessage = async (contactMessageDto: CreateContactMessageDto): Promise<ContactMessage> => {
   await verifyRecaptcha(contactMessageDto.captchaToken);
@@ -121,5 +122,41 @@ const parseUserAgent = (userAgent: string): ParsedUserAgent => {
     deviceVendor: result.device.vendor || null,
     deviceModel: result.device.model || null,
     isBot: !!result.device.type,
+  };
+}
+
+export const getFullContactMessages = async (page: number, size: number): Promise<{ items: FullContactMessage[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+  const totalCount = await ContactMessageModel.countDocuments({ deleted: false });
+  const contactMessageDocs = await ContactMessageModel
+    .find(
+      {
+        deleted: false,
+      }, 
+      {
+        name: 1,
+        email: 1,
+        message: 1,
+        userAgent: 1,
+        screen: 1,
+        timezone: 1,
+        language: 1,
+        ipAddress: 1,
+        city: 1,
+        country: 1,
+        latitude: 1,
+        longitude: 1,
+        browser: 1,
+        os: 1,
+        deviceType: 1,
+        status: 1,
+      })
+    .sort({ updatedAt: -1 })
+    .skip(page * size)
+    .limit(size);
+
+  return {
+    items: mapDocumentsToFullContactMessages(contactMessageDocs),
+    totalCount
   };
 }

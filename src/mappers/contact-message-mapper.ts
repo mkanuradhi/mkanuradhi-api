@@ -1,5 +1,5 @@
 import ContactMessageDocument from "../documents/contact-message-document";
-import ContactMessage from "../interfaces/i-contact-message";
+import ContactMessage, { FullContactMessage } from "../interfaces/i-contact-message";
 import { mapDocument, mapDocuments } from "./generic-mapper";
 
 export const mapDocumentToContactMessage = (doc: ContactMessageDocument): ContactMessage => {
@@ -8,4 +8,8 @@ export const mapDocumentToContactMessage = (doc: ContactMessageDocument): Contac
 
 export const mapDocumentsToContactMessages = (docs: ContactMessageDocument[]): ContactMessage[] => {
   return mapDocuments(docs) as ContactMessage[];
+};
+
+export const mapDocumentsToFullContactMessages = (docs: ContactMessageDocument[]): FullContactMessage[] => {
+  return mapDocuments(docs) as FullContactMessage[];
 };

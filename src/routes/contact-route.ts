@@ -1,9 +1,14 @@
 import express from 'express';
 import * as contactController from '../controllers/contact-controller';
+import requireAuthenticated from '../middleware/require-authenticated';
+import Role from '../enums/role';
 
-const emailRoute = express.Router();
+const contactRoute = express.Router();
 
 // Add a new contact message
-emailRoute.post('/', contactController.createContactMessage);
+contactRoute.post('/', contactController.createContactMessage);
 
-export default emailRoute;
+// Fetch all contact messages
+contactRoute.get('/', requireAuthenticated([Role.ADMIN]), contactController.getFullContactMessages);
+
+export default contactRoute;
