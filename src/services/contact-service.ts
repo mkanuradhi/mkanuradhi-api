@@ -152,6 +152,7 @@ export const getFullContactMessages = async (page: number, size: number): Promis
         deviceType: 1,
         isRead: 1,
         status: 1,
+        createdAt: 1,
       })
     .sort({ updatedAt: -1 })
     .skip(page * size)
