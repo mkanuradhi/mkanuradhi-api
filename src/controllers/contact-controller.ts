@@ -59,3 +59,16 @@ export const getFullContactMessages = asyncErrorHandler( async (req: Request, re
 
   res.status(200).json(result);
 });
+
+export const toggleIsReadInContactMessage = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const contactMessageId = req.params.id;
+  
+  const updatedContactMessage = await contactService.toggleIsReadInContactMessage(contactMessageId);
+  res.status(200).json(updatedContactMessage);
+});
+
+export const deleteContactMessage = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const contactMessageId = req.params.id;
+  await contactService.deleteContactMessage(contactMessageId);
+  res.status(204).json();
+});

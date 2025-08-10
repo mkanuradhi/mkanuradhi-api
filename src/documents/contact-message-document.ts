@@ -17,6 +17,7 @@ interface ContactMessageDocument extends BaseDocument {
   browser?: string;
   os?: string;
   deviceType?: string;
+  isRead?: boolean;
   status: DocumentStatus;
   deleted: boolean;
 }

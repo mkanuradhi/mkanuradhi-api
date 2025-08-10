@@ -3,7 +3,7 @@ import ContactMessage, { FullContactMessage } from '../interfaces/i-contact-mess
 import logger from "../config/logger-config";
 import { sendEmail } from "./email-service";
 import { SendEmailDto } from '../dtos/email-dto';
-import { mapDocumentsToFullContactMessages, mapDocumentToContactMessage } from "../mappers/contact-message-mapper";
+import { mapDocumentsToFullContactMessages, mapDocumentToContactMessage, mapDocumentToFullContactMessage } from "../mappers/contact-message-mapper";
 import ContactMessageModel from "../models/contact-message-model";
 import AppError from '../errors/app-error';
 import { verifyRecaptcha } from './recaptcha-service';
@@ -41,6 +41,7 @@ export const createContactMessage = async (contactMessageDto: CreateContactMessa
       browser: parsedUserAgent.browser,
       os: parsedUserAgent.os,
       deviceType: parsedUserAgent.deviceType,
+      isRead: false,
     }], { session });
 
     await session.commitTransaction();
@@ -149,6 +150,7 @@ export const getFullContactMessages = async (page: number, size: number): Promis
         browser: 1,
         os: 1,
         deviceType: 1,
+        isRead: 1,
         status: 1,
       })
     .sort({ updatedAt: -1 })
@@ -159,4 +161,58 @@ export const getFullContactMessages = async (page: number, size: number): Promis
     items: mapDocumentsToFullContactMessages(contactMessageDocs),
     totalCount
   };
+}
+
+export const toggleIsReadInContactMessage = async (contactMessageId: string): Promise<FullContactMessage> => {
+  const contactMessageDoc = await ContactMessageModel.findOne({
+    _id: contactMessageId,
+    deleted: false,
+  });
+  if (!contactMessageDoc) {
+      throw new AppError(`Cannot find the contact message with ID: ${contactMessageId}. Unable to toggle the contact message.`, 400);
+  }
+
+  const updatedContactMessageDoc = await ContactMessageModel.findByIdAndUpdate(
+    contactMessageId,
+    { 
+      $set: {
+        isRead: !contactMessageDoc.isRead,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true, runValidators: true }
+  );
+
+  if (!updatedContactMessageDoc) {
+      throw new AppError('Failed to update contact message document.', 500);
+  }
+
+  logger.info(`Contact message toggled for ID: ${contactMessageId}`);
+  return mapDocumentToFullContactMessage(updatedContactMessageDoc);
+}
+
+export const deleteContactMessage = async (contactMessageId: string): Promise<void> => {
+  const contactMessageDoc = await ContactMessageModel.findOne({ 
+    _id: contactMessageId,
+    deleted: false,
+  });
+  if (!contactMessageDoc) {
+    throw new AppError(`Cannot find the contact message with ID '${contactMessageId}' or it is already deleted.`, 404);
+  }
+
+  const updatedContactMessageDoc = await ContactMessageModel.findByIdAndUpdate(
+    contactMessageId,
+    {
+      $set: {
+        deleted: true,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedContactMessageDoc) {
+    throw new AppError('Failed to delete contact message document.', 500);
+  }
+
+  logger.info(`Contact message deleted for id: ${contactMessageId}`);
 }
