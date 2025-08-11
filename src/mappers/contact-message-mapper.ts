@@ -10,6 +10,10 @@ export const mapDocumentsToContactMessages = (docs: ContactMessageDocument[]): C
   return mapDocuments(docs) as ContactMessage[];
 };
 
+export const mapDocumentToFullContactMessage = (doc: ContactMessageDocument): FullContactMessage => {
+  return mapDocument(doc) as FullContactMessage;
+};
+
 export const mapDocumentsToFullContactMessages = (docs: ContactMessageDocument[]): FullContactMessage[] => {
   return mapDocuments(docs) as FullContactMessage[];
 };

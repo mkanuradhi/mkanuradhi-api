@@ -29,6 +29,7 @@ export interface FullContactMessage {
   browser?: string;
   os?: string;
   deviceType?: string;
+  isRead?: boolean;
   status: DocumentStatus;
   deleted: boolean;
   createdAt: Date;

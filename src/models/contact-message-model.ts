@@ -39,71 +39,75 @@ const contactMessageSchema = new Schema<ContactMessageDocument>(
     },
     userAgent: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_USER_AGENT_LENGTH, `User agent cannot exceed ${MAX_USER_AGENT_LENGTH} characters.`],
     },
     screen: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_NAME_LENGTH, `Screen size cannot exceed ${MAX_NAME_LENGTH} characters.`],
     },
     timezone: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_EMAIL_LENGTH, `Timezone cannot exceed ${MAX_EMAIL_LENGTH} characters.`],
     },
     language: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_NAME_LENGTH, `Language cannot exceed ${MAX_NAME_LENGTH} characters.`],
     },
     ipAddress: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_EMAIL_LENGTH, `IP address cannot exceed ${MAX_EMAIL_LENGTH} characters.`],
     },
     city: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_NAME_LENGTH, `City cannot exceed ${MAX_NAME_LENGTH} characters.`],
     },
     country: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_NAME_LENGTH, `Country cannot exceed ${MAX_NAME_LENGTH} characters.`],
     },
     latitude: {
       type: Number,
-      nullable: true,
+      default: null,
     },
     longitude: {
       type: Number,
-      nullable: true,
+      default: null,
     },
     browser: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_NAME_LENGTH, `Browser cannot exceed ${MAX_NAME_LENGTH} characters.`],
     },
     os: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_NAME_LENGTH, `Operating system cannot exceed ${MAX_NAME_LENGTH} characters.`],
     },
     deviceType: {
       type: String,
-      nullable: true,
+      default: null,
       trim: true,
       maxLength: [MAX_NAME_LENGTH, `Device type cannot exceed ${MAX_NAME_LENGTH} characters.`],
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
     },
     status: {
       type: String,
@@ -130,7 +134,7 @@ contactMessageSchema.set('toObject', { virtuals: true });
 contactMessageSchema.pre('validate', async function (next) {
   // validate status
   if (!Object.values(DocumentStatus).includes(this.status)) {
-    next(
+    return next(
       new AppError(`Invalid status: '${this.status}'. Allowed values are: ${Object.values(DocumentStatus).join(', ')}.`, 400)
     );
   }
