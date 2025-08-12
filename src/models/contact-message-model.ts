@@ -142,6 +142,22 @@ contactMessageSchema.pre('validate', async function (next) {
   next();
 });
 
+contactMessageSchema.index(
+  { createdAt: -1 },
+  {
+    partialFilterExpression: { deleted: false },
+    name: 'idx_non_deleted_createdAt_desc',
+  }
+);
+
+contactMessageSchema.index(
+  { isRead: 1 },
+  {
+    partialFilterExpression: { deleted: false },
+    name: 'idx_non_deleted_isRead',
+  }
+);
+
 const ContactMessageModel = model<ContactMessageDocument>('ContactMessage', contactMessageSchema);
 
 export default ContactMessageModel;

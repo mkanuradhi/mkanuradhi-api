@@ -18,4 +18,7 @@ contactRoute.patch('/:id/toggle/read', requireAuthenticated([Role.ADMIN]), valid
 // Delete a contact message
 contactRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, contactController.deleteContactMessage);
 
+// Fetch count of unread contact messages
+contactRoute.get('/unread/count', contactController.getUnreadContactMessagesCount);
+
 export default contactRoute;
