@@ -217,3 +217,8 @@ export const deleteContactMessage = async (contactMessageId: string): Promise<vo
 
   logger.info(`Contact message deleted for id: ${contactMessageId}`);
 }
+
+export const getUnreadContactMessagesCount = async (): Promise<{ count: number }> => {
+  const unreadCount = await ContactMessageModel.countDocuments({ deleted: false, isRead: false });
+  return { count: unreadCount };
+}

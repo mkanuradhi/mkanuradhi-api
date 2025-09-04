@@ -1,0 +1,9 @@
+enum AwardScope {
+  INTERNATIONAL = 'INTERNATIONAL',
+  NATIONAL = 'NATIONAL',
+  UNIVERSITY = 'UNIVERSITY',
+  FACULTY = 'FACULTY',
+  DEPARTMENT = 'DEPARTMENT',
+}
+
+export default AwardScope;

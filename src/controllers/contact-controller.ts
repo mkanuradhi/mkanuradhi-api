@@ -72,3 +72,8 @@ export const deleteContactMessage = asyncErrorHandler( async (req: Request, res:
   await contactService.deleteContactMessage(contactMessageId);
   res.status(204).json();
 });
+
+export const getUnreadContactMessagesCount = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const result = await contactService.getUnreadContactMessagesCount();
+  res.status(200).json(result);
+});

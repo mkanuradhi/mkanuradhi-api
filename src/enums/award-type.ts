@@ -1,0 +1,10 @@
+enum AwardType {
+  AWARD = 'AWARD',
+  GRANT = 'GRANT',
+  FELLOWSHIP = 'FELLOWSHIP',
+  SCHOLARSHIP = 'SCHOLARSHIP',
+  PRIZE = 'PRIZE',
+  RECOGNITION = 'RECOGNITION',
+}
+
+export default AwardType;

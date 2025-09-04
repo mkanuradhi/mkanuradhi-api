@@ -8,6 +8,7 @@ import courseRoute from './routes/course-route';
 import quizRoute from './routes/quiz-route';
 import publicationRoute from './routes/publication-route';
 import researchRoute from './routes/research-route';
+import awardRoute from './routes/award-route';
 import logger from './config/logger-config';
 import limiter from './config/rate-limit-config';
 import RequestLogger from './middleware/request-logger';
@@ -53,6 +54,7 @@ app.use('/courses', courseRoute);
 app.use('/quizzes', quizRoute);
 app.use('/publications', publicationRoute);
 app.use('/research', researchRoute);
+app.use('/awards', awardRoute);
 
 // handling errors
 app.use(notFoundHandler);
