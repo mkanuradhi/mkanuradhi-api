@@ -36,7 +36,9 @@ export interface UpdateAwardEnDto extends CreateAwardEnDto, VersionDto {
 
 export interface UpdateAwardSiDto extends VersionDto {
   titleSi: string;
-  subtitleSi: string;
   descriptionSi: string;
-  locationSi: string;
+  issuerSi: string;
+  issuerLocationSi: string;
+  ceremonyLocationSi: string;
+  coRecipientsSi: string[];
 }

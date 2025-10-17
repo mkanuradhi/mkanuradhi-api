@@ -164,7 +164,7 @@ const awardSchema = new Schema<AwardDocument>(
     monetaryValue: {
       type: String,
       trim: true,
-      maxLength: [MAX_TITLE_LENGTH, `Related work URL cannot exceed ${MAX_TITLE_LENGTH} characters.`]
+      maxLength: [MAX_TITLE_LENGTH, `Monetary value cannot exceed ${MAX_TITLE_LENGTH} characters.`]
     },
     issuerImage: {
       type: String,
@@ -180,7 +180,7 @@ const awardSchema = new Schema<AwardDocument>(
         values: Object.values(DocumentStatus),
         message: 'Award status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.INACTIVE,
+      default: DocumentStatus.ACTIVE,
     },
     deleted: {
       type: Boolean,
