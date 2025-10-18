@@ -1,4 +1,4 @@
-import { CreateAwardEnDto } from "../dtos/award-dto";
+import { CreateAwardEnDto, UpdateAwardEnDto } from "../dtos/award-dto";
 import AppError from "../errors/app-error";
 import Award from "../interfaces/i-award";
 import AwardModel from "../models/award-model";
@@ -124,4 +124,62 @@ export const getAward = async (awardId: string): Promise<Award> => {
   } else {
     throw new AppError(`Award cannot be found for id: ${awardId}`, 400);
   }
+}
+
+export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto): Promise<Award> => {
+  const existingAwardDoc = await AwardModel.findOne({
+    _id: awardId,
+    deleted: false,
+  });
+  if (!existingAwardDoc) {
+      throw new AppError(`Cannot find the award with ID: ${awardId}. Unable to update the award.`, 400);
+  }
+  if (existingAwardDoc.__v !== awardDto.v) {
+    throw new AppError(`Award has been modified by another process. Please refresh and try again.`, 409);
+  }
+
+  const existingAwardDocsWithTitle = await AwardModel.find({
+    _id: { $ne: awardId },
+    titleEn: awardDto.titleEn.trim(),
+    descriptionEn: awardDto.descriptionEn.trim(),
+    issuerEn: awardDto.issuerEn.trim(),
+    deleted: false,
+  });
+  if (existingAwardDocsWithTitle && existingAwardDocsWithTitle.length > 0) {
+    throw new AppError(`Existing award found for the title: ${awardDto.titleEn}, description: ${awardDto.descriptionEn} and issuer: ${awardDto.issuerEn}`, 400);
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    { 
+      $set: {
+        titleEn: awardDto.titleEn,
+        descriptionEn: awardDto.descriptionEn,
+        issuerEn: awardDto.issuerEn,
+        issuerLocationEn: awardDto.issuerLocationEn,
+        ceremonyLocationEn: awardDto.ceremonyLocationEn,
+        coRecipientsEn: awardDto.coRecipientsEn,
+
+        receivedDate: awardDto.receivedDate,
+        type: awardDto.type,
+        scope: awardDto.scope,
+        role: awardDto.role,
+        result: awardDto.result,
+        category: awardDto.category,
+
+        eventUrl: awardDto.eventUrl,
+        relatedWorkUrl: awardDto.relatedWorkUrl,
+        monetaryValue: awardDto.monetaryValue,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedAwardDoc) {
+      throw new AppError('Failed to update award document.', 500);
+  }
+
+  logger.info(`Award updated for ID: ${awardId}`);
+  return mapDocumentToAward(updatedAwardDoc);
 }

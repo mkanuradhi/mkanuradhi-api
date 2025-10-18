@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateAwardEnDto } from "../dtos/award-dto";
+import { CreateAwardEnDto, UpdateAwardEnDto } from "../dtos/award-dto";
 import * as awardService from "../services/award-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Award from "../interfaces/i-award";
@@ -73,4 +73,52 @@ export const getAward = asyncErrorHandler( async (req: Request, res: Response, n
   const awardId = req.params.id;
   const award = await awardService.getAward(awardId);
   res.status(200).json(award);
+});
+
+export const updateAwardEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const {
+    titleEn,
+    descriptionEn,
+    issuerEn,
+    issuerLocationEn,
+    ceremonyLocationEn,
+    coRecipientsEn,
+
+    receivedDate,
+    type,
+    scope,
+    role,
+    result,
+    category,
+
+    eventUrl,
+    relatedWorkUrl,
+    monetaryValue,
+    v
+  } = req.body;
+
+  const awardDto: UpdateAwardEnDto = {
+    titleEn,
+    descriptionEn,
+    issuerEn,
+    issuerLocationEn,
+    ceremonyLocationEn,
+    coRecipientsEn,
+
+    receivedDate,
+    type,
+    scope,
+    role,
+    result,
+    category,
+
+    eventUrl,
+    relatedWorkUrl,
+    monetaryValue,
+    v
+  };
+  
+  const updatedAward = await awardService.updateAwardEn(awardId, awardDto);
+  res.status(200).json(updatedAward);
 });

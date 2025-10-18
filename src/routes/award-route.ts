@@ -15,4 +15,7 @@ awardRoute.get('/', awardController.getAwards);
 // Fetch a specific award by ID
 awardRoute.get('/:id', validateObjectId, awardController.getAward);
 
+// Update award data (partial update only for en text data)
+awardRoute.patch('/:id/en', validateObjectId, awardController.updateAwardEn);
+
 export default awardRoute;
