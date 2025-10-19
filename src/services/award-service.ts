@@ -26,6 +26,7 @@ export const createAwardEn = async (awardDto: CreateAwardEnDto): Promise<Award> 
     ceremonyLocationEn: awardDto.ceremonyLocationEn,
     coRecipientsEn: awardDto.coRecipientsEn,
 
+    year: awardDto.year,
     receivedDate: awardDto.receivedDate,
     type: awardDto.type,
     scope: awardDto.scope,
@@ -61,6 +62,7 @@ export const getAwards = async (page: number, size: number): Promise<{ items: Aw
         issuerLocationSi: 1,
         ceremonyLocationSi: 1,
         coRecipientsSi: 1,
+        year: 1,
         receivedDate: 1,
         type: 1,
         scope: 1,
@@ -74,7 +76,7 @@ export const getAwards = async (page: number, size: number): Promise<{ items: Aw
         primaryImage: 1,
         status: 1,
       })
-    .sort({ receivedDate: -1 })
+    .sort({ year: -1, receivedDate: -1 })
     .skip(page * size)
     .limit(size);
 
@@ -100,6 +102,7 @@ export const getAward = async (awardId: string): Promise<Award> => {
       issuerLocationSi: 1,
       ceremonyLocationSi: 1,
       coRecipientsSi: 1,
+      year: 1,
       receivedDate: 1,
       type: 1,
       scope: 1,
@@ -160,6 +163,7 @@ export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto)
         ceremonyLocationEn: awardDto.ceremonyLocationEn,
         coRecipientsEn: awardDto.coRecipientsEn,
 
+        year: awardDto.year,
         receivedDate: awardDto.receivedDate,
         type: awardDto.type,
         scope: awardDto.scope,

@@ -106,6 +106,12 @@ const awardSchema = new Schema<AwardDocument>(
         }
       ]
     },
+    year: {
+      type: Number,
+      required: [true, "Year is required."],
+      min: [2010, "Year must be a valid four-digit number."],
+      max: [2050, "Year must be a valid year."]
+    },
     receivedDate: {
       type: Date,
       required: [true, "Recieved date is required."],

@@ -19,6 +19,7 @@ export interface CreateAwardEnDto {
   ceremonyLocationEn: string;
   coRecipientsEn: string[];
 
+  year: number;
   receivedDate: Date;
   type: AwardType;
   scope: AwardScope;

@@ -21,6 +21,7 @@ interface AwardDocument extends BaseDocument {
   ceremonyLocationSi: string;
   coRecipientsSi: string[];
 
+  year: number;
   receivedDate: Date;
   type: AwardType;
   scope: AwardScope;

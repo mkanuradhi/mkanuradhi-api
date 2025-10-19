@@ -14,6 +14,7 @@ export const createAwardEn = asyncErrorHandler( async (req: Request, res: Respon
     ceremonyLocationEn,
     coRecipientsEn,
 
+    year,
     receivedDate,
     type,
     scope,
@@ -34,6 +35,7 @@ export const createAwardEn = asyncErrorHandler( async (req: Request, res: Respon
     ceremonyLocationEn,
     coRecipientsEn,
 
+    year,
     receivedDate,
     type,
     scope,
@@ -85,6 +87,7 @@ export const updateAwardEn = asyncErrorHandler( async (req: Request, res: Respon
     ceremonyLocationEn,
     coRecipientsEn,
 
+    year,
     receivedDate,
     type,
     scope,
@@ -106,6 +109,7 @@ export const updateAwardEn = asyncErrorHandler( async (req: Request, res: Respon
     ceremonyLocationEn,
     coRecipientsEn,
 
+    year,
     receivedDate,
     type,
     scope,
