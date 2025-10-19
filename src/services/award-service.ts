@@ -1,4 +1,4 @@
-import { CreateAwardEnDto, UpdateAwardEnDto } from "../dtos/award-dto";
+import { CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDto } from "../dtos/award-dto";
 import AppError from "../errors/app-error";
 import Award from "../interfaces/i-award";
 import AwardModel from "../models/award-model";
@@ -185,5 +185,53 @@ export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto)
   }
 
   logger.info(`Award updated for ID: ${awardId}`);
+  return mapDocumentToAward(updatedAwardDoc);
+}
+
+export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto): Promise<Award> => {
+  const existingAwardDoc = await AwardModel.findOne({
+    _id: awardId,
+    deleted: false,
+  });
+  if (!existingAwardDoc) {
+      throw new AppError(`Cannot find the award with ID: ${awardId}. Unable to update the award.`, 400);
+  }
+  if (existingAwardDoc.__v !== awardDto.v) {
+    throw new AppError(`Award has been modified by another process. Please refresh and try again.`, 409);
+  }
+
+  const existingAwardDocsWithTitle = await AwardModel.find({
+    _id: { $ne: awardId },
+    year: existingAwardDoc.year,
+    titleSi: awardDto.titleSi.trim(),
+    descriptionSi: awardDto.descriptionSi.trim(),
+    issuerSi: awardDto.issuerSi.trim(),
+    deleted: false,
+  });
+  if (existingAwardDocsWithTitle && existingAwardDocsWithTitle.length > 0) {
+    throw new AppError(`Existing award found for the year: ${existingAwardDoc.year}, title: ${awardDto.titleSi}, description: ${awardDto.descriptionSi} and issuer: ${awardDto.issuerSi}`, 400);
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    { 
+      $set: {
+        titleSi: awardDto.titleSi,
+        descriptionSi: awardDto.descriptionSi,
+        issuerSi: awardDto.issuerSi,
+        issuerLocationSi: awardDto.issuerLocationSi,
+        ceremonyLocationSi: awardDto.ceremonyLocationSi,
+        coRecipientsSi: awardDto.coRecipientsSi,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedAwardDoc) {
+    throw new AppError('Failed to update award document.', 500);
+  }
+
+  logger.info(`Award updated for ID: ${awardId} and title Si: ${awardDto.titleSi}`);
   return mapDocumentToAward(updatedAwardDoc);
 }

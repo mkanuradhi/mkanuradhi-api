@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import asyncErrorHandler from "../utils/async-error-handler";
-import { CreateAwardEnDto, UpdateAwardEnDto } from "../dtos/award-dto";
+import { CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDto } from "../dtos/award-dto";
 import * as awardService from "../services/award-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Award from "../interfaces/i-award";
@@ -124,5 +124,31 @@ export const updateAwardEn = asyncErrorHandler( async (req: Request, res: Respon
   };
   
   const updatedAward = await awardService.updateAwardEn(awardId, awardDto);
+  res.status(200).json(updatedAward);
+});
+
+export const updateAwardSi = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const {
+    titleSi,
+    descriptionSi,
+    issuerSi,
+    issuerLocationSi,
+    ceremonyLocationSi,
+    coRecipientsSi,
+    v
+  } = req.body;
+
+  const awardDto: UpdateAwardSiDto = {
+    titleSi,
+    descriptionSi,
+    issuerSi,
+    issuerLocationSi,
+    ceremonyLocationSi,
+    coRecipientsSi,
+    v
+  };
+  
+  const updatedAward = await awardService.updateAwardSi(awardId, awardDto);
   res.status(200).json(updatedAward);
 });

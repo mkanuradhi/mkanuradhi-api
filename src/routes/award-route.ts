@@ -18,4 +18,7 @@ awardRoute.get('/:id', validateObjectId, awardController.getAward);
 // Update award data (partial update only for en text data)
 awardRoute.patch('/:id/en', validateObjectId, awardController.updateAwardEn);
 
+// Update award si text data (partial update only for si text data)
+awardRoute.patch('/:id/si', validateObjectId, awardController.updateAwardSi);
+
 export default awardRoute;
