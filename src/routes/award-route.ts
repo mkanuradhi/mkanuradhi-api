@@ -6,6 +6,9 @@ import validateObjectId from '../middleware/validate-objectid';
 
 const awardRoute = express.Router();
 
+// Search awards by query
+awardRoute.get('/search', awardController.searchAwards);
+
 // Add a new award (en text data)
 awardRoute.post('/', awardController.createAwardEn);
 

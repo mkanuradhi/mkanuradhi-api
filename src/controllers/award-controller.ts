@@ -4,6 +4,9 @@ import { ActivationAwardDto, CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDt
 import * as awardService from "../services/award-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Award from "../interfaces/i-award";
+import { SearchParamsDto } from "../dtos/search-params-dto";
+import { parseLangQueryParam, parseSearchParams } from "../utils/common-util";
+import AwardView from "../interfaces/i-award-view";
 
 export const createAwardEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const {
@@ -171,4 +174,29 @@ export const deleteAward = asyncErrorHandler( async (req: Request, res: Response
   const awardId = req.params.id;
   await awardService.deleteAward(awardId);
   res.status(204).json();
+});
+
+export const searchAwards = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const searchParams: SearchParamsDto = parseSearchParams(req);
+  const lang: string = parseLangQueryParam(req);
+  const { awardViews, totalCount } = await awardService.searchAwards(lang, searchParams);
+  
+  const page = searchParams.page || 0;
+  const size = searchParams.size || 200;
+
+  const message = `${totalCount} result${totalCount !== 1 ? 's' : ''} found for '${searchParams.query}'`;
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
+
+  const result: PaginatedResult<AwardView> = {
+    message,
+    items: awardViews,
+    pagination: {
+      totalCount,
+      totalPages,
+      currentPage: page,
+      currentPageSize: awardViews.length,
+    },
+  };
+
+  res.status(200).json(result);
 });

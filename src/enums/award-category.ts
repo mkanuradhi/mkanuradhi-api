@@ -4,6 +4,7 @@ enum AwardCategory {
   SERVICE = 'SERVICE',
   LEADERSHIP = 'LEADERSHIP',
   INNOVATION = 'INNOVATION',
+  ACADEMIC = 'ACADEMIC',
 }
 
 export default AwardCategory;

@@ -1,12 +1,15 @@
 import { ActivationAwardDto, CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDto } from "../dtos/award-dto";
 import AppError from "../errors/app-error";
 import Award from "../interfaces/i-award";
+import AwardView from "../interfaces/i-award-view";
 import AwardModel from "../models/award-model";
-import { mapDocumentsToAwards, mapDocumentToAward } from "../mappers/award-mapper";
+import { mapDocumentsToAwards, mapDocumentsToAwardViews, mapDocumentToAward } from "../mappers/award-mapper";
 import logger from "../config/logger-config";
 import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
+import { SearchParamsDto } from "../dtos/search-params-dto";
+import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
 
 
 export const createAwardEn = async (awardDto: CreateAwardEnDto): Promise<Award> => {
@@ -302,5 +305,76 @@ export const deleteAward = async (awardId: string): Promise<void> => {
   );
   if (!updatedAwardDoc) {
     throw new AppError('Failed to delete award document.', 500);
+  }
+}
+
+export const searchAwards = async (lang: string, searchParams: SearchParamsDto): Promise<{ awardViews: AwardView[]; totalCount: number; }> => {
+  const {page = 0, size = 200, sort} = searchParams;
+  
+  validatePaginationDetails(page, size);
+
+  const searchFilter = buildSearchFilter(searchParams);
+  const sortOptions = getSortOptions(sort);
+
+  const commonFields = {
+    year: 1,
+    receivedDate: 1,
+    type: 1,
+    scope: 1,
+    role: 1,
+    result: 1,
+    category: 1,
+
+    eventUrl: 1,
+    relatedWorkUrl: 1,
+    monetaryValue: 1,
+
+    issuerImage: 1,
+    primaryImage: 1,
+
+    status: 1,
+    deleted: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    v: 1,
+  };
+
+  const langFields = {
+    [`title${capitalizeLang(lang)}`]: 1,
+    [`description${capitalizeLang(lang)}`]: 1,
+    [`issuer${capitalizeLang(lang)}`]: 1,
+    [`issuerLocation${capitalizeLang(lang)}`]: 1,
+    [`ceremonyLocation${capitalizeLang(lang)}`]: 1,
+    [`coRecipients${capitalizeLang(lang)}`]: 1,
+  };
+
+  const projection = { ...commonFields, ...langFields };
+  
+  const [awardDocs, totalCount] = await Promise.all([
+    // Fetch paginated awards
+    AwardModel.find(searchFilter, projection)
+      .sort(sortOptions)
+      .skip(page * size)
+      .limit(size),
+    
+    // Count total documents for the query
+    AwardModel.countDocuments(searchFilter),
+  ]);
+
+  const awardViews: AwardView[] = mapDocumentsToAwardViews(lang, awardDocs);
+
+  return { awardViews, totalCount };
+}
+
+const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
+  const defaultSort: Record<string, 1 | -1> = { year: -1, code: -1, updatedAt: -1 };
+  if (!sort) {
+    return defaultSort;
+  }
+
+  switch (sort) {
+    case "latest": return { year: -1 };
+    case "oldest": return { year: 1 };
+    default: return defaultSort;
   }
 }

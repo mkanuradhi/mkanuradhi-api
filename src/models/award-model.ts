@@ -211,6 +211,24 @@ awardSchema.index(
   { name: 'idx_admin_status_created' }
 );
 
+awardSchema.index(
+  {
+    titleEn: "text",
+    descriptionEn: "text",
+    issuerEn: "text",
+    issuerLocationEn: "text",
+    ceremonyLocationEn: "text",
+    titleSi: "text",
+    descriptionSi: "text",
+    issuerSi: "text",
+    issuerLocationSi: "text",
+    ceremonyLocationSi: "text",
+  },
+  {
+    name: "idx_text_search",
+  }
+); // For text search
+
 const AwardModel = model<AwardDocument>("Award", awardSchema);
 
 export default AwardModel;
