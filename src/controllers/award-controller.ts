@@ -167,3 +167,8 @@ export const toggleAwardActivation = asyncErrorHandler( async (req: Request, res
   res.status(200).json(updatedAward);
 });
 
+export const deleteAward = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  await awardService.deleteAward(awardId);
+  res.status(204).json();
+});

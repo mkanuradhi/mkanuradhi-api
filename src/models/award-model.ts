@@ -7,13 +7,13 @@ import AwardResult from "../enums/award-result";
 import AwardCategory from "../enums/award-category";
 import DocumentStatus from "../enums/document-status";
 
-const MAX_TITLE_LENGTH = 200;
-const MAX_DESCRIPTION_LENGTH = 700;
+const MAX_TITLE_LENGTH = 300;
+const MAX_DESCRIPTION_LENGTH = 1000;
 
 const MAX_CO_RECIPIENTS = 20;
 const MAX_CO_RECIPIENT_NAME_LENGTH = 150;
 
-const MAX_URL_LENGTH = 400;
+const MAX_URL_LENGTH = 500;
 
 const awardSchema = new Schema<AwardDocument>(
   {

@@ -24,5 +24,8 @@ awardRoute.patch('/:id/si', validateObjectId, awardController.updateAwardSi);
 // Activate or deactivate a award
 awardRoute.patch('/:id/toggle', validateObjectId, awardController.toggleAwardActivation);
 
+// Delete a award
+awardRoute.delete('/:id', validateObjectId, awardController.deleteAward);
+
 
 export default awardRoute;

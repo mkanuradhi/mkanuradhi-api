@@ -6,6 +6,7 @@ import { mapDocumentsToAwards, mapDocumentToAward } from "../mappers/award-mappe
 import logger from "../config/logger-config";
 import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
+import { v4 as uuidv4 } from 'uuid';
 
 
 export const createAwardEn = async (awardDto: CreateAwardEnDto): Promise<Award> => {
@@ -269,4 +270,37 @@ export const toggleAwardActivation = async (awardId: string, awardDto: Activatio
 
   logger.info(`Award updated for status for ID: ${awardId}`);
   return mapDocumentToAward(updatedAwardDoc);
+}
+
+export const deleteAward = async (awardId: string): Promise<void> => {
+  const awardDoc = await AwardModel.findOne({ 
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find the award with ID '${awardId}' or it is already deleted.`, 404);
+  }
+
+  const deletedTitleEn = `${awardDoc.titleEn}-DELETED-${uuidv4()}`;
+  const deletedDescriptionEn = `${awardDoc.descriptionEn}-DELETED-${uuidv4()}`;
+  const deletedTitleSi = `${awardDoc.titleSi}-DELETED-${uuidv4()}`;
+  const deletedDescriptionSi = `${awardDoc.descriptionSi}-DELETED-${uuidv4()}`;
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    {
+      $set: {
+        titleEn: deletedTitleEn,
+        descriptionEn: deletedDescriptionEn,
+        titleSi: deletedTitleSi,
+        descriptionSi: deletedDescriptionSi,
+        deleted: true,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedAwardDoc) {
+    throw new AppError('Failed to delete award document.', 500);
+  }
 }
