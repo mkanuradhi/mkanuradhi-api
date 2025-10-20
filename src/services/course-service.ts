@@ -336,7 +336,7 @@ export const searchCourses = async (lang: string, searchParams: SearchParamsDto)
   const projection = { ...commonFields, ...langFields };
   
   const [courseDocs, totalCount] = await Promise.all([
-    // Fetch paginated sourses
+    // Fetch paginated courses
     CourseModel.find(searchFilter, projection)
       .sort(sortOptions)
       .skip(page * size)

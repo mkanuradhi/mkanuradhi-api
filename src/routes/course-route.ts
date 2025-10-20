@@ -7,7 +7,7 @@ import Role from '../enums/role';
 
 const courseRoute = express.Router();
 
-// Search products by query
+// Search courses by query
 courseRoute.get('/search', courseController.searchCourses);
 
 // Add a new course (en text data)
