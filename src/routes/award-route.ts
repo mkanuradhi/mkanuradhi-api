@@ -21,4 +21,8 @@ awardRoute.patch('/:id/en', validateObjectId, awardController.updateAwardEn);
 // Update award si text data (partial update only for si text data)
 awardRoute.patch('/:id/si', validateObjectId, awardController.updateAwardSi);
 
+// Activate or deactivate a award
+awardRoute.patch('/:id/toggle', validateObjectId, awardController.toggleAwardActivation);
+
+
 export default awardRoute;

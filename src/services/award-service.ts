@@ -1,10 +1,11 @@
-import { CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDto } from "../dtos/award-dto";
+import { ActivationAwardDto, CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDto } from "../dtos/award-dto";
 import AppError from "../errors/app-error";
 import Award from "../interfaces/i-award";
 import AwardModel from "../models/award-model";
 import { mapDocumentsToAwards, mapDocumentToAward } from "../mappers/award-mapper";
 import logger from "../config/logger-config";
 import { validatePaginationDetails } from "../validators/common-validator";
+import DocumentStatus from "../enums/document-status";
 
 
 export const createAwardEn = async (awardDto: CreateAwardEnDto): Promise<Award> => {
@@ -233,5 +234,39 @@ export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto)
   }
 
   logger.info(`Award updated for ID: ${awardId} and title Si: ${awardDto.titleSi}`);
+  return mapDocumentToAward(updatedAwardDoc);
+}
+
+export const toggleAwardActivation = async (awardId: string, awardDto: ActivationAwardDto): Promise<Award> => {
+  const existingAwardDoc = await AwardModel.findOne({
+    _id: awardId,
+    deleted: false,
+  });
+  if (!existingAwardDoc) {
+      throw new AppError(`Cannot find the award with ID: ${awardId}. Unable to update the award.`, 400);
+  }
+
+  if (awardDto.status === DocumentStatus.ACTIVE) { // check sinhala details are available only when award is going to be activated
+    if (!existingAwardDoc.titleSi?.trim() || !existingAwardDoc.descriptionSi?.trim() || !existingAwardDoc.issuerSi?.trim()) {
+      throw new AppError("Missing or empty required fields in Sinhala: Either the title or description or issuer is missing.", 400);
+    }
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    { 
+      $set: {
+        status: awardDto.status,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedAwardDoc) {
+      throw new AppError('Failed to update award document.', 500);
+  }
+
+  logger.info(`Award updated for status for ID: ${awardId}`);
   return mapDocumentToAward(updatedAwardDoc);
 }
