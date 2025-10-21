@@ -10,7 +10,7 @@ const awardRoute = express.Router();
 awardRoute.get('/search', awardController.searchAwards);
 
 // Add a new award (en text data)
-awardRoute.post('/', awardController.createAwardEn);
+awardRoute.post('/', requireAuthenticated([Role.ADMIN]), awardController.createAwardEn);
 
 // Fetch all awards
 awardRoute.get('/', awardController.getAwards);
@@ -19,16 +19,16 @@ awardRoute.get('/', awardController.getAwards);
 awardRoute.get('/:id', validateObjectId, awardController.getAward);
 
 // Update award data (partial update only for en text data)
-awardRoute.patch('/:id/en', validateObjectId, awardController.updateAwardEn);
+awardRoute.patch('/:id/en', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.updateAwardEn);
 
 // Update award si text data (partial update only for si text data)
-awardRoute.patch('/:id/si', validateObjectId, awardController.updateAwardSi);
+awardRoute.patch('/:id/si', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.updateAwardSi);
 
 // Activate or deactivate a award
-awardRoute.patch('/:id/toggle', validateObjectId, awardController.toggleAwardActivation);
+awardRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.toggleAwardActivation);
 
 // Delete a award
-awardRoute.delete('/:id', validateObjectId, awardController.deleteAward);
+awardRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.deleteAward);
 
 
 export default awardRoute;

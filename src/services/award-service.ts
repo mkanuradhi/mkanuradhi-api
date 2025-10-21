@@ -10,9 +10,10 @@ import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
+import AppUser from "../interfaces/i-app-user";
 
 
-export const createAwardEn = async (awardDto: CreateAwardEnDto): Promise<Award> => {
+export const createAwardEn = async (awardDto: CreateAwardEnDto, appUser?: AppUser | null): Promise<Award> => {
   const existingAwardDoc = await AwardModel.findOne({
     titleEn: awardDto.titleEn.trim(),
     descriptionEn: awardDto.descriptionEn.trim(),
@@ -42,6 +43,9 @@ export const createAwardEn = async (awardDto: CreateAwardEnDto): Promise<Award> 
     eventUrl: awardDto.eventUrl,
     relatedWorkUrl: awardDto.relatedWorkUrl,
     monetaryValue: awardDto.monetaryValue,
+
+    createdBy: appUser || undefined,
+    updatedBy: appUser || undefined,
   });
 
   logger.info(`Award created for ${awardDto.titleEn}`);
@@ -134,7 +138,7 @@ export const getAward = async (awardId: string): Promise<Award> => {
   }
 }
 
-export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto): Promise<Award> => {
+export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto, appUser?: AppUser | null): Promise<Award> => {
   const existingAwardDoc = await AwardModel.findOne({
     _id: awardId,
     deleted: false,
@@ -179,6 +183,8 @@ export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto)
         eventUrl: awardDto.eventUrl,
         relatedWorkUrl: awardDto.relatedWorkUrl,
         monetaryValue: awardDto.monetaryValue,
+
+        updatedBy: appUser || undefined,
       },
       $inc: { __v: 1 }
     },
@@ -193,7 +199,7 @@ export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto)
   return mapDocumentToAward(updatedAwardDoc);
 }
 
-export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto): Promise<Award> => {
+export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto, appUser?: AppUser | null): Promise<Award> => {
   const existingAwardDoc = await AwardModel.findOne({
     _id: awardId,
     deleted: false,
@@ -227,6 +233,7 @@ export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto)
         issuerLocationSi: awardDto.issuerLocationSi,
         ceremonyLocationSi: awardDto.ceremonyLocationSi,
         coRecipientsSi: awardDto.coRecipientsSi,
+        updatedBy: appUser || undefined,
       },
       $inc: { __v: 1 }
     },
@@ -241,7 +248,7 @@ export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto)
   return mapDocumentToAward(updatedAwardDoc);
 }
 
-export const toggleAwardActivation = async (awardId: string, awardDto: ActivationAwardDto): Promise<Award> => {
+export const toggleAwardActivation = async (awardId: string, awardDto: ActivationAwardDto, appUser?: AppUser | null): Promise<Award> => {
   const existingAwardDoc = await AwardModel.findOne({
     _id: awardId,
     deleted: false,
@@ -261,6 +268,7 @@ export const toggleAwardActivation = async (awardId: string, awardDto: Activatio
     { 
       $set: {
         status: awardDto.status,
+        updatedBy: appUser || undefined,
       },
       $inc: { __v: 1 }
     },
@@ -275,7 +283,7 @@ export const toggleAwardActivation = async (awardId: string, awardDto: Activatio
   return mapDocumentToAward(updatedAwardDoc);
 }
 
-export const deleteAward = async (awardId: string): Promise<void> => {
+export const deleteAward = async (awardId: string, appUser?: AppUser | null): Promise<void> => {
   const awardDoc = await AwardModel.findOne({ 
     _id: awardId,
     deleted: false,
@@ -297,6 +305,7 @@ export const deleteAward = async (awardId: string): Promise<void> => {
         descriptionEn: deletedDescriptionEn,
         titleSi: deletedTitleSi,
         descriptionSi: deletedDescriptionSi,
+        updatedBy: appUser || undefined,
         deleted: true,
       },
       $inc: { __v: 1 }

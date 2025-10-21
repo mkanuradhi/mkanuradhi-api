@@ -6,6 +6,7 @@ import AwardRole from "../enums/award-role";
 import AwardResult from "../enums/award-result";
 import AwardCategory from "../enums/award-category";
 import DocumentStatus from "../enums/document-status";
+import AppUserSchema from "./app-user-schema";
 
 const MAX_TITLE_LENGTH = 300;
 const MAX_DESCRIPTION_LENGTH = 1000;
@@ -192,6 +193,8 @@ const awardSchema = new Schema<AwardDocument>(
       type: Boolean,
       default: false,
     },
+    createdBy: { type: AppUserSchema, required: false },
+    updatedBy: { type: AppUserSchema, required: false },
   },
   {
     timestamps: true,

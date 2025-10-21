@@ -50,7 +50,7 @@ export const createAwardEn = asyncErrorHandler( async (req: Request, res: Respon
     relatedWorkUrl,
     monetaryValue,
   };
-  const addedAward = await awardService.createAwardEn(awardEnDto);
+  const addedAward = await awardService.createAwardEn(awardEnDto, req.appUser);
   res.status(201).json(addedAward);
 });
 
@@ -126,7 +126,7 @@ export const updateAwardEn = asyncErrorHandler( async (req: Request, res: Respon
     v
   };
   
-  const updatedAward = await awardService.updateAwardEn(awardId, awardDto);
+  const updatedAward = await awardService.updateAwardEn(awardId, awardDto, req.appUser);
   res.status(200).json(updatedAward);
 });
 
@@ -152,7 +152,7 @@ export const updateAwardSi = asyncErrorHandler( async (req: Request, res: Respon
     v
   };
   
-  const updatedAward = await awardService.updateAwardSi(awardId, awardDto);
+  const updatedAward = await awardService.updateAwardSi(awardId, awardDto, req.appUser);
   res.status(200).json(updatedAward);
 });
 
@@ -166,13 +166,13 @@ export const toggleAwardActivation = asyncErrorHandler( async (req: Request, res
     status,
   };
   
-  const updatedAward = await awardService.toggleAwardActivation(awardId, awardDto);
+  const updatedAward = await awardService.toggleAwardActivation(awardId, awardDto, req.appUser);
   res.status(200).json(updatedAward);
 });
 
 export const deleteAward = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const awardId = req.params.id;
-  await awardService.deleteAward(awardId);
+  await awardService.deleteAward(awardId, req.appUser);
   res.status(204).json();
 });
 

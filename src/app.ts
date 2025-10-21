@@ -40,12 +40,13 @@ const corsOptions = {
   credentials: true
 }
 app.set('trust proxy', 1);
-app.use(clerkMiddleware());
 
 app.use(cors(corsOptions));
 app.use(limiter);
 app.use(RequestLogger);
 app.use(express.json());
+
+app.use(clerkMiddleware());
 
 app.use('/', homeRoute);
 app.use('/contact', contactRoute);
