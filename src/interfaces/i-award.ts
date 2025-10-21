@@ -22,6 +22,7 @@ interface Award {
   ceremonyLocationSi: string; // city, country in Sinhala
   coRecipientsSi: string[]; // array of names in Sinhala
 
+  year: number;
   receivedDate: Date;
   type: AwardType; // award | grant | fellowship | scholarship | prize | recognition
   scope: AwardScope; // international | national | university | faculty | department

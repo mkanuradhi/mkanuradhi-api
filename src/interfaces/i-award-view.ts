@@ -4,22 +4,16 @@ import AwardRole from "../enums/award-role";
 import AwardScope from "../enums/award-scope";
 import AwardType from "../enums/award-type";
 import DocumentStatus from "../enums/document-status";
-import BaseDocument from "./base-document";
 
-interface AwardDocument extends BaseDocument {
-  titleEn: string;
-  descriptionEn: string;
-  issuerEn: string;
-  issuerLocationEn: string;
-  ceremonyLocationEn: string;
-  coRecipientsEn: string[];
+interface AwardView {
+  id: string;
 
-  titleSi: string;
-  descriptionSi: string;
-  issuerSi: string;
-  issuerLocationSi: string;
-  ceremonyLocationSi: string;
-  coRecipientsSi: string[];
+  title: string;
+  description: string;
+  issuer: string;
+  issuerLocation: string;
+  ceremonyLocation: string;
+  coRecipients: string[];
 
   year: number;
   receivedDate: Date;
@@ -38,6 +32,9 @@ interface AwardDocument extends BaseDocument {
 
   status: DocumentStatus;
   deleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  v: number;
 }
 
-export default AwardDocument;
+export default AwardView;

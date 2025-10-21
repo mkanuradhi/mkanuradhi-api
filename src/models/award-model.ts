@@ -6,14 +6,15 @@ import AwardRole from "../enums/award-role";
 import AwardResult from "../enums/award-result";
 import AwardCategory from "../enums/award-category";
 import DocumentStatus from "../enums/document-status";
+import AppUserSchema from "./app-user-schema";
 
-const MAX_TITLE_LENGTH = 200;
-const MAX_DESCRIPTION_LENGTH = 700;
+const MAX_TITLE_LENGTH = 300;
+const MAX_DESCRIPTION_LENGTH = 1000;
 
 const MAX_CO_RECIPIENTS = 20;
 const MAX_CO_RECIPIENT_NAME_LENGTH = 150;
 
-const MAX_URL_LENGTH = 400;
+const MAX_URL_LENGTH = 500;
 
 const awardSchema = new Schema<AwardDocument>(
   {
@@ -106,6 +107,12 @@ const awardSchema = new Schema<AwardDocument>(
         }
       ]
     },
+    year: {
+      type: Number,
+      required: [true, "Year is required."],
+      min: [2010, "Year must be a valid four-digit number."],
+      max: [2050, "Year must be a valid year."]
+    },
     receivedDate: {
       type: Date,
       required: [true, "Recieved date is required."],
@@ -164,7 +171,7 @@ const awardSchema = new Schema<AwardDocument>(
     monetaryValue: {
       type: String,
       trim: true,
-      maxLength: [MAX_TITLE_LENGTH, `Related work URL cannot exceed ${MAX_TITLE_LENGTH} characters.`]
+      maxLength: [MAX_TITLE_LENGTH, `Monetary value cannot exceed ${MAX_TITLE_LENGTH} characters.`]
     },
     issuerImage: {
       type: String,
@@ -180,12 +187,14 @@ const awardSchema = new Schema<AwardDocument>(
         values: Object.values(DocumentStatus),
         message: 'Award status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.INACTIVE,
+      default: DocumentStatus.ACTIVE,
     },
     deleted: {
       type: Boolean,
       default: false,
     },
+    createdBy: { type: AppUserSchema, required: false },
+    updatedBy: { type: AppUserSchema, required: false },
   },
   {
     timestamps: true,
@@ -204,6 +213,24 @@ awardSchema.index(
   { status: 1, createdAt: -1 },
   { name: 'idx_admin_status_created' }
 );
+
+awardSchema.index(
+  {
+    titleEn: "text",
+    descriptionEn: "text",
+    issuerEn: "text",
+    issuerLocationEn: "text",
+    ceremonyLocationEn: "text",
+    titleSi: "text",
+    descriptionSi: "text",
+    issuerSi: "text",
+    issuerLocationSi: "text",
+    ceremonyLocationSi: "text",
+  },
+  {
+    name: "idx_text_search",
+  }
+); // For text search
 
 const AwardModel = model<AwardDocument>("Award", awardSchema);
 
