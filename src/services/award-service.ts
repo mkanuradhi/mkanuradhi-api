@@ -367,7 +367,7 @@ export const searchAwards = async (lang: string, searchParams: SearchParamsDto):
 }
 
 const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
-  const defaultSort: Record<string, 1 | -1> = { year: -1, code: -1, updatedAt: -1 };
+  const defaultSort: Record<string, 1 | -1> = { year: -1, receivedDate: -1, updatedAt: -1 };
   if (!sort) {
     return defaultSort;
   }
