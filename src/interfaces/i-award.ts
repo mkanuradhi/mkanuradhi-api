@@ -4,6 +4,7 @@ import AwardRole from "../enums/award-role";
 import AwardScope from "../enums/award-scope";
 import AwardType from "../enums/award-type";
 import DocumentStatus from "../enums/document-status";
+import AppUser from "./i-app-user";
 
 interface Award {
   id: string;
@@ -41,6 +42,8 @@ interface Award {
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: AppUser;
+  updatedBy?: AppUser;
   v: number;
 }
 

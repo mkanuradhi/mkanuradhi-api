@@ -127,6 +127,8 @@ export const getAward = async (awardId: string): Promise<Award> => {
       deleted: 1,
       createdAt: 1,
       updatedAt: 1,
+      createdBy: 1,
+      updatedBy: 1,
       __v: 1
     }
   );
