@@ -312,6 +312,43 @@ export const uploadPrimaryImage = async (awardId: string, imageFile?: Express.Mu
   return mapDocumentToAward(awardDoc);
 }
 
+export const uploadIssuerImage = async (awardId: string, imageFile?: Express.Multer.File, appUser?: AppUser | null): Promise<Award> => {
+  const awardDoc = await AwardModel.findOne({
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find award with ID '${awardId}'`, 404);
+  }
+  if (!imageFile) {
+    throw new AppError('No issuer image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError("Failed to upload the issuer image to cloud. Please try again.", 500);
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    {
+      $set: {
+        issuerImage: imageUrl,
+        updatedBy: appUser || undefined,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedAwardDoc) {
+      throw new AppError('Failed to update award with issuer image.', 500);
+  }
+
+  logger.info(`Uploaded issuer image for award ID: ${awardId}`);
+  return mapDocumentToAward(updatedAwardDoc);
+}
+
 export const deleteAward = async (awardId: string, appUser?: AppUser | null): Promise<void> => {
   const awardDoc = await AwardModel.findOne({ 
     _id: awardId,

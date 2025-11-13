@@ -176,6 +176,12 @@ export const uploadPrimaryImage = asyncErrorHandler(async (req: Request, res: Re
   res.status(200).json(updatedAward);
 });
 
+export const uploadIssuerImage = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const updatedAward = await awardService.uploadIssuerImage(awardId, req.file, req.appUser);
+  res.status(200).json(updatedAward);
+});
+
 export const deleteAward = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const awardId = req.params.id;
   await awardService.deleteAward(awardId, req.appUser);

@@ -25,13 +25,16 @@ awardRoute.patch('/:id/en', requireAuthenticated([Role.ADMIN]), validateObjectId
 // Update award si text data (partial update only for si text data)
 awardRoute.patch('/:id/si', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.updateAwardSi);
 
-// Activate or deactivate a award
+// Activate or deactivate an award
 awardRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.toggleAwardActivation);
 
-// Update the primary image for a award
+// Upload primary image for an award
 awardRoute.patch('/:id/primary-image', requireAuthenticated([Role.ADMIN]), upload.single('primaryImage'), awardController.uploadPrimaryImage);
 
-// Delete a award
+// Upload issuer image for an award
+awardRoute.patch('/:id/issuer-image', requireAuthenticated([Role.ADMIN]), upload.single('issuerImage'), awardController.uploadIssuerImage);
+
+// Delete an award
 awardRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.deleteAward);
 
 // Delete the primary image of an award
