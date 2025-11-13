@@ -34,5 +34,8 @@ awardRoute.patch('/:id/primary-image', requireAuthenticated([Role.ADMIN]), uploa
 // Delete a award
 awardRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.deleteAward);
 
+// Delete the primary image of an award
+awardRoute.delete('/:id/primary-image', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.deletePrimaryImage);
+
 
 export default awardRoute;

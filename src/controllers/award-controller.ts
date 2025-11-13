@@ -182,6 +182,12 @@ export const deleteAward = asyncErrorHandler( async (req: Request, res: Response
   res.status(204).json();
 });
 
+export const deletePrimaryImage = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const updatedAward = await awardService.deletePrimaryImage(awardId, req.appUser);
+  res.status(200).json(updatedAward);
+});
+
 export const searchAwards = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const searchParams: SearchParamsDto = parseSearchParams(req);
   const lang: string = parseLangQueryParam(req);
