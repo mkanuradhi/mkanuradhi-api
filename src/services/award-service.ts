@@ -9,7 +9,7 @@ import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { SearchParamsDto } from "../dtos/search-params-dto";
-import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
+import { buildSearchFilter, capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
 import AppUser from "../interfaces/i-app-user";
 
 
@@ -283,6 +283,33 @@ export const toggleAwardActivation = async (awardId: string, awardDto: Activatio
 
   logger.info(`Award updated for status for ID: ${awardId}`);
   return mapDocumentToAward(updatedAwardDoc);
+}
+
+export const uploadPrimaryImage = async (awardId: string, imageFile?: Express.Multer.File): Promise<Award> => {
+  const awardDoc = await AwardModel.findOne({
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find award with ID '${awardId}'`, 404);
+  }
+  if (!imageFile) {
+    throw new AppError('No primary image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError("Failed to upload the primary image. Please try again.", 500);
+  }
+
+  awardDoc.set({
+    primaryImage: imageUrl,
+  });
+  awardDoc.increment();
+  await awardDoc.save();
+
+  logger.info(`Uploaded primary image for award ID: ${awardId}`);
+  return mapDocumentToAward(awardDoc);
 }
 
 export const deleteAward = async (awardId: string, appUser?: AppUser | null): Promise<void> => {

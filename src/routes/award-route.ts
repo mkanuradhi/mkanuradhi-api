@@ -3,6 +3,7 @@ import * as awardController from '../controllers/award-controller';
 import requireAuthenticated from '../middleware/require-authenticated';
 import Role from '../enums/role';
 import validateObjectId from '../middleware/validate-objectid';
+import upload from '../middleware/file-upload';
 
 const awardRoute = express.Router();
 
@@ -26,6 +27,9 @@ awardRoute.patch('/:id/si', requireAuthenticated([Role.ADMIN]), validateObjectId
 
 // Activate or deactivate a award
 awardRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.toggleAwardActivation);
+
+// Update the primary image for a award
+awardRoute.patch('/:id/primary-image', requireAuthenticated([Role.ADMIN]), upload.single('primaryImage'), awardController.uploadPrimaryImage);
 
 // Delete a award
 awardRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.deleteAward);
