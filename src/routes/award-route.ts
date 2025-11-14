@@ -40,5 +40,7 @@ awardRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, 
 // Delete the primary image of an award
 awardRoute.delete('/:id/primary-image', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.deletePrimaryImage);
 
+// Delete the issuer image of an award
+awardRoute.delete('/:id/issuer-image', requireAuthenticated([Role.ADMIN]), validateObjectId, awardController.deleteIssuerImage);
 
 export default awardRoute;

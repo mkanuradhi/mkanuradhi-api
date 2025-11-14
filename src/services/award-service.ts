@@ -411,6 +411,34 @@ export const deletePrimaryImage = async (awardId: string, appUser?: AppUser | nu
   return mapDocumentToAward(updatedAwardDoc);
 }
 
+export const deleteIssuerImage = async (awardId: string, appUser?: AppUser | null): Promise<Award> => {
+  const awardDoc = await AwardModel.findOne({ 
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find the award with ID '${awardId}' or it is already deleted.`, 404);
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    {
+      $set: {
+        issuerImage: null,
+        updatedBy: appUser || undefined,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedAwardDoc) {
+    throw new AppError('Failed to delete the issuer image of the award document.', 500);
+  }
+
+  logger.info(`Deleted the issuer image of the award for ID: ${awardId}`);
+  return mapDocumentToAward(updatedAwardDoc);
+}
+
 export const searchAwards = async (lang: string, searchParams: SearchParamsDto): Promise<{ awardViews: AwardView[]; totalCount: number; }> => {
   const {page = 0, size = 200, sort} = searchParams;
   
