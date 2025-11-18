@@ -9,7 +9,7 @@ import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { SearchParamsDto } from "../dtos/search-params-dto";
-import { buildSearchFilter, capitalizeLang } from "../utils/common-util";
+import { buildSearchFilter, capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
 import AppUser from "../interfaces/i-app-user";
 
 
@@ -127,6 +127,8 @@ export const getAward = async (awardId: string): Promise<Award> => {
       deleted: 1,
       createdAt: 1,
       updatedAt: 1,
+      createdBy: 1,
+      updatedBy: 1,
       __v: 1
     }
   );
@@ -283,6 +285,70 @@ export const toggleAwardActivation = async (awardId: string, awardDto: Activatio
   return mapDocumentToAward(updatedAwardDoc);
 }
 
+export const uploadPrimaryImage = async (awardId: string, imageFile?: Express.Multer.File): Promise<Award> => {
+  const awardDoc = await AwardModel.findOne({
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find award with ID '${awardId}'`, 404);
+  }
+  if (!imageFile) {
+    throw new AppError('No primary image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError("Failed to upload the primary image. Please try again.", 500);
+  }
+
+  awardDoc.set({
+    primaryImage: imageUrl,
+  });
+  awardDoc.increment();
+  await awardDoc.save();
+
+  logger.info(`Uploaded primary image for award ID: ${awardId}`);
+  return mapDocumentToAward(awardDoc);
+}
+
+export const uploadIssuerImage = async (awardId: string, imageFile?: Express.Multer.File, appUser?: AppUser | null): Promise<Award> => {
+  const awardDoc = await AwardModel.findOne({
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find award with ID '${awardId}'`, 404);
+  }
+  if (!imageFile) {
+    throw new AppError('No issuer image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError("Failed to upload the issuer image to cloud. Please try again.", 500);
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    {
+      $set: {
+        issuerImage: imageUrl,
+        updatedBy: appUser || undefined,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedAwardDoc) {
+      throw new AppError('Failed to update award with issuer image.', 500);
+  }
+
+  logger.info(`Uploaded issuer image for award ID: ${awardId}`);
+  return mapDocumentToAward(updatedAwardDoc);
+}
+
 export const deleteAward = async (awardId: string, appUser?: AppUser | null): Promise<void> => {
   const awardDoc = await AwardModel.findOne({ 
     _id: awardId,
@@ -315,6 +381,62 @@ export const deleteAward = async (awardId: string, appUser?: AppUser | null): Pr
   if (!updatedAwardDoc) {
     throw new AppError('Failed to delete award document.', 500);
   }
+}
+
+export const deletePrimaryImage = async (awardId: string, appUser?: AppUser | null): Promise<Award> => {
+  const awardDoc = await AwardModel.findOne({ 
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find the award with ID '${awardId}' or it is already deleted.`, 404);
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    {
+      $set: {
+        primaryImage: null,
+        updatedBy: appUser || undefined,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedAwardDoc) {
+    throw new AppError('Failed to delete the primary image of the award document.', 500);
+  }
+
+  logger.info(`Deleted the primary image of the award for ID: ${awardId}`);
+  return mapDocumentToAward(updatedAwardDoc);
+}
+
+export const deleteIssuerImage = async (awardId: string, appUser?: AppUser | null): Promise<Award> => {
+  const awardDoc = await AwardModel.findOne({ 
+    _id: awardId,
+    deleted: false,
+  });
+  if (!awardDoc) {
+    throw new AppError(`Cannot find the award with ID '${awardId}' or it is already deleted.`, 404);
+  }
+
+  const updatedAwardDoc = await AwardModel.findByIdAndUpdate(
+    awardId,
+    {
+      $set: {
+        issuerImage: null,
+        updatedBy: appUser || undefined,
+      },
+      $inc: { __v: 1 }
+    },
+    { new: true }
+  );
+  if (!updatedAwardDoc) {
+    throw new AppError('Failed to delete the issuer image of the award document.', 500);
+  }
+
+  logger.info(`Deleted the issuer image of the award for ID: ${awardId}`);
+  return mapDocumentToAward(updatedAwardDoc);
 }
 
 export const searchAwards = async (lang: string, searchParams: SearchParamsDto): Promise<{ awardViews: AwardView[]; totalCount: number; }> => {

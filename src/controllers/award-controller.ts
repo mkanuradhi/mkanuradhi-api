@@ -170,10 +170,34 @@ export const toggleAwardActivation = asyncErrorHandler( async (req: Request, res
   res.status(200).json(updatedAward);
 });
 
+export const uploadPrimaryImage = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const updatedAward = await awardService.uploadPrimaryImage(awardId, req.file);
+  res.status(200).json(updatedAward);
+});
+
+export const uploadIssuerImage = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const updatedAward = await awardService.uploadIssuerImage(awardId, req.file, req.appUser);
+  res.status(200).json(updatedAward);
+});
+
 export const deleteAward = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const awardId = req.params.id;
   await awardService.deleteAward(awardId, req.appUser);
   res.status(204).json();
+});
+
+export const deletePrimaryImage = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const updatedAward = await awardService.deletePrimaryImage(awardId, req.appUser);
+  res.status(200).json(updatedAward);
+});
+
+export const deleteIssuerImage = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const awardId = req.params.id;
+  const updatedAward = await awardService.deleteIssuerImage(awardId, req.appUser);
+  res.status(200).json(updatedAward);
 });
 
 export const searchAwards = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
