@@ -13,7 +13,9 @@ import { UAParser } from 'ua-parser-js';
 import { validatePaginationDetails } from '../validators/common-validator';
 import React from 'react';
 import ContactAckEmail from '../emails/templates/contact-ack-email';
+import ContactNotifyEmail from '../emails/templates/contact-notify-email';
 import { renderEmail, renderEmailText } from '../emails/render-email';
+import IPApiResponse from '../responses/ipapi-response';
 
 export const createContactMessage = async (contactMessageDto: CreateContactMessageDto): Promise<ContactMessage> => {
   await verifyRecaptcha(contactMessageDto.captchaToken);
@@ -51,7 +53,7 @@ export const createContactMessage = async (contactMessageDto: CreateContactMessa
 
     logger.info(`Contact Message created for ${contactMessageDto.name}`);
 
-    sendNotifyEmail(contactMessageDto);
+    sendNotifyEmailToAdmin(contactMessageDto, ipApiResponse, parsedUserAgent);
     sendAcknowledgeEmailToSender(contactMessageDto);
 
     return mapDocumentToContactMessage(contactMessageDoc);
@@ -93,25 +95,54 @@ const validateContactMessage = (contactMessageDto: CreateContactMessageDto): voi
   }
 }
 
-const sendNotifyEmail = async (contactMessageDto: CreateContactMessageDto): Promise<void> => {
-  const htmlMessage = `
-    <h2>You have received a new message from your website contact form.</h2>
-    <p><b>Name:</b> ${contactMessageDto.name}</p>
-    <p><b>Email:</b> ${contactMessageDto.email}</p>
-    <p><b>Message:</b></p>
-    <p>${contactMessageDto.message}</p>
-  `;
+const sendNotifyEmailToAdmin = async (contactMessageDto: CreateContactMessageDto, ipApiResponse: IPApiResponse, parsedUserAgent: ParsedUserAgent): Promise<void> => {
+  try {
+    const emailComponent = React.createElement(ContactNotifyEmail, {
+      name: contactMessageDto.name,
+      email: contactMessageDto.email,
+      message: contactMessageDto.message,
+      city: ipApiResponse.city,
+      country: ipApiResponse.countryName,
+      browser: parsedUserAgent.browser,
+      os: parsedUserAgent.os,
+    });
 
-  const sendEmailDto: SendEmailDto = {
-    to: process.env.EMAIL_NOTIFY || '',
-    subject: `Contact form submission from ${contactMessageDto.name}`,
-    html: htmlMessage,
-  };
+    // Render to HTML and plain text
+    const html = await renderEmail(emailComponent);
+    const text = await renderEmailText(emailComponent);
 
-  // send the email asynchronously
-  sendEmail(sendEmailDto)
-    .then(r => logger.info(`Email worker ok: ${r.ok}`))
-    .catch(err => logger.error('Async email error', err));
+    const sendEmailDto: SendEmailDto = {
+      to: process.env.EMAIL_NOTIFY || '',
+      subject: "New Message Received From Your Website!",
+      html,
+      text,
+    };
+
+    // send the email asynchronously
+    sendEmailViaResend(sendEmailDto)
+      .then(r => logger.info(`Acknowledgement email worker ok: ${r.ok}`))
+      .catch(err => logger.error('Async email error', err));
+  } catch (error) {
+    logger.error('Error rendering acknowledgment email template', error);
+  }
+  // const htmlMessage = `
+  //   <h2>You have received a new message from your website contact form.</h2>
+  //   <p><b>Name:</b> ${contactMessageDto.name}</p>
+  //   <p><b>Email:</b> ${contactMessageDto.email}</p>
+  //   <p><b>Message:</b></p>
+  //   <p>${contactMessageDto.message}</p>
+  // `;
+
+  // const sendEmailDto: SendEmailDto = {
+  //   to: process.env.EMAIL_NOTIFY || '',
+  //   subject: `Contact form submission from ${contactMessageDto.name}`,
+  //   html: htmlMessage,
+  // };
+
+  // // send the email asynchronously
+  // sendEmail(sendEmailDto)
+  //   .then(r => logger.info(`Email worker ok: ${r.ok}`))
+  //   .catch(err => logger.error('Async email error', err));
 }
 
 const sendAcknowledgeEmailToSender = async (contactMessageDto: CreateContactMessageDto): Promise<void> => {
@@ -133,7 +164,7 @@ const sendAcknowledgeEmailToSender = async (contactMessageDto: CreateContactMess
 
     // send the email asynchronously
     sendEmailViaResend(sendEmailDto)
-      .then(r => logger.info(`Resend email worker ok: ${r.ok}`))
+      .then(r => logger.info(`Acknowledgement email worker ok: ${r.ok}`))
       .catch(err => logger.error('Async email error', err));
   } catch (error) {
     logger.error('Error rendering acknowledgment email template', error);
