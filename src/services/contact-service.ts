@@ -1,7 +1,7 @@
 import { CreateContactMessageDto } from '../dtos/contact-message-dto';
 import ContactMessage, { FullContactMessage } from '../interfaces/i-contact-message';
 import logger from "../config/logger-config";
-import { sendEmail } from "./email-service";
+import { sendEmail, sendEmailViaResend } from "./email-service";
 import { SendEmailDto } from '../dtos/email-dto';
 import { mapDocumentsToFullContactMessages, mapDocumentToContactMessage, mapDocumentToFullContactMessage } from "../mappers/contact-message-mapper";
 import ContactMessageModel from "../models/contact-message-model";
@@ -49,6 +49,7 @@ export const createContactMessage = async (contactMessageDto: CreateContactMessa
     logger.info(`Contact Message created for ${contactMessageDto.name}`);
 
     sendNotifyEmail(contactMessageDto);
+    sendAcknowledgeEmailToSender(contactMessageDto);
 
     return mapDocumentToContactMessage(contactMessageDoc);
   } catch (error) {
@@ -109,6 +110,68 @@ const sendNotifyEmail = async (contactMessageDto: CreateContactMessageDto): Prom
     .then(r => logger.info(`Email worker ok: ${r.ok}`))
     .catch(err => logger.error('Async email error', err));
 }
+
+const sendAcknowledgeEmailToSender = async (contactMessageDto: CreateContactMessageDto): Promise<void> => {
+  const htmlMessage = getAcknowledgmentEmailHtml(contactMessageDto.name);
+
+  const sendEmailDto: SendEmailDto = {
+    to: contactMessageDto.email || '',
+    subject: `Contact form submission from ${contactMessageDto.name}`,
+    html: htmlMessage,
+  };
+
+  // send the email asynchronously
+  sendEmailViaResend(sendEmailDto)
+    .then(r => logger.info(`Email worker ok: ${r.ok}`))
+    .catch(err => logger.error('Async email error', err));
+}
+
+const getAcknowledgmentEmailHtml = (name: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px;">
+  <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+    <tr>
+      <td style="padding: 50px 40px; text-align: center;">
+        <div style="width: 80px; height: 80px; margin: 0 auto 30px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <span style="color: white; font-size: 40px;">✓</span>
+        </div>
+        
+        <h1 style="margin: 0 0 20px; color: #1f2937; font-size: 28px; font-weight: 700;">Message Received!</h1>
+        
+        <p style="margin: 0 0 30px; color: #6b7280; font-size: 16px; line-height: 1.6;">
+          Hi ${name}, thanks for getting in touch! I've received your message and I'll respond as soon as possible.
+        </p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+          <p style="margin: 0; color: #374151; font-size: 14px; line-height: 1.6;">
+            <strong>What happens next?</strong><br>
+            I typically respond within 72 hours during business days. I'm looking forward to helping you!
+          </p>
+        </div>
+        
+        <p style="margin: 0; color: #6b7280; font-size: 14px;">
+          Best wishes,<br>
+          <strong style="color: #1f2937;">The Team</strong>
+        </p>
+      </td>
+    </tr>
+    
+    <tr>
+      <td style="padding: 30px 40px; background-color: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
+        <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+          This is an automated confirmation. Please do not reply.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
 
 const parseUserAgent = (userAgent: string): ParsedUserAgent => {
   const parser = new UAParser(userAgent);
