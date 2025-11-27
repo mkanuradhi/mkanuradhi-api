@@ -42,6 +42,9 @@ export const sendEmailViaResend = async (sendEmailDto: SendEmailDto): Promise<Em
     to: sendEmailDto.to,
     subject: sendEmailDto.subject,
     html: sendEmailDto.html || '',
+    text: sendEmailDto.text || '',
+    cc: sendEmailDto.cc,
+    bcc: sendEmailDto.bcc,
   });
 
   if (error) {
