@@ -125,24 +125,6 @@ const sendNotifyEmailToAdmin = async (contactMessageDto: CreateContactMessageDto
   } catch (error) {
     logger.error('Error rendering acknowledgment email template', error);
   }
-  // const htmlMessage = `
-  //   <h2>You have received a new message from your website contact form.</h2>
-  //   <p><b>Name:</b> ${contactMessageDto.name}</p>
-  //   <p><b>Email:</b> ${contactMessageDto.email}</p>
-  //   <p><b>Message:</b></p>
-  //   <p>${contactMessageDto.message}</p>
-  // `;
-
-  // const sendEmailDto: SendEmailDto = {
-  //   to: process.env.EMAIL_NOTIFY || '',
-  //   subject: `Contact form submission from ${contactMessageDto.name}`,
-  //   html: htmlMessage,
-  // };
-
-  // // send the email asynchronously
-  // sendEmail(sendEmailDto)
-  //   .then(r => logger.info(`Email worker ok: ${r.ok}`))
-  //   .catch(err => logger.error('Async email error', err));
 }
 
 const sendAcknowledgeEmailToSender = async (contactMessageDto: CreateContactMessageDto): Promise<void> => {
