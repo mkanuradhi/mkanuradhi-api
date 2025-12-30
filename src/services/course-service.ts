@@ -325,6 +325,7 @@ export const searchCourses = async (lang: string, searchParams: SearchParamsDto)
     credits: 1,
     mode: 1,
     path: 1,
+    quizzes: 1,
   };
 
   const langFields = {
