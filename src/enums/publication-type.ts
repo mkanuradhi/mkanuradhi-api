@@ -2,6 +2,7 @@ enum PublicationType {
   JOURNAL_ARTICLE = 'JOURNAL_ARTICLE',
   BOOK_CHAPTER = 'BOOK_CHAPTER',
   CONFERENCE_PROCEEDING = 'CONFERENCE_PROCEEDING',
+  ABSTRACT = 'ABSTRACT',
 }
 
 export default PublicationType;
