@@ -41,6 +41,6 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd ~/opt/mka/backend
+            cd /opt/mka/backend
             docker compose pull
             docker compose up -d
