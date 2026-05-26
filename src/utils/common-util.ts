@@ -86,3 +86,35 @@ export const buildSearchFilter = ({ query, status }: SearchParamsDto): Record<st
 
   return filter;
 };
+
+/**
+ * Converts a string to a URL-safe path.
+ */
+const generatePath = (text: string): string => {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // remove non-alphanumeric except spaces and hyphens
+    .replace(/\s+/g, '-')         // replace spaces with hyphens
+    .replace(/-+/g, '-')          // collapse multiple hyphens
+    .replace(/^-|-$/g, '');       // trim leading/trailing hyphens
+};
+
+/**
+ * Ensures path is unique in the collection.
+ */
+export const generateUniquePath = async (
+  baseText: string,
+  exists: (slug: string) => Promise<boolean>,
+): Promise<string> => {
+  const base = generatePath(baseText);
+  let slug    = base;
+  let counter = 2;
+
+  while (await exists(slug)) {
+    slug = `${base}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+};

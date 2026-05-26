@@ -7,7 +7,7 @@ import { BookAuthorRole, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
 
 const MAX_TITLE_LENGTH = 500;
-const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_PATH_LENGTH = MAX_TITLE_LENGTH + 10; // number length
 
 const bookAuthorSchema = new Schema<BookAuthor>(
   {
@@ -78,7 +78,7 @@ const bookSchema = new Schema<BookDocument>(
       unique: true,
       required: [true, 'Path is required.'],
       minLength: [3, 'Path must be present.'],
-      maxLength: [MAX_TITLE_LENGTH, `Path cannot exceed ${MAX_TITLE_LENGTH} characters.`],
+      maxLength: [MAX_PATH_LENGTH, `Path cannot exceed ${MAX_PATH_LENGTH} characters.`],
       match: [/^[a-z0-9\-]+$/, 'Path must be URL-safe (lowercase letters, numbers, hyphens).'],
     },
     publisher: {
@@ -152,6 +152,15 @@ const bookSchema = new Schema<BookDocument>(
   },
   {
     timestamps: true,
+  }
+);
+
+bookSchema.index(
+  { 'title.en': 1 },
+  {
+    unique: true,
+    sparse: true,   // sparse = documents without title.en are excluded from index
+    collation: { locale: 'en', strength: 2 },  // case-insensitive
   }
 );
 

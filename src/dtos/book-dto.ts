@@ -16,7 +16,6 @@ export interface CreateBookDto {
   subject: LocalizedString[];
   authors: BookAuthor[];
   writtenLang: BookLanguage;
-  path: string;
 
   publisher: LocalizedString;
   publishedYear: number;
