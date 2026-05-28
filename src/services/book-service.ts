@@ -1,12 +1,15 @@
 import { CreateBookDto, UpdateBookDto } from "../dtos/book-dto";
 import AppUser from "../interfaces/i-app-user";
 import AppError from "../errors/app-error";
-import Book from "../interfaces/i-book";
+import Book, { PublicBook } from "../interfaces/i-book";
 import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
-import { generateUniquePath } from "../utils/common-util";
+import { generateUniquePath, localizeField } from "../utils/common-util";
+import BookDocument from "../documents/book-document";
+import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
+import DocumentStatus from "../enums/document-status";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -153,4 +156,51 @@ export const getBook = async (bookId: string): Promise<Book> => {
   if (!bookDoc) throw new AppError(`Book not found for id: ${bookId}`, 404);
 
   return mapDocumentToBook(bookDoc);
+};
+
+export const getBookByPath = async (lang: string, bookPath: string): Promise<PublicBook> => {
+  const locale = SUPPORTED_LOCALES.includes(lang as Locale)
+    ? (lang as Locale)
+    : DEFAULT_LOCALE;
+
+  const bookDoc = await BookModel.findOne({
+    path:    bookPath.trim(),
+    deleted: false,
+    status:  DocumentStatus.ACTIVE,   // public only sees active books
+  });
+
+  if (!bookDoc) throw new AppError(`Book not found for path: ${bookPath}`, 404);
+
+  logger.info(`Book fetched by path: ${bookPath}`);
+  return toPublicDto(bookDoc, locale);
+}
+
+const toPublicDto = (doc: BookDocument, locale: Locale): PublicBook => {
+  return {
+    id:            doc._id.toString(),
+    title:         localizeField(doc.title, locale),
+    subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
+    description:   localizeField(doc.description, locale),
+    content:       localizeField(doc.content, locale),
+    subject:       doc.subject.map((s) => localizeField(s, locale)),
+    authors:       doc.authors.map(a => ({
+      name:        localizeField(a.name, locale),
+      role:        a.role,
+      profileUrl:  a.profileUrl,
+    })),
+    path:          doc.path,
+    writtenLang:   doc.writtenLang,
+    publisher:     localizeField(doc.publisher, locale),
+    publishedYear: doc.publishedYear,
+    edition:       doc.edition,
+    isbn:          doc.isbn,
+    pages:         doc.pages,
+    tags:          doc.tags,
+    coverImage:    doc.coverImage,
+    previewImages: doc.previewImages ?? [],
+    buyLink:       doc.buyLink,
+    pdfTeaser:     doc.pdfTeaser,
+    featured:      doc.featured,
+    displayOrder:  doc.displayOrder,
+  };
 };

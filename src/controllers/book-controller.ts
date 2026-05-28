@@ -3,6 +3,7 @@ import asyncErrorHandler from "../utils/async-error-handler";
 import * as bookService from "../services/book-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Book from "../interfaces/i-book";
+import { parseLangQueryParam } from "../utils/common-util";
 
 export const createBook = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const addedBook = await bookService.createBook(req.body, req.appUser);
@@ -38,5 +39,12 @@ export const updateBook = asyncErrorHandler(async (req: Request, res: Response, 
 export const getBook = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
   const bookId = req.params.id;
   const book = await bookService.getBook(bookId);
+  res.status(200).json(book);
+});
+
+export const getBookByPath = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const lang: string = parseLangQueryParam(req);
+  const bookPath = req.params.path;
+  const book = await bookService.getBookByPath(lang, bookPath);
   res.status(200).json(book);
 });

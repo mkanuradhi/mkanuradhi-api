@@ -20,4 +20,7 @@ bookRoute.get('/:id', validateObjectId, bookController.getBook);
 // Update book data
 bookRoute.put('/:id', validate(updateBookSchema), bookController.updateBook);
 
+// Fetch a specific book by path
+bookRoute.get('/path/:path', bookController.getBookByPath);
+
 export default bookRoute;

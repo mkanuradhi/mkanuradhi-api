@@ -47,4 +47,34 @@ interface Book {
   v: number;
 }
 
+export interface PublicBookAuthor {
+  name:       string;
+  role:       BookAuthorRole;
+  profileUrl?: string;
+}
+
+export interface PublicBook {
+  id:            string;
+  title:         string;
+  subtitle?:     string;
+  description:   string;
+  content:       string;
+  subject:       string[];
+  authors:       PublicBookAuthor[];
+  path:          string;
+  writtenLang:   BookLanguage;
+  publisher:     string;
+  publishedYear: number;
+  edition?:      string;
+  isbn?:         string;
+  pages?:        number;
+  tags:          string[];
+  coverImage?:   string;
+  previewImages: string[];
+  buyLink?:      string;
+  pdfTeaser?:    string;
+  featured:      boolean;
+  displayOrder?: number;
+}
+
 export default Book;
