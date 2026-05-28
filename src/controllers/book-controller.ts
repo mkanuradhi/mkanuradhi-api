@@ -48,3 +48,9 @@ export const getBookByPath = asyncErrorHandler( async (req: Request, res: Respon
   const book = await bookService.getBookByPath(lang, bookPath);
   res.status(200).json(book);
 });
+
+export const deleteBook = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const bookId = req.params.id;
+  await bookService.deleteBook(bookId, req.appUser);
+  res.status(204).json();
+});

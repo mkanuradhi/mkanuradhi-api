@@ -10,6 +10,7 @@ import { generateUniquePath, localizeField } from "../utils/common-util";
 import BookDocument from "../documents/book-document";
 import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
+import { v4 as uuidv4 } from 'uuid';
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -173,6 +174,38 @@ export const getBookByPath = async (lang: string, bookPath: string): Promise<Pub
 
   logger.info(`Book fetched by path: ${bookPath}`);
   return toPublicDto(bookDoc, locale);
+}
+
+export const deleteBook = async (bookId: string, appUser?: AppUser | null): Promise<void> => {
+  const bookDoc = await BookModel.findOne({ 
+    _id: bookId,
+    deleted: false,
+  });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID '${bookId}' or it is already deleted.`, 404);
+  }
+
+  const deletedSuffix = `DELETED-${uuidv4()}`;
+
+  const updatedBookDoc = await BookModel.findByIdAndUpdate(
+    bookId,
+    {
+      $set: {
+        'title.en': bookDoc.title.en ? `${bookDoc.title.en}-${deletedSuffix}` : undefined,
+        'title.si': bookDoc.title.si ? `${bookDoc.title.si}-${deletedSuffix}` : undefined,
+        'path':     `${bookDoc.path}-${deletedSuffix}`,
+        deleted:    true,
+        updatedBy:  appUser ?? undefined,
+      },
+      $inc: { __v: 1 },
+    },
+    { new: true }
+  );
+
+  if (!updatedBookDoc) {
+    throw new AppError('Failed to delete book.', 500);
+  }
+  logger.info(`Book deleted: ${bookId}`);
 }
 
 const toPublicDto = (doc: BookDocument, locale: Locale): PublicBook => {

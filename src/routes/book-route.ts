@@ -23,4 +23,7 @@ bookRoute.put('/:id', validate(updateBookSchema), bookController.updateBook);
 // Fetch a specific book by path
 bookRoute.get('/path/:path', bookController.getBookByPath);
 
+// Delete an book
+bookRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, bookController.deleteBook);
+
 export default bookRoute;
