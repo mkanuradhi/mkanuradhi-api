@@ -6,6 +6,7 @@ import { Request } from "express";
 import { AVAILABLE_LANGS, DEFAULT_LANG } from "../constants/common-vars";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import DocumentStatus from "../enums/document-status";
+import { DEFAULT_LOCALE, Locale, LocalizedString } from "../types/locale.types";
 
 export const uploadImageToCloudService = async (file: Express.Multer.File): Promise<string> => {
   const formData = new FormData();
@@ -85,4 +86,40 @@ export const buildSearchFilter = ({ query, status }: SearchParamsDto): Record<st
   if (status !== undefined) filter.status = status;
 
   return filter;
+};
+
+/**
+ * Converts a string to a URL-safe path.
+ */
+const generatePath = (text: string): string => {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // remove non-alphanumeric except spaces and hyphens
+    .replace(/\s+/g, '-')         // replace spaces with hyphens
+    .replace(/-+/g, '-')          // collapse multiple hyphens
+    .replace(/^-|-$/g, '');       // trim leading/trailing hyphens
+};
+
+/**
+ * Ensures path is unique in the collection.
+ */
+export const generateUniquePath = async (
+  baseText: string,
+  exists: (slug: string) => Promise<boolean>,
+): Promise<string> => {
+  const base = generatePath(baseText);
+  let slug    = base;
+  let counter = 2;
+
+  while (await exists(slug)) {
+    slug = `${base}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+};
+
+export const localizeField = (field: LocalizedString, locale: Locale): string => {
+  return field[locale] ?? field[DEFAULT_LOCALE] ?? Object.values(field).find(v => !!v) ?? '';
 };

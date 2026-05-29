@@ -1,3 +1,4 @@
+import { z } from "zod";
 import AppError from "../errors/app-error";
 import { Types } from "mongoose";
 
@@ -49,3 +50,18 @@ export const validateQuizAvailableDates = (availableFrom?: Date | string, availa
     }
   }
 }
+
+// reusable — optional fields, at least one locale required
+export const localizedStringSchema = z.object({
+  en: z.string().trim().optional(),
+  si: z.string().trim().optional(),
+}).refine(
+  data => !!data.en || !!data.si,
+  { message: 'At least one locale (en or si) is required.' }
+);
+
+// optional localized string — neither locale required
+export const optionalLocalizedStringSchema = z.object({
+  en: z.string().trim().optional(),
+  si: z.string().trim().optional(),
+}).optional();

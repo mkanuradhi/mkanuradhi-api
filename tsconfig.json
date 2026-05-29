@@ -10,6 +10,6 @@
     "skipLibCheck": true,                      /* Skip type checking all .d.ts files. */
   },
   "include": [
-    "./api/**/*", "./src/types/**/*.ts"
+    "./api/**/*", "./src/**/*.ts"
   ]
 }
