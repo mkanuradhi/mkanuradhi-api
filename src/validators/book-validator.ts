@@ -21,27 +21,18 @@ const bookAuthorSchema = z.object({
 
 export const createBookSchema = z.object({
   title: localizedStringSchema,
-
   subtitle: optionalLocalizedStringSchema,
-
   description: localizedStringSchema.refine(
     data => !data.en || data.en.length <= MAX_DESCRIPTION_LENGTH,
     { message: `English description cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.` }
   ),
-
   content: localizedStringSchema,
-
   subject: z.array(localizedStringSchema).default([]),
-
-  authors: z.array(bookAuthorSchema)
-    .min(1, 'At least one author is required.'),
-
+  authors: z.array(bookAuthorSchema).min(1, 'At least one author is required.'),
   writtenLang: z.enum(BookLanguage, {
     error: () => ({ message: 'Invalid written language.' })
   }),
-
   publisher: localizedStringSchema,
-
   publishedYear: z.number()
     .int('Published year must be an integer.')
     .min(0,   'Published year cannot be negative.')

@@ -4,7 +4,7 @@ import requireAuthenticated from '../middleware/require-authenticated';
 import Role from '../enums/role';
 import validateObjectId from '../middleware/validate-objectid';
 import { validate } from '../middleware/validate-middleware';
-import { createBookSchema, updateBookSchema } from '../validators/book-validator';
+import { activationBookSchema, createBookSchema, updateBookSchema } from '../validators/book-validator';
 
 const bookRoute = express.Router();
 
@@ -25,5 +25,8 @@ bookRoute.get('/path/:path', bookController.getBookByPath);
 
 // Delete an book
 bookRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, bookController.deleteBook);
+
+// Activate or deactivate an book
+bookRoute.patch('/:id/toggle', validateObjectId, validate(activationBookSchema), bookController.toggleBookActivation);
 
 export default bookRoute;

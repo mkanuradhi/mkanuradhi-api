@@ -1,4 +1,3 @@
-import { CreateBookDto, UpdateBookDto } from "../dtos/book-dto";
 import AppUser from "../interfaces/i-app-user";
 import AppError from "../errors/app-error";
 import Book, { PublicBook } from "../interfaces/i-book";
@@ -11,6 +10,7 @@ import BookDocument from "../documents/book-document";
 import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
+import { ActivationBookDto, CreateBookDto, UpdateBookDto } from "../validators/book-validator";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -206,6 +206,27 @@ export const deleteBook = async (bookId: string, appUser?: AppUser | null): Prom
     throw new AppError('Failed to delete book.', 500);
   }
   logger.info(`Book deleted: ${bookId}`);
+}
+
+export const toggleBookActivation = async (bookId: string, bookDto: ActivationBookDto, appUser?: AppUser | null): Promise<Book> => {
+  const updatedBookDoc = await BookModel.findOneAndUpdate(
+    { _id: bookId, deleted: false },    // condition + existence check in one
+    {
+      $set: {
+        status:    bookDto.status,
+        updatedBy: appUser ?? undefined,
+      },
+      $inc: { __v: 1 },
+    },
+    { new: true }
+  );
+
+  if (!updatedBookDoc) {
+    throw new AppError(`Cannot find the book with ID: ${bookId}.`, 404);
+  }
+
+  logger.info(`Book status updated for ID: ${bookId}`);
+  return mapDocumentToBook(updatedBookDoc);
 }
 
 const toPublicDto = (doc: BookDocument, locale: Locale): PublicBook => {
