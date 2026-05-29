@@ -1,6 +1,6 @@
 import AppUser from "../interfaces/i-app-user";
 import AppError from "../errors/app-error";
-import Book, { PublicBook } from "../interfaces/i-book";
+import Book, { LocalizedBook, LocalizedSummaryBook } from "../interfaces/i-book";
 import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
@@ -159,23 +159,6 @@ export const getBook = async (bookId: string): Promise<Book> => {
   return mapDocumentToBook(bookDoc);
 };
 
-export const getBookByPath = async (lang: string, bookPath: string): Promise<PublicBook> => {
-  const locale = SUPPORTED_LOCALES.includes(lang as Locale)
-    ? (lang as Locale)
-    : DEFAULT_LOCALE;
-
-  const bookDoc = await BookModel.findOne({
-    path:    bookPath.trim(),
-    deleted: false,
-    status:  DocumentStatus.ACTIVE,   // public only sees active books
-  });
-
-  if (!bookDoc) throw new AppError(`Book not found for path: ${bookPath}`, 404);
-
-  logger.info(`Book fetched by path: ${bookPath}`);
-  return toPublicDto(bookDoc, locale);
-}
-
 export const deleteBook = async (bookId: string, appUser?: AppUser | null): Promise<void> => {
   const bookDoc = await BookModel.findOne({ 
     _id: bookId,
@@ -229,7 +212,57 @@ export const toggleBookActivation = async (bookId: string, bookDto: ActivationBo
   return mapDocumentToBook(updatedBookDoc);
 }
 
-const toPublicDto = (doc: BookDocument, locale: Locale): PublicBook => {
+export const getLocalizedBooks = async (lang: string, page: number, size: number): Promise<{ items: LocalizedSummaryBook[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+
+  const locale = resolveLocale(lang);
+
+  const [totalCount, bookDocs] = await Promise.all([
+    BookModel.countDocuments({ deleted: false, status: DocumentStatus.ACTIVE }),
+    BookModel
+      .find(
+        { deleted: false, status: DocumentStatus.ACTIVE },
+        {
+          title:         1,
+          subtitle:      1,
+          description:   1,
+          authors:       1,
+          writtenLang:   1,
+          path:          1,
+          publishedYear: 1,
+          tags:          1,
+          coverImage:    1,
+          featured:      1,
+          displayOrder:  1,
+        }
+      )
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .skip(page * size)
+      .limit(size)
+  ]);
+
+  return {
+    items: bookDocs.map(doc => toLocalizedSummaryBook(doc, locale)),
+    totalCount,
+  };
+};
+
+export const getLocalizedBookByPath = async (lang: string, bookPath: string): Promise<LocalizedBook> => {
+  const locale = resolveLocale(lang);
+
+  const bookDoc = await BookModel.findOne({
+    path:    bookPath.trim(),
+    deleted: false,
+    status:  DocumentStatus.ACTIVE,   // public only sees active books
+  });
+
+  if (!bookDoc) throw new AppError(`Book not found for path: ${bookPath}`, 404);
+
+  logger.info(`Book fetched by path: ${bookPath}`);
+  return toLocalizedBook(bookDoc, locale);
+}
+
+const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
   return {
     id:            doc._id.toString(),
     title:         localizeField(doc.title, locale),
@@ -255,6 +288,32 @@ const toPublicDto = (doc: BookDocument, locale: Locale): PublicBook => {
     buyLink:       doc.buyLink,
     pdfTeaser:     doc.pdfTeaser,
     featured:      doc.featured,
+  };
+};
+
+const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSummaryBook => {
+  return {
+    id:            doc._id.toString(),
+    title:         localizeField(doc.title, locale),
+    subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
+    description:   localizeField(doc.description, locale),
+    authors:       doc.authors.map(a => ({
+      name:        localizeField(a.name, locale),
+      role:        a.role,
+      profileUrl:  a.profileUrl,
+    })),
+    path:          doc.path,
+    writtenLang:   doc.writtenLang,
+    publishedYear: doc.publishedYear,
+    tags:          doc.tags,
+    coverImage:    doc.coverImage,
+    featured:      doc.featured,
     displayOrder:  doc.displayOrder,
   };
+};
+
+const resolveLocale = (lang: string): Locale => {
+  return SUPPORTED_LOCALES.includes(lang as Locale)
+    ? (lang as Locale)
+    : DEFAULT_LOCALE;
 };

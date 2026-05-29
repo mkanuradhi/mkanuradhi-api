@@ -47,20 +47,22 @@ interface Book {
   v: number;
 }
 
-export interface PublicBookAuthor {
+// Shared author shape for localized DTOs
+export interface LocalizedBookAuthor {
   name:       string;
   role:       BookAuthorRole;
   profileUrl?: string;
 }
 
-export interface PublicBook {
+// Public detail page — full, one locale resolved
+export interface LocalizedBook {
   id:            string;
   title:         string;
   subtitle?:     string;
   description:   string;
   content:       string;
   subject:       string[];
-  authors:       PublicBookAuthor[];
+  authors:       LocalizedBookAuthor[];
   path:          string;
   writtenLang:   BookLanguage;
   publisher:     string;
@@ -73,6 +75,21 @@ export interface PublicBook {
   previewImages: string[];
   buyLink?:      string;
   pdfTeaser?:    string;
+  featured:      boolean;
+}
+
+// Public list/card — light, one locale resolved
+export interface LocalizedSummaryBook {
+  id:            string;
+  title:         string;
+  subtitle?:     string;
+  description:   string;
+  authors:       LocalizedBookAuthor[];
+  writtenLang:   BookLanguage;
+  path:          string;
+  publishedYear: number;
+  tags:          string[];
+  coverImage?:   string;
   featured:      boolean;
   displayOrder?: number;
 }
