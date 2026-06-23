@@ -87,3 +87,9 @@ export const uploadCoverImage = asyncErrorHandler(async (req: Request, res: Resp
   const updatedBook = await bookService.uploadCoverImage(bookId, req.file);
   res.status(200).json(updatedBook);
 });
+
+export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadPreviewImages(bookId, req.files as Express.Multer.File[]);
+  res.status(200).json(updatedBook);
+});

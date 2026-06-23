@@ -10,6 +10,8 @@ const MAX_CONTENT_LENGTH     = 5000;
 const MAX_ISBN_LENGTH        = 20;
 const MIN_PUBLISHED_YEAR     = 2010;
 
+export const MAX_BOOK_PREVIEW_IMAGES = 10;
+
 // Sub-schemas
 
 const bookAuthorSchema = z.object({
