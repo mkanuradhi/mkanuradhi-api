@@ -10,7 +10,7 @@ import BookDocument from "../documents/book-document";
 import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
-import { ActivationBookDto, CreateBookDto, DeletePreviewImageDto, MAX_BOOK_PREVIEW_IMAGES, UpdateBookDto } from "../validators/book-validator";
+import { ActivationBookDto, CreateBookDto, DeletePreviewImageDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -304,6 +304,31 @@ export const deletePreviewImage = async (bookId: string, dto: DeletePreviewImage
   await bookDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Deleted preview image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const reorderPreviewImages = async (bookId: string, dto: ReorderPreviewImagesDto): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+
+  const existingImages = bookDoc.previewImages ?? [];
+
+  // ensure submitted URLs exactly match existing ones — no additions or removals
+  const existingSet  = new Set(existingImages);
+  const submittedSet = new Set(dto.urls);
+
+  const sameLength = existingSet.size === submittedSet.size;
+  const sameUrls   = [...submittedSet].every(url => existingSet.has(url));
+
+  if (!sameLength || !sameUrls) {
+    throw new AppError('Reorder list must contain exactly the same URLs as existing preview images.', 400);
+  }
+
+  bookDoc.previewImages = dto.urls;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Reordered preview images for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
 };
 

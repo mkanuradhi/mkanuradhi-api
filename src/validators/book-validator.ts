@@ -127,8 +127,13 @@ export const deletePreviewImageSchema = z.object({
   url: z.url('Invalid preview image URL.'),
 });
 
+export const reorderPreviewImagesSchema = z.object({
+  urls: z.array(z.url('Invalid preview image URL.')).min(1, 'At least one URL is required.'),
+});
+
 // Inferred types — no separate DTO interfaces needed
 export type CreateBookDto = z.infer<typeof createBookSchema>;
 export type UpdateBookDto = z.infer<typeof updateBookSchema>;
 export type ActivationBookDto = z.infer<typeof activationBookSchema>;
 export type DeletePreviewImageDto = z.infer<typeof deletePreviewImageSchema>;
+export type ReorderPreviewImagesDto = z.infer<typeof reorderPreviewImagesSchema>;
