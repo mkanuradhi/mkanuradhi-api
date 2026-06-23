@@ -81,3 +81,9 @@ export const getLocalizedBooks = asyncErrorHandler( async (req: Request, res: Re
 
   res.status(200).json(result);
 });
+
+export const uploadCoverImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadCoverImage(bookId, req.file);
+  res.status(200).json(updatedBook);
+});

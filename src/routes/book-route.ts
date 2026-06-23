@@ -5,6 +5,7 @@ import Role from '../enums/role';
 import validateObjectId from '../middleware/validate-objectid';
 import { validate } from '../middleware/validate-middleware';
 import { activationBookSchema, createBookSchema, updateBookSchema } from '../validators/book-validator';
+import { uploadImage } from '../middleware/file-upload';
 
 const bookRoute = express.Router();
 
@@ -31,5 +32,8 @@ bookRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, b
 
 // Activate or deactivate an book
 bookRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(activationBookSchema), bookController.toggleBookActivation);
+
+// Update the cover image for a book
+bookRoute.patch('/:id/cover-image', requireAuthenticated([Role.ADMIN]), uploadImage.single('coverImage'), bookController.uploadCoverImage);
 
 export default bookRoute;

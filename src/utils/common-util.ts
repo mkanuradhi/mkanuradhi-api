@@ -36,7 +36,14 @@ export const uploadImageToCloudService = async (file: Express.Multer.File): Prom
 
     throw new AppError("Image upload failed. Invalid response from server.", 500);
   } catch (error) {
-    throw new AppError("Image upload failed. Please try again.", 500);
+    if (error instanceof AppError) throw error;
+
+    // extract imgbb error message if available
+    if (axios.isAxiosError(error) && error.response?.data?.error?.message) {
+      throw new AppError(`Image upload failed: ${error.response.data.error.message}`, 500);
+    }
+
+    throw new AppError('Image upload failed. Please try again.', 500);
   }
 };
 

@@ -5,7 +5,7 @@ import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
-import { generateUniquePath, localizeField } from "../utils/common-util";
+import { generateUniquePath, localizeField, uploadImageToCloudService } from "../utils/common-util";
 import BookDocument from "../documents/book-document";
 import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
@@ -240,6 +240,29 @@ export const getLocalizedBookByPath = async (lang: string, bookPath: string): Pr
   logger.info(`Book fetched by path: ${bookPath}`);
   return toLocalizedBook(bookDoc, locale);
 }
+
+export const uploadCoverImage = async (bookId: string, imageFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No cover image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload cover image. Please try again.', 500);
+  }
+
+  bookDoc.coverImage = imageUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded cover image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
 
 const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
   return {
