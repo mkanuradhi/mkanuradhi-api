@@ -121,7 +121,14 @@ export const activationBookSchema = z.object({
   }),
 });
 
+// delete preview image
+
+export const deletePreviewImageSchema = z.object({
+  url: z.url('Invalid preview image URL.'),
+});
+
 // Inferred types — no separate DTO interfaces needed
 export type CreateBookDto = z.infer<typeof createBookSchema>;
 export type UpdateBookDto = z.infer<typeof updateBookSchema>;
 export type ActivationBookDto = z.infer<typeof activationBookSchema>;
+export type DeletePreviewImageDto = z.infer<typeof deletePreviewImageSchema>;

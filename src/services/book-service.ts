@@ -10,7 +10,7 @@ import BookDocument from "../documents/book-document";
 import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
-import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, UpdateBookDto } from "../validators/book-validator";
+import { ActivationBookDto, CreateBookDto, DeletePreviewImageDto, MAX_BOOK_PREVIEW_IMAGES, UpdateBookDto } from "../validators/book-validator";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -287,6 +287,23 @@ export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.M
   await bookDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Uploaded ${uploadedUrls.length} preview image(s) for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const deletePreviewImage = async (bookId: string, dto: DeletePreviewImageDto): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+
+  const existingImages = bookDoc.previewImages ?? [];
+  if (!existingImages.includes(dto.url)) {
+    throw new AppError('Preview image URL not found for this book.', 404);
+  }
+
+  bookDoc.previewImages = existingImages.filter(url => url !== dto.url);
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted preview image for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
 };
 

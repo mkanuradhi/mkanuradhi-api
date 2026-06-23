@@ -4,6 +4,7 @@ import * as bookService from "../services/book-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Book, { LocalizedSummaryBook } from "../interfaces/i-book";
 import { parseLangQueryParam } from "../utils/common-util";
+import { DeletePreviewImageDto } from "../validators/book-validator";
 
 export const createBook = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const addedBook = await bookService.createBook(req.body, req.appUser);
@@ -91,5 +92,12 @@ export const uploadCoverImage = asyncErrorHandler(async (req: Request, res: Resp
 export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
   const bookId = req.params.id;
   const updatedBook = await bookService.uploadPreviewImages(bookId, req.files as Express.Multer.File[]);
+  res.status(200).json(updatedBook);
+});
+
+export const deletePreviewImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const dto = req.body as DeletePreviewImageDto;
+  const updatedBook = await bookService.deletePreviewImage(bookId, dto);
   res.status(200).json(updatedBook);
 });

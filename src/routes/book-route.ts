@@ -4,7 +4,7 @@ import requireAuthenticated from '../middleware/require-authenticated';
 import Role from '../enums/role';
 import validateObjectId from '../middleware/validate-objectid';
 import { validate } from '../middleware/validate-middleware';
-import { activationBookSchema, createBookSchema, MAX_BOOK_PREVIEW_IMAGES, updateBookSchema } from '../validators/book-validator';
+import { activationBookSchema, createBookSchema, deletePreviewImageSchema, MAX_BOOK_PREVIEW_IMAGES, updateBookSchema } from '../validators/book-validator';
 import { uploadImage } from '../middleware/file-upload';
 
 const bookRoute = express.Router();
@@ -38,5 +38,9 @@ bookRoute.patch('/:id/cover-image', requireAuthenticated([Role.ADMIN]), uploadIm
 
 // Update the preview images for a book
 bookRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), uploadImage.array('images', MAX_BOOK_PREVIEW_IMAGES), bookController.uploadPreviewImages);
+
+// Delete a preview image for a book
+bookRoute.delete('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validate(deletePreviewImageSchema), bookController.deletePreviewImage);
+
 
 export default bookRoute;
