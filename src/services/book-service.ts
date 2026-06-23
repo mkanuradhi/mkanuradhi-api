@@ -170,24 +170,25 @@ export const deleteBook = async (bookId: string, appUser?: AppUser | null): Prom
 }
 
 export const toggleBookActivation = async (bookId: string, bookDto: ActivationBookDto, appUser?: AppUser | null): Promise<Book> => {
-  const updatedBookDoc = await BookModel.findOneAndUpdate(
-    { _id: bookId, deleted: false },    // condition + existence check in one
-    {
-      $set: {
-        status:    bookDto.status,
-        updatedBy: appUser ?? undefined,
-      },
-      $inc: { __v: 1 },
-    },
-    { new: true }
-  );
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
 
-  if (!updatedBookDoc) {
+  if (!bookDoc) {
     throw new AppError(`Cannot find the book with ID: ${bookId}.`, 404);
   }
 
+  // cover image is required before a book can be made active
+  if (bookDto.status === DocumentStatus.ACTIVE && !bookDoc.coverImage) {
+    throw new AppError('Cannot activate a book without a cover image.', 400);
+  }
+
+  bookDoc.status    = bookDto.status;
+  bookDoc.updatedBy = appUser ?? undefined;
+  bookDoc.increment(); // Increment the version for optimistic concurrency control
+
+  await bookDoc.save({ validateModifiedOnly: true });
+
   logger.info(`Book status updated for ID: ${bookId}`);
-  return mapDocumentToBook(updatedBookDoc);
+  return mapDocumentToBook(bookDoc);
 }
 
 export const getLocalizedBooks = async (lang: string, page: number, size: number): Promise<{ items: LocalizedSummaryBook[], totalCount: number }> => {
