@@ -25,14 +25,6 @@ export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | nul
       throw new AppError(`A book already exists with the title: ${titleTextEn}`, 400);
   }
 
-  // isbn uniqueness check — only if provided
-  if (bookDto.isbn) {
-    const isbnConflict = await BookModel.findOne({ isbn: bookDto.isbn.trim() });
-    if (isbnConflict) {
-      throw new AppError(`A book already exists for ISBN: ${bookDto.isbn}`, 400);
-    }
-  }
-
   // generate unique path — checks DB for conflicts automatically
   const uniquePath = await generateUniquePath(
     titleTextEn,
@@ -99,17 +91,6 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
     throw new AppError(`A book already exists with the title: "${titleTextEn}"`, 400);
   }
 
-  // check for duplicate ISBN
-  if (bookDto.isbn) {
-    const isbnConflict = await BookModel.findOne({
-      isbn: bookDto.isbn.trim(),
-      _id:  { $ne: bookId },
-    });
-    if (isbnConflict) {
-      throw new AppError(`A book already exists for ISBN: ${bookDto.isbn}`, 400);
-    }
-  }
-
   const bookDoc = await BookModel.findOneAndUpdate(
     { _id: bookId, __v: bookDto.v, deleted: false },  // atomic version check
     {
@@ -124,13 +105,10 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
         publisher:     bookDto.publisher,
         publishedYear: bookDto.publishedYear,
         edition:       bookDto.edition,
-        isbn:          bookDto.isbn,
+        isbns:         bookDto.isbns,
         pages:         bookDto.pages,
         tags:          bookDto.tags,
-        coverImage:    bookDto.coverImage,
-        previewImages: bookDto.previewImages,
         buyLink:       bookDto.buyLink,
-        pdfTeaser:     bookDto.pdfTeaser,
         featured:      bookDto.featured,
         displayOrder:  bookDto.displayOrder,
         updatedBy:     appUser ?? undefined,
@@ -280,7 +258,7 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     publisher:     localizeField(doc.publisher, locale),
     publishedYear: doc.publishedYear,
     edition:       doc.edition,
-    isbn:          doc.isbn,
+    isbns:         doc.isbns ?? [],
     pages:         doc.pages,
     tags:          doc.tags,
     coverImage:    doc.coverImage,

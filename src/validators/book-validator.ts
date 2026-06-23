@@ -1,53 +1,79 @@
 // src/validators/book.validator.ts
 import { z } from 'zod';
-import { BookAuthorRole, BookLanguage } from '../enums/book-enums';
+import { BookAuthorRole, BookIsbnFormat, BookLanguage } from '../enums/book-enums';
 import { localizedStringSchema, optionalLocalizedStringSchema } from './common-validator';
 import DocumentStatus from '../enums/document-status';
 
 const MAX_TITLE_LENGTH       = 500;
-const MAX_DESCRIPTION_LENGTH = 5000;
+const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_CONTENT_LENGTH     = 5000;
+const MAX_ISBN_LENGTH        = 20;
+const MIN_PUBLISHED_YEAR     = 2010;
 
 // Sub-schemas
 
 const bookAuthorSchema = z.object({
   name:       localizedStringSchema,
   role:       z.enum(BookAuthorRole, {
-                error: () => ({ message: 'Invalid author role.' })
+                error: (ctx) => ({ message: `Invalid author role '${ctx.input}'. Valid roles are: ${Object.values(BookAuthorRole).join(', ')}.` })
               }),
-  profileUrl: z.string().url('Invalid profile URL.').optional(),
+  profileUrl: z.url('Invalid profile URL.').optional(),
 });
+
+const bookIsbnSchema = z.object({
+  format: z.enum(BookIsbnFormat, {
+    error: (ctx) => ({ message: `Invalid ISBN format '${ctx.input}'. Valid formats are: ${Object.values(BookIsbnFormat).join(', ')}.` })
+  }),
+  value:  z.string().trim().max(MAX_ISBN_LENGTH, `ISBN value cannot exceed ${MAX_ISBN_LENGTH} characters.`),
+});
+
+const isbnArraySchema = z.array(bookIsbnSchema)
+  .refine(
+    (v) => new Set(v.map(i => i.format)).size === v.length,
+    { message: 'Each ISBN format must be unique.' }
+  )
+  .refine(
+    (v) => new Set(v.map(i => i.value)).size === v.length,
+    { message: 'Each ISBN value must be unique.' }
+  )
+  .optional();
+
+const localizedDescriptionSchema = localizedStringSchema.refine(
+  data => (!data.en || data.en.length <= MAX_DESCRIPTION_LENGTH) &&
+          (!data.si || data.si.length <= MAX_DESCRIPTION_LENGTH),
+  { message: `Description cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.` }
+);
+
+const localizedContentSchema = localizedStringSchema.refine(
+  data => (!data.en || data.en.length <= MAX_CONTENT_LENGTH) &&
+          (!data.si || data.si.length <= MAX_CONTENT_LENGTH),
+  { message: `Content cannot exceed ${MAX_CONTENT_LENGTH} characters.` }
+);
 
 // Create
 
 export const createBookSchema = z.object({
   title: localizedStringSchema,
   subtitle: optionalLocalizedStringSchema,
-  description: localizedStringSchema.refine(
-    data => !data.en || data.en.length <= MAX_DESCRIPTION_LENGTH,
-    { message: `English description cannot exceed ${MAX_DESCRIPTION_LENGTH} characters.` }
-  ),
-  content: localizedStringSchema,
+  description: localizedDescriptionSchema,
+  content: localizedContentSchema,
   subject: z.array(localizedStringSchema).default([]),
   authors: z.array(bookAuthorSchema).min(1, 'At least one author is required.'),
   writtenLang: z.enum(BookLanguage, {
-    error: () => ({ message: 'Invalid written language.' })
+    error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
   }),
   publisher: localizedStringSchema,
   publishedYear: z.number()
     .int('Published year must be an integer.')
-    .min(0,   'Published year cannot be negative.')
+    .min(MIN_PUBLISHED_YEAR,   `Published year cannot be before ${MIN_PUBLISHED_YEAR}.`)
     .max(new Date().getFullYear(), 'Published year cannot be in the future.'),
 
   edition:  z.string().trim().max(MAX_TITLE_LENGTH).optional(),
-  isbn:     z.string().trim().max(20, 'ISBN cannot exceed 20 characters.').optional(),
+  isbns:    isbnArraySchema,
   pages:    z.number().int().min(1, 'Pages must be at least 1.').optional(),
   tags:     z.array(z.string().trim()).default([]),
 
-  coverImage:    z.string().trim().optional(),
-  previewImages: z.array(z.string().trim()).default([]),
   buyLink:       z.string().trim().optional(),
-  pdfTeaser:     z.string().trim().optional(),
-
   featured:     z.boolean().default(false),
   displayOrder: z.number().int().min(0).optional(),
 });
@@ -55,26 +81,28 @@ export const createBookSchema = z.object({
 // Update
 
 export const updateBookSchema = z.object({
-  title:         localizedStringSchema.optional(),
+  title:         localizedStringSchema,
   subtitle:      optionalLocalizedStringSchema,
-  description:   localizedStringSchema.optional(),
-  content:       localizedStringSchema.optional(),
-  subject:       z.array(localizedStringSchema).optional(),
-  authors:       z.array(bookAuthorSchema).min(1).optional(),
+  description: localizedDescriptionSchema,
+  content:       localizedContentSchema,
+  subject:       z.array(localizedStringSchema),
+  authors: z.array(bookAuthorSchema).min(1, 'At least one author is required.'),
   writtenLang:   z.enum(BookLanguage, {
-                   error: () => ({ message: 'Invalid written language.' })
-                 }).optional(),
-  publisher:     localizedStringSchema.optional(),
-  publishedYear: z.number().int().min(0).max(new Date().getFullYear()).optional(),
+    error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
+  }),
+  publisher:     localizedStringSchema,
+  publishedYear: z.number()
+    .int('Published year must be an integer.')
+    .min(MIN_PUBLISHED_YEAR,   `Published year cannot be before ${MIN_PUBLISHED_YEAR}.`)
+    .max(new Date().getFullYear(), 'Published year cannot be in the future.'),
+
   edition:       z.string().trim().max(MAX_TITLE_LENGTH).optional(),
-  isbn:          z.string().trim().max(20).optional(),
-  pages:         z.number().int().min(1).optional(),
-  tags:          z.array(z.string().trim()).optional(),
-  coverImage:    z.string().trim().optional(),
-  previewImages: z.array(z.string().trim()).optional(),
+  isbns:         isbnArraySchema,
+  pages:    z.number().int().min(1, 'Pages must be at least 1.').optional(),
+  tags:     z.array(z.string().trim()),
+
   buyLink:       z.string().trim().optional(),
-  pdfTeaser:     z.string().trim().optional(),
-  featured:      z.boolean().optional(),
+  featured:      z.boolean(),
   displayOrder:  z.number().int().min(0).optional(),
 
   // v defined at same level — never dropped
@@ -87,7 +115,7 @@ export const updateBookSchema = z.object({
 
 export const activationBookSchema = z.object({
   status: z.enum(DocumentStatus, {
-    error: () => ({ message: 'Invalid status value.' })
+    error: (ctx) => ({ message: `Invalid status '${ctx.input}'. Valid values are: ${Object.values(DocumentStatus).join(', ')}.` })
   }),
 });
 

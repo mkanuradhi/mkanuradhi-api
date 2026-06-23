@@ -1,4 +1,4 @@
-import { BookAuthorRole, BookLanguage } from "../enums/book-enums";
+import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
 import { LocalizedString } from "../types/locale.types";
 import AppUser from "./i-app-user";
@@ -7,6 +7,11 @@ export interface BookAuthor {
   name: LocalizedString;
   role: BookAuthorRole;
   profileUrl?: string;
+}
+
+export interface BookIsbn {
+  format: BookIsbnFormat;
+  value: string;
 }
 
 interface Book {
@@ -24,7 +29,7 @@ interface Book {
   publisher: LocalizedString;
   publishedYear: number;
   edition?: string;
-  isbn?: string;
+  isbns?: BookIsbn[];
   pages?: number;
   tags: string[];
 
@@ -68,7 +73,7 @@ export interface LocalizedBook {
   publisher:     string;
   publishedYear: number;
   edition?:      string;
-  isbn?:         string;
+  isbns?:        BookIsbn[];
   pages?:        number;
   tags:          string[];
   coverImage?:   string;

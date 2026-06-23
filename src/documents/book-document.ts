@@ -1,6 +1,6 @@
 import { BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
-import { BookAuthor } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn } from "../interfaces/i-book";
 import { LocalizedString } from "../types/locale.types";
 import BaseDocument from "./base-document";
 
@@ -17,7 +17,7 @@ interface BookDocument extends BaseDocument {
   publisher: LocalizedString;
   publishedYear: number;
   edition: string;
-  isbn: string;
+  isbns?: BookIsbn[];
   pages: number;
   tags: string[];
 
