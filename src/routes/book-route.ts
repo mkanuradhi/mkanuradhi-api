@@ -5,7 +5,7 @@ import Role from '../enums/role';
 import validateObjectId from '../middleware/validate-objectid';
 import { validate } from '../middleware/validate-middleware';
 import { activationBookSchema, createBookSchema, deletePreviewImageSchema, MAX_BOOK_PREVIEW_IMAGES, reorderPreviewImagesSchema, updateBookSchema } from '../validators/book-validator';
-import { uploadImage } from '../middleware/file-upload';
+import { uploadImage, uploadPdf } from '../middleware/file-upload';
 
 const bookRoute = express.Router();
 
@@ -44,5 +44,8 @@ bookRoute.delete('/:id/preview-images', requireAuthenticated([Role.ADMIN]), vali
 
 // Reorder preview images for a book
 bookRoute.patch('/:id/preview-images/reorder', requireAuthenticated([Role.ADMIN]), validate(reorderPreviewImagesSchema), bookController.reorderPreviewImages);
+
+// Upload a PDF teaser for a book
+bookRoute.patch('/:id/pdf-teaser', requireAuthenticated([Role.ADMIN]), uploadPdf.single('pdfTeaser'), bookController.uploadPdfTeaser);
 
 export default bookRoute;

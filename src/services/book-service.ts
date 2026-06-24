@@ -11,6 +11,7 @@ import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { ActivationBookDto, CreateBookDto, DeletePreviewImageDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
+import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -329,6 +330,31 @@ export const reorderPreviewImages = async (bookId: string, dto: ReorderPreviewIm
   await bookDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Reordered preview images for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const uploadPdfTeaser = async (bookId: string, pdfFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!pdfFile) {
+    throw new AppError('No PDF file provided.', 400);
+  }
+
+  // delete old PDF from R2 before uploading new one
+  if (bookDoc.pdfTeaser) {
+    await deleteFileFromR2(bookDoc.pdfTeaser);
+  }
+
+  const pdfUrl = await uploadFileToR2(pdfFile, 'books/pdf-teasers');
+
+  bookDoc.pdfTeaser = pdfUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded PDF teaser for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
 };
 

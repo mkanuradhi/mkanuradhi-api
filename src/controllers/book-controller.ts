@@ -108,3 +108,9 @@ export const reorderPreviewImages = asyncErrorHandler(async (req: Request, res: 
   const updatedBook = await bookService.reorderPreviewImages(bookId, dto);
   res.status(200).json(updatedBook);
 });
+
+export const uploadPdfTeaser = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadPdfTeaser(bookId, req.file);
+  res.status(200).json(updatedBook);
+});
