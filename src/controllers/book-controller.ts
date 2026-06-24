@@ -114,3 +114,9 @@ export const uploadPdfTeaser = asyncErrorHandler(async (req: Request, res: Respo
   const updatedBook = await bookService.uploadPdfTeaser(bookId, req.file);
   res.status(200).json(updatedBook);
 });
+
+export const deletePdfTeaser = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.deletePdfTeaser(bookId);
+  res.status(200).json(updatedBook);
+});

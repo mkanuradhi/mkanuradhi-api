@@ -358,6 +358,26 @@ export const uploadPdfTeaser = async (bookId: string, pdfFile?: Express.Multer.F
   return mapDocumentToBook(bookDoc);
 };
 
+export const deletePdfTeaser = async (bookId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!bookDoc.pdfTeaser) {
+    throw new AppError('This book has no PDF teaser to delete.', 400);
+  }
+
+  await deleteFileFromR2(bookDoc.pdfTeaser);
+
+  bookDoc.pdfTeaser = undefined;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted PDF teaser for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
 const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
   return {
     id:            doc._id.toString(),

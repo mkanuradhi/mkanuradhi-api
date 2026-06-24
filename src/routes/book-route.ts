@@ -48,4 +48,7 @@ bookRoute.patch('/:id/preview-images/reorder', requireAuthenticated([Role.ADMIN]
 // Upload a PDF teaser for a book
 bookRoute.patch('/:id/pdf-teaser', requireAuthenticated([Role.ADMIN]), uploadPdf.single('pdfTeaser'), bookController.uploadPdfTeaser);
 
+// Delete the PDF teaser for a book
+bookRoute.delete('/:id/pdf-teaser', requireAuthenticated([Role.ADMIN]), bookController.deletePdfTeaser);
+
 export default bookRoute;
