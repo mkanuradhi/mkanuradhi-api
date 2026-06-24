@@ -36,6 +36,9 @@ bookRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjec
 // Update the cover image for a book
 bookRoute.patch('/:id/cover-image', requireAuthenticated([Role.ADMIN]), uploadImage.single('coverImage'), bookController.uploadCoverImage);
 
+// Delete the cover image from a book
+bookRoute.delete('/:id/cover-image', requireAuthenticated([Role.ADMIN]), bookController.deleteCoverImage);
+
 // Update the preview images for a book
 bookRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), uploadImage.array('images', MAX_BOOK_PREVIEW_IMAGES), bookController.uploadPreviewImages);
 

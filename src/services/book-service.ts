@@ -265,6 +265,25 @@ export const uploadCoverImage = async (bookId: string, imageFile?: Express.Multe
   return mapDocumentToBook(bookDoc);
 };
 
+export const deleteCoverImage = async (bookId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!bookDoc.coverImage) {
+    throw new AppError('This book has no cover image to delete.', 400);
+  }
+
+  bookDoc.coverImage = undefined;
+  bookDoc.status = DocumentStatus.INACTIVE; // Deactivate the book if cover image is deleted
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted cover image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
 export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.Multer.File[]): Promise<Book> => {
   const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
   if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);

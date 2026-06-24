@@ -89,6 +89,12 @@ export const uploadCoverImage = asyncErrorHandler(async (req: Request, res: Resp
   res.status(200).json(updatedBook);
 });
 
+export const deleteCoverImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.deleteCoverImage(bookId);
+  res.status(200).json(updatedBook);
+});
+
 export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
   const bookId = req.params.id;
   const updatedBook = await bookService.uploadPreviewImages(bookId, req.files as Express.Multer.File[]);
