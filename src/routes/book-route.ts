@@ -25,7 +25,7 @@ bookRoute.post('/', requireAuthenticated([Role.ADMIN]), validate(createBookSchem
 bookRoute.get('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, bookController.getBook);
 
 // Update book data
-bookRoute.put('/:id', requireAuthenticated([Role.ADMIN]), validate(updateBookSchema), bookController.updateBook);
+bookRoute.put('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(updateBookSchema), bookController.updateBook);
 
 // Delete an book
 bookRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, bookController.deleteBook);
@@ -34,24 +34,24 @@ bookRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, b
 bookRoute.patch('/:id/toggle', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(activationBookSchema), bookController.toggleBookActivation);
 
 // Update the cover image for a book
-bookRoute.patch('/:id/cover-image', requireAuthenticated([Role.ADMIN]), uploadImage.single('coverImage'), bookController.uploadCoverImage);
+bookRoute.patch('/:id/cover-image', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.single('coverImage'), bookController.uploadCoverImage);
 
 // Delete the cover image from a book
-bookRoute.delete('/:id/cover-image', requireAuthenticated([Role.ADMIN]), bookController.deleteCoverImage);
+bookRoute.delete('/:id/cover-image', requireAuthenticated([Role.ADMIN]), validateObjectId, bookController.deleteCoverImage);
 
 // Update the preview images for a book
-bookRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), uploadImage.array('images', MAX_BOOK_PREVIEW_IMAGES), bookController.uploadPreviewImages);
+bookRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.array('images', MAX_BOOK_PREVIEW_IMAGES), bookController.uploadPreviewImages);
 
 // Delete a preview image for a book
-bookRoute.delete('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validate(deletePreviewImageSchema), bookController.deletePreviewImage);
+bookRoute.delete('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(deletePreviewImageSchema), bookController.deletePreviewImage);
 
 // Reorder preview images for a book
-bookRoute.patch('/:id/preview-images/reorder', requireAuthenticated([Role.ADMIN]), validate(reorderPreviewImagesSchema), bookController.reorderPreviewImages);
+bookRoute.patch('/:id/preview-images/reorder', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(reorderPreviewImagesSchema), bookController.reorderPreviewImages);
 
 // Upload a PDF teaser for a book
-bookRoute.patch('/:id/pdf-teaser', requireAuthenticated([Role.ADMIN]), uploadPdf.single('pdfTeaser'), bookController.uploadPdfTeaser);
+bookRoute.patch('/:id/pdf-teaser', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadPdf.single('pdfTeaser'), bookController.uploadPdfTeaser);
 
 // Delete the PDF teaser for a book
-bookRoute.delete('/:id/pdf-teaser', requireAuthenticated([Role.ADMIN]), bookController.deletePdfTeaser);
+bookRoute.delete('/:id/pdf-teaser', requireAuthenticated([Role.ADMIN]), validateObjectId, bookController.deletePdfTeaser);
 
 export default bookRoute;
