@@ -40,7 +40,7 @@ bookRoute.patch('/:id/cover-image', requireAuthenticated([Role.ADMIN]), validate
 bookRoute.delete('/:id/cover-image', requireAuthenticated([Role.ADMIN]), validateObjectId, bookController.deleteCoverImage);
 
 // Update the preview images for a book
-bookRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.array('images', MAX_BOOK_PREVIEW_IMAGES), bookController.uploadPreviewImages);
+bookRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.array('previewImages', MAX_BOOK_PREVIEW_IMAGES), bookController.uploadPreviewImages);
 
 // Delete a preview image for a book
 bookRoute.delete('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(deletePreviewImageSchema), bookController.deletePreviewImage);
