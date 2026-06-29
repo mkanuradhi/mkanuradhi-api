@@ -1,6 +1,6 @@
 import { BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
-import { BookAuthor, BookIsbn } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPreviewImage } from "../interfaces/i-book";
 import { LocalizedString } from "../types/locale.types";
 import BaseDocument from "./base-document";
 
@@ -23,8 +23,8 @@ interface BookDocument extends BaseDocument {
 
   // Media & links
   coverImage?:    string;
-  previewImages?:  string[];
-  buyLink?:        string;
+  previewImages?: BookPreviewImage[];
+  buyLink?:       string;
   pdfTeaser?:     string;
 
   // Portfolio display

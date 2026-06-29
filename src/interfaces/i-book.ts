@@ -14,6 +14,13 @@ export interface BookIsbn {
   value: string;
 }
 
+export interface BookPreviewImage {
+  id:           string;
+  url:          string;
+  caption?:     LocalizedString;
+  displayOrder: number;
+}
+
 interface Book {
   id: string;
 
@@ -35,7 +42,7 @@ interface Book {
 
   // Media & links
   coverImage?:    string;
-  previewImages?:  string[];
+  previewImages?:  BookPreviewImage[];
   buyLink?:        string;
   pdfTeaser?:     string;
 
@@ -59,6 +66,13 @@ export interface LocalizedBookAuthor {
   profileUrl?: string;
 }
 
+export interface LocalizedBookPreviewImage {
+  id:           string;
+  url:          string;
+  caption?:     string;
+  displayOrder: number;
+}
+
 // Public detail page — full, one locale resolved
 export interface LocalizedBook {
   id:            string;
@@ -77,7 +91,7 @@ export interface LocalizedBook {
   pages?:        number;
   tags:          string[];
   coverImage?:   string;
-  previewImages: string[];
+  previewImages?: LocalizedBookPreviewImage[];
   buyLink?:      string;
   pdfTeaser?:    string;
   featured:      boolean;

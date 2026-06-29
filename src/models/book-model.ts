@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
 import BookDocument from "../documents/book-document";
 import AppUserSchema from "./app-user-schema";
-import { BookAuthor, BookIsbn } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPreviewImage } from "../interfaces/i-book";
 import { localizedStringSchema } from "./localized-string-schema";
 import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
@@ -53,6 +53,30 @@ const bookIsbnSchema = new Schema<BookIsbn>(
   }, {
     _id: false, // no separate _id — it's embedded, not a collection
   }
+);
+
+const previewImageSchema = new Schema<BookPreviewImage>(
+  {
+    id: {
+      type:     String,
+      required: [true, "Preview image ID is required."],
+    },
+    url: {
+      type:     String,
+      required: [true, "Preview image URL is required."],
+      trim:     true,
+    },
+    caption: {
+      type:     localizedStringSchema,
+      required: false,
+    },
+    displayOrder: {
+      type:    Number,
+      default: 0,
+      min:     [0, "Display order cannot be negative."],
+    },
+  },
+  { _id: false }
 );
 
 const bookSchema = new Schema<BookDocument>(
@@ -148,7 +172,7 @@ const bookSchema = new Schema<BookDocument>(
       required: false,
     },
     previewImages: {
-      type: [String],
+      type: [previewImageSchema],
       default: []
     },
     buyLink: {

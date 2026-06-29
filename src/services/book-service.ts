@@ -1,6 +1,6 @@
 import AppUser from "../interfaces/i-app-user";
 import AppError from "../errors/app-error";
-import Book, { LocalizedBook, LocalizedSummaryBook } from "../interfaces/i-book";
+import Book, { BookPreviewImage, LocalizedBook, LocalizedSummaryBook } from "../interfaces/i-book";
 import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
@@ -302,7 +302,14 @@ export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.M
     imageFiles.map(file => uploadImageToCloudService(file))
   );
 
-  bookDoc.previewImages = [...(bookDoc.previewImages ?? []), ...uploadedUrls];
+  // map each uploaded URL to a BookPreviewImage sub-document
+  const newImages: BookPreviewImage[] = uploadedUrls.map((url, index) => ({
+    id: uuidv4(),
+    url,
+    displayOrder: currentCount + index,  // append after existing images
+  }));
+
+  bookDoc.previewImages = [...(bookDoc.previewImages ?? []), ...newImages];
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 
@@ -315,11 +322,13 @@ export const deletePreviewImage = async (bookId: string, dto: DeletePreviewImage
   if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
 
   const existingImages = bookDoc.previewImages ?? [];
-  if (!existingImages.includes(dto.url)) {
-    throw new AppError('Preview image URL not found for this book.', 404);
+
+  const imageExists = existingImages.some(img => img.id === dto.id);
+  if (!imageExists) {
+    throw new AppError('Preview image not found for this book.', 404);
   }
 
-  bookDoc.previewImages = existingImages.filter(url => url !== dto.url);
+  bookDoc.previewImages = existingImages.filter(img => img.id !== dto.id);
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 
@@ -333,18 +342,23 @@ export const reorderPreviewImages = async (bookId: string, dto: ReorderPreviewIm
 
   const existingImages = bookDoc.previewImages ?? [];
 
-  // ensure submitted URLs exactly match existing ones — no additions or removals
-  const existingSet  = new Set(existingImages);
-  const submittedSet = new Set(dto.urls);
+  // ensure submitted IDs exactly match existing ones — no additions or removals
+  const existingIdSet  = new Set(existingImages.map(img => img.id));
+  const submittedIdSet = new Set(dto.ids);
 
-  const sameLength = existingSet.size === submittedSet.size;
-  const sameUrls   = [...submittedSet].every(url => existingSet.has(url));
+  const sameLength = existingIdSet.size === submittedIdSet.size;
+  const sameIds    = [...submittedIdSet].every(id => existingIdSet.has(id));
 
-  if (!sameLength || !sameUrls) {
-    throw new AppError('Reorder list must contain exactly the same URLs as existing preview images.', 400);
+  if (!sameLength || !sameIds) {
+    throw new AppError('Reorder list must contain exactly the same IDs as existing preview images.', 400);
   }
 
-  bookDoc.previewImages = dto.urls;
+  // rebuild array in submitted order with updated displayOrder
+  bookDoc.previewImages = dto.ids.map((id, index) => {
+    const img = existingImages.find(img => img.id === id)!;
+    return { ...img, displayOrder: index };
+  });
+
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 
@@ -419,7 +433,12 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     pages:         doc.pages,
     tags:          doc.tags,
     coverImage:    doc.coverImage,
-    previewImages: doc.previewImages ?? [],
+    previewImages: doc.previewImages?.map(pi => ({
+      id:      pi.id,
+      url:     pi.url,
+      caption: localizeField(pi.caption, locale),
+      displayOrder: pi.displayOrder,
+    })),
     buyLink:       doc.buyLink,
     pdfTeaser:     doc.pdfTeaser,
     featured:      doc.featured,

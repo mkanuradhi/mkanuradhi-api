@@ -10,7 +10,7 @@ const MAX_CONTENT_LENGTH     = 5000;
 const MAX_ISBN_LENGTH        = 20;
 const MIN_PUBLISHED_YEAR     = 2010;
 
-export const MAX_BOOK_PREVIEW_IMAGES = 10;
+export const MAX_BOOK_PREVIEW_IMAGES = 20;
 
 // Sub-schemas
 
@@ -124,11 +124,13 @@ export const activationBookSchema = z.object({
 // delete preview image
 
 export const deletePreviewImageSchema = z.object({
-  url: z.url('Invalid preview image URL.'),
+  id: z.string().trim().min(1, 'Prieview image ID is required.'),
 });
 
 export const reorderPreviewImagesSchema = z.object({
-  urls: z.array(z.url('Invalid preview image URL.')).min(1, 'At least one URL is required.'),
+  ids: z.array(
+    z.string().trim().min(1, 'Preview image ID cannot be empty.')
+  ).min(1, 'At least one preview image ID is required.'),
 });
 
 // Inferred types — no separate DTO interfaces needed

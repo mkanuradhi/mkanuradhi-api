@@ -127,6 +127,7 @@ export const generateUniquePath = async (
   return slug;
 };
 
-export const localizeField = (field: LocalizedString, locale: Locale): string => {
+export const localizeField = (field: LocalizedString | undefined, locale: Locale): string => {
+  if (!field) return "";
   return field[locale] ?? field[DEFAULT_LOCALE] ?? Object.values(field).find(v => !!v) ?? '';
 };
