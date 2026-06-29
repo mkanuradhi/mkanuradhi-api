@@ -10,7 +10,7 @@ import BookDocument from "../documents/book-document";
 import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
-import { ActivationBookDto, CreateBookDto, DeletePreviewImageDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
+import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
 import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
@@ -317,18 +317,18 @@ export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.M
   return mapDocumentToBook(bookDoc);
 };
 
-export const deletePreviewImage = async (bookId: string, dto: DeletePreviewImageDto): Promise<Book> => {
+export const deletePreviewImage = async (bookId: string, previewImageId: string): Promise<Book> => {
   const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
   if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
 
   const existingImages = bookDoc.previewImages ?? [];
 
-  const imageExists = existingImages.some(img => img.id === dto.id);
+  const imageExists = existingImages.some(img => img.id === previewImageId);
   if (!imageExists) {
     throw new AppError('Preview image not found for this book.', 404);
   }
 
-  bookDoc.previewImages = existingImages.filter(img => img.id !== dto.id);
+  bookDoc.previewImages = existingImages.filter(img => img.id !== previewImageId);
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 

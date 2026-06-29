@@ -4,7 +4,7 @@ import * as bookService from "../services/book-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Book, { LocalizedSummaryBook } from "../interfaces/i-book";
 import { parseLangQueryParam } from "../utils/common-util";
-import { DeletePreviewImageDto, ReorderPreviewImagesDto } from "../validators/book-validator";
+import { ReorderPreviewImagesDto } from "../validators/book-validator";
 
 export const createBook = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const addedBook = await bookService.createBook(req.body, req.appUser);
@@ -103,8 +103,8 @@ export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: R
 
 export const deletePreviewImage = asyncErrorHandler(async (req: Request, res: Response) => {
   const bookId = req.params.id;
-  const dto = req.body as DeletePreviewImageDto;
-  const updatedBook = await bookService.deletePreviewImage(bookId, dto);
+  const previewImageId = req.params.previewImageId;
+  const updatedBook = await bookService.deletePreviewImage(bookId, previewImageId);
   res.status(200).json(updatedBook);
 });
 

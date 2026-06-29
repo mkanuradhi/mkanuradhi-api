@@ -121,12 +121,6 @@ export const activationBookSchema = z.object({
   }),
 });
 
-// delete preview image
-
-export const deletePreviewImageSchema = z.object({
-  id: z.string().trim().min(1, 'Prieview image ID is required.'),
-});
-
 export const reorderPreviewImagesSchema = z.object({
   ids: z.array(
     z.string().trim().min(1, 'Preview image ID cannot be empty.')
@@ -137,5 +131,4 @@ export const reorderPreviewImagesSchema = z.object({
 export type CreateBookDto = z.infer<typeof createBookSchema>;
 export type UpdateBookDto = z.infer<typeof updateBookSchema>;
 export type ActivationBookDto = z.infer<typeof activationBookSchema>;
-export type DeletePreviewImageDto = z.infer<typeof deletePreviewImageSchema>;
 export type ReorderPreviewImagesDto = z.infer<typeof reorderPreviewImagesSchema>;
