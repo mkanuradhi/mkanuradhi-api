@@ -4,9 +4,11 @@ import { LocalizedString } from "../types/locale.types";
 import AppUser from "./i-app-user";
 
 export interface BookAuthor {
-  name: LocalizedString;
-  role: BookAuthorRole;
+  id:          string;
+  name:        LocalizedString;
+  role:        BookAuthorRole;
   profileUrl?: string;
+  imageUrl?:   string;
 }
 
 export interface BookIsbn {
@@ -61,9 +63,11 @@ interface Book {
 
 // Shared author shape for localized DTOs
 export interface LocalizedBookAuthor {
-  name:       string;
-  role:       BookAuthorRole;
+  id:          string;
+  name:        string;
+  role:        BookAuthorRole;
   profileUrl?: string;
+  imageUrl?:   string;
 }
 
 export interface LocalizedBookPreviewImage {

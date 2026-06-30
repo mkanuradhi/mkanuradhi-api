@@ -20,6 +20,7 @@ const bookAuthorSchema = z.object({
                 error: (ctx) => ({ message: `Invalid author role '${ctx.input}'. Valid roles are: ${Object.values(BookAuthorRole).join(', ')}.` })
               }),
   profileUrl: z.url('Invalid profile URL.').optional(),
+  // id and imageUrl intentionally excluded
 });
 
 const bookIsbnSchema = z.object({
@@ -39,6 +40,20 @@ const isbnArraySchema = z.array(bookIsbnSchema)
     { message: 'Each ISBN value must be unique.' }
   )
   .optional();
+
+const bookAuthorArraySchema = z.array(bookAuthorSchema)
+  .min(1, 'At least one author is required.')
+  .refine(
+    authors =>{
+      const names = authors.map(a =>
+        (a.name.en ?? "").trim().toLowerCase()
+      );
+      return new Set(names).size === names.length;
+    },
+    {
+      message: "Author names must be unique.",
+    }
+  );
 
 const localizedDescriptionSchema = localizedStringSchema.refine(
   data => (!data.en || data.en.length <= MAX_DESCRIPTION_LENGTH) &&
@@ -60,7 +75,7 @@ export const createBookSchema = z.object({
   description: localizedDescriptionSchema,
   content: localizedContentSchema,
   subject: z.array(localizedStringSchema).default([]),
-  authors: z.array(bookAuthorSchema).min(1, 'At least one author is required.'),
+  authors: bookAuthorArraySchema,
   writtenLang: z.enum(BookLanguage, {
     error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
   }),
@@ -82,6 +97,30 @@ export const createBookSchema = z.object({
 
 // Update
 
+const updateBookAuthorSchema = z.object({
+  id:         z.string().trim().min(1, 'Author ID is required.').optional(), // absent = new author
+  name:       localizedStringSchema,
+  role:       z.enum(BookAuthorRole, {
+                error: (ctx) => ({ message: `Invalid author role '${ctx.input}'. Valid roles are: ${Object.values(BookAuthorRole).join(', ')}.` })
+              }),
+  profileUrl: z.url('Invalid profile URL.').optional(),
+  // imageUrl intentionally excluded — handled via separate upload endpoint
+});
+
+const updateBookAuthorArraySchema = z.array(updateBookAuthorSchema)
+  .min(1, 'At least one author is required.')
+  .refine(
+    authors =>{
+      const names = authors.map(a =>
+        (a.name.en ?? "").trim().toLowerCase()
+      );
+      return new Set(names).size === names.length;
+    },
+    {
+      message: "Author names must be unique.",
+    }
+  );
+
 const updateBookPreviewImageSchema = z.object({
   id:           z.string(),
   caption:      optionalLocalizedStringSchema,
@@ -94,7 +133,7 @@ export const updateBookSchema = z.object({
   description:   localizedDescriptionSchema,
   content:       localizedContentSchema,
   subject:       z.array(localizedStringSchema),
-  authors:       z.array(bookAuthorSchema).min(1, 'At least one author is required.'),
+  authors:       updateBookAuthorArraySchema,
   writtenLang:   z.enum(BookLanguage, {
     error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
   }),

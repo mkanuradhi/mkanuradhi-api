@@ -32,11 +32,21 @@ export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | nul
     async (slug) => !!(await BookModel.exists({ path: slug }))
   );
 
+  // generate id for each author — imageUrl not accepted on create
+  const authorsWithIds = bookDto.authors.map(author => ({
+    id:         uuidv4(),
+    name:       author.name,
+    role:       author.role,
+    profileUrl: author.profileUrl,
+    // imageUrl intentionally omitted — handled via separate upload endpoint
+  }));
+
   const bookDoc = await BookModel.create({
     ...bookDto,
-    path:          uniquePath,
-    createdBy:     appUser ?? undefined,
-    updatedBy:     appUser ?? undefined,
+    authors:   authorsWithIds,
+    path:      uniquePath,
+    createdBy: appUser ?? undefined,
+    updatedBy: appUser ?? undefined,
   });
 
   logger.info(`Book created for ${titleTextEn}`);
@@ -92,6 +102,7 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
     throw new AppError(`A book already exists with the title: "${titleTextEn}"`, 400);
   }
 
+  const mergedAuthors = getMergedAuthors(bookDto, existingBookDoc);
   const mergedPreviewImages = getMergedPreviewImages(bookDto, existingBookDoc);
 
   const bookDoc = await BookModel.findOneAndUpdate(
@@ -103,7 +114,7 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
         description:   bookDto.description,
         content:       bookDto.content,
         subject:       bookDto.subject,
-        authors:       bookDto.authors,
+        authors:       mergedAuthors,
         writtenLang:   bookDto.writtenLang,
         publisher:     bookDto.publisher,
         publishedYear: bookDto.publishedYear,
@@ -130,9 +141,40 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
   return mapDocumentToBook(bookDoc);
 }
 
+const getMergedAuthors = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
+  const existingAuthorMap = new Map(
+    existingBookDoc.authors.map(a => [a.id, a])
+  );
+
+  return bookDto.authors.map(dtoAuthor => {
+    if (dtoAuthor.id) {
+      // existing author — validate id exists and preserve imageUrl
+      const existingAuthor = existingAuthorMap.get(dtoAuthor.id);
+      if (!existingAuthor) {
+        throw new AppError(`Author not found: ${dtoAuthor.id}`, 400);
+      }
+      return {
+        id:         existingAuthor.id,
+        name:       dtoAuthor.name,
+        role:       dtoAuthor.role,
+        profileUrl: dtoAuthor.profileUrl,
+        imageUrl:   existingAuthor.imageUrl,  // preserved — never from client
+      };
+    } else {
+      // new author — generate id, no imageUrl yet
+      return {
+        id:         uuidv4(),
+        name:       dtoAuthor.name,
+        role:       dtoAuthor.role,
+        profileUrl: dtoAuthor.profileUrl,
+      };
+    }
+  });
+}
+
 const getMergedPreviewImages = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
   if (!bookDto.previewImages)
-    return existingBookDoc.previewImages;
+    return existingBookDoc.previewImages ?? [];
 
   const existingImages = existingBookDoc.previewImages ?? [];
 
@@ -291,6 +333,8 @@ export const uploadCoverImage = async (bookId: string, imageFile?: Express.Multe
     throw new AppError('Failed to upload cover image. Please try again.', 500);
   }
 
+  // Note: imgbb does not support image deletion via API
+  // old cover image URL is simply overwritten
   bookDoc.coverImage = imageUrl;
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
@@ -454,9 +498,11 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     content:       localizeField(doc.content, locale),
     subject:       doc.subject.map((s) => localizeField(s, locale)),
     authors:       doc.authors.map(a => ({
+      id:          a.id,
       name:        localizeField(a.name, locale),
       role:        a.role,
       profileUrl:  a.profileUrl,
+      imageUrl:    a.imageUrl,
     })),
     path:          doc.path,
     writtenLang:   doc.writtenLang,
@@ -486,9 +532,11 @@ const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSum
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
     description:   localizeField(doc.description, locale),
     authors:       doc.authors.map(a => ({
+      id:          a.id,
       name:        localizeField(a.name, locale),
       role:        a.role,
       profileUrl:  a.profileUrl,
+      imageUrl:    a.imageUrl,
     })),
     path:          doc.path,
     writtenLang:   doc.writtenLang,
