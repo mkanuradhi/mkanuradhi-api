@@ -92,35 +92,7 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
     throw new AppError(`A book already exists with the title: "${titleTextEn}"`, 400);
   }
 
-  let mergedPreviewImages = existingBookDoc.previewImages ?? [];
-
-  if (bookDto.previewImages) {
-    const existingImages = existingBookDoc.previewImages ?? [];
-
-    const existingImageMap = new Map(
-      existingImages.map(img => [img.id, img])
-    );
-
-    const submittedIds = bookDto.previewImages.map(img => img.id);
-    const missingId     = submittedIds.find(id => !existingImageMap.has(id));
-    if (missingId) {
-      throw new AppError(`Preview image not found: ${missingId}`, 400);
-    }
-
-    if (submittedIds.length !== existingImages.length) {
-      throw new AppError('Preview images update must include all existing images.', 400);
-    }
-
-    mergedPreviewImages = bookDto.previewImages.map(dtoImg => {
-      const existingImg = existingImageMap.get(dtoImg.id)!;
-      return {
-        id:           existingImg.id,
-        url:          existingImg.url,
-        caption:      dtoImg.caption,
-        displayOrder: dtoImg.displayOrder,
-      };
-    });
-  }
+  const mergedPreviewImages = getMergedPreviewImages(bookDto, existingBookDoc);
 
   const bookDoc = await BookModel.findOneAndUpdate(
     { _id: bookId, __v: bookDto.v, deleted: false },  // atomic version check
@@ -156,6 +128,37 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
 
   logger.info(`Book updated: ${bookId}`);
   return mapDocumentToBook(bookDoc);
+}
+
+const getMergedPreviewImages = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
+  if (!bookDto.previewImages)
+    return existingBookDoc.previewImages;
+
+  const existingImages = existingBookDoc.previewImages ?? [];
+
+  const existingImageMap = new Map(
+    existingImages.map(img => [img.id, img])
+  );
+
+  const submittedIds = bookDto.previewImages.map(img => img.id);
+  const missingId     = submittedIds.find(id => !existingImageMap.has(id));
+  if (missingId) {
+    throw new AppError(`Preview image not found: ${missingId}`, 400);
+  }
+
+  if (submittedIds.length !== existingImages.length) {
+    throw new AppError('Preview images update must include all existing images.', 400);
+  }
+
+  return bookDto.previewImages.map(dtoImg => {
+    const existingImg = existingImageMap.get(dtoImg.id)!;
+    return {
+      id:           existingImg.id,
+      url:          existingImg.url,
+      caption:      dtoImg.caption,
+      displayOrder: dtoImg.displayOrder,
+    };
+  });
 }
 
 export const getBook = async (bookId: string): Promise<Book> => {
