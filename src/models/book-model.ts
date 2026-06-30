@@ -13,6 +13,10 @@ const MAX_ISBNS        = Object.values(BookIsbnFormat).length; // one per format
 
 const bookAuthorSchema = new Schema<BookAuthor>(
   {
+    id: {
+      type:     String,
+      required: [true, "Author ID is required."],
+    },
     name: {
       type: localizedStringSchema,
       required: [true, "Author name is required."],
@@ -29,8 +33,13 @@ const bookAuthorSchema = new Schema<BookAuthor>(
       type: String,
       trim: true,
     },
+    imageUrl: {
+      type:     String,
+      required: false,
+      trim:     true,
+    },
   }, {
-    _id: false, // no separate _id — it's embedded, not a collection
+    _id: false,
   }
 );
 

@@ -362,6 +362,37 @@ export const deleteCoverImage = async (bookId: string): Promise<Book> => {
   return mapDocumentToBook(bookDoc);
 };
 
+export const uploadAuthorImage = async (bookId: string, authorId: string, imageFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  // find the author within the book
+  const authorIndex = bookDoc.authors.findIndex(a => a.id === authorId);
+  if (authorIndex === -1) {
+    throw new AppError(`Author: '${authorId}' not found for the book ${bookId}.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No author image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload author image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old cover image URL is simply overwritten
+  bookDoc.authors[authorIndex].imageUrl = imageUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded image for author ID: ${authorId} in book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
 export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.Multer.File[]): Promise<Book> => {
   const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
   if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
