@@ -82,30 +82,37 @@ export const createBookSchema = z.object({
 
 // Update
 
+const updateBookPreviewImageSchema = z.object({
+  id:           z.string(),
+  caption:      optionalLocalizedStringSchema,
+  displayOrder: z.number(),
+});
+
 export const updateBookSchema = z.object({
   title:         localizedStringSchema,
   subtitle:      optionalLocalizedStringSchema,
-  description: localizedDescriptionSchema,
+  description:   localizedDescriptionSchema,
   content:       localizedContentSchema,
   subject:       z.array(localizedStringSchema),
-  authors: z.array(bookAuthorSchema).min(1, 'At least one author is required.'),
+  authors:       z.array(bookAuthorSchema).min(1, 'At least one author is required.'),
   writtenLang:   z.enum(BookLanguage, {
     error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
   }),
   publisher:     localizedStringSchema,
   publishedYear: z.number()
     .int('Published year must be an integer.')
-    .min(MIN_PUBLISHED_YEAR,   `Published year cannot be before ${MIN_PUBLISHED_YEAR}.`)
+    .min(MIN_PUBLISHED_YEAR, `Published year cannot be before ${MIN_PUBLISHED_YEAR}.`)
     .max(new Date().getFullYear(), 'Published year cannot be in the future.'),
 
-  edition:       z.string().trim().max(MAX_TITLE_LENGTH).optional(),
-  isbns:         isbnArraySchema,
-  pages:    z.number().int().min(1, 'Pages must be at least 1.').optional(),
-  tags:     z.array(z.string().trim()),
+  edition: z.string().trim().max(MAX_TITLE_LENGTH).optional(),
+  isbns:   isbnArraySchema,
+  pages:   z.number().int().min(1, 'Pages must be at least 1.').optional(),
+  tags:    z.array(z.string().trim()),
 
   buyLink:       z.string().trim().optional(),
   featured:      z.boolean(),
   displayOrder:  z.number().int().min(0).optional(),
+  previewImages: z.array(updateBookPreviewImageSchema).optional(),
 
   // v defined at same level — never dropped
   v: z.number({ error: 'Version (v) is required and must be a number.' })

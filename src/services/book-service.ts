@@ -76,20 +76,50 @@ export const getBooks = async (page: number, size: number): Promise<{ items: Boo
 
 export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser?: AppUser | null): Promise<Book> => {
   // Verify book exists first
-  const bookExists = await BookModel.exists({ _id: bookId, deleted: false });
-  if (!bookExists) throw new AppError(`Book not found for id: ${bookId}`, 404);
+  const existingBookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!existingBookDoc) throw new AppError(`Book not found for id: ${bookId}`, 404);
 
   const titleTextEn = bookDto.title?.en?.trim();
   if (!titleTextEn) throw new AppError('Title must have en locale.', 400);
 
   // Duplicate title check — exclude current doc
-  const existingDoc = await BookModel.findOne({
+  const existingDuplicateDoc = await BookModel.findOne({
     'title.en': titleTextEn,
     _id:        { $ne: bookId }, // exclude the current doc
     deleted:    false,
   });
-  if (existingDoc) {
+  if (existingDuplicateDoc) {
     throw new AppError(`A book already exists with the title: "${titleTextEn}"`, 400);
+  }
+
+  let mergedPreviewImages = existingBookDoc.previewImages ?? [];
+
+  if (bookDto.previewImages) {
+    const existingImages = existingBookDoc.previewImages ?? [];
+
+    const existingImageMap = new Map(
+      existingImages.map(img => [img.id, img])
+    );
+
+    const submittedIds = bookDto.previewImages.map(img => img.id);
+    const missingId     = submittedIds.find(id => !existingImageMap.has(id));
+    if (missingId) {
+      throw new AppError(`Preview image not found: ${missingId}`, 400);
+    }
+
+    if (submittedIds.length !== existingImages.length) {
+      throw new AppError('Preview images update must include all existing images.', 400);
+    }
+
+    mergedPreviewImages = bookDto.previewImages.map(dtoImg => {
+      const existingImg = existingImageMap.get(dtoImg.id)!;
+      return {
+        id:           existingImg.id,
+        url:          existingImg.url,
+        caption:      dtoImg.caption,
+        displayOrder: dtoImg.displayOrder,
+      };
+    });
   }
 
   const bookDoc = await BookModel.findOneAndUpdate(
@@ -112,6 +142,7 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
         buyLink:       bookDto.buyLink,
         featured:      bookDto.featured,
         displayOrder:  bookDto.displayOrder,
+        previewImages: mergedPreviewImages,
         updatedBy:     appUser ?? undefined,
       },
       $inc: { __v: 1 },
