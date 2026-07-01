@@ -393,6 +393,31 @@ export const uploadAuthorImage = async (bookId: string, authorId: string, imageF
   return mapDocumentToBook(bookDoc);
 };
 
+export const deleteAuthorImage = async (bookId: string, authorId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  // find the author within the book
+  const authorIndex = bookDoc.authors.findIndex(a => a.id === authorId);
+  if (authorIndex === -1) {
+    throw new AppError(`Author: '${authorId}' not found for the book ${bookId}.`, 404);
+  }
+
+  if (!bookDoc.authors[authorIndex].imageUrl) {
+    throw new AppError('This author has no image to delete.', 400);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  bookDoc.authors[authorIndex].imageUrl = undefined;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted author image for author: ${authorId} in book: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
 export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.Multer.File[]): Promise<Book> => {
   const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
   if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);

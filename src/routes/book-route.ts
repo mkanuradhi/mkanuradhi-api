@@ -43,6 +43,9 @@ bookRoute.delete('/:id/cover-image', requireAuthenticated([Role.ADMIN]), validat
 // Update the author image for a book
 bookRoute.patch('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), uploadImage.single('authorImage'), bookController.uploadAuthorImage);
 
+// Delete the author image from a book
+bookRoute.delete('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), bookController.deleteAuthorImage);
+
 // Update the preview images for a book
 bookRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.array('previewImages', MAX_BOOK_PREVIEW_IMAGES), bookController.uploadPreviewImages);
 
