@@ -11,6 +11,13 @@ export interface BookAuthor {
   imageUrl?:   string;
 }
 
+export interface BookPublisher {
+  name:      LocalizedString;
+  address:   LocalizedString;
+  webUrl?:   string;
+  imageUrl?: string;
+}
+
 export interface BookIsbn {
   format: BookIsbnFormat;
   value: string;
@@ -35,7 +42,7 @@ interface Book {
   writtenLang: BookLanguage;
   path: string;
 
-  publisher: LocalizedString;
+  publisher?: BookPublisher;
   publishedYear: number;
   edition?: string;
   isbns?: BookIsbn[];
@@ -70,6 +77,13 @@ export interface LocalizedBookAuthor {
   imageUrl?:   string;
 }
 
+export interface LocalizedBookPublisher {
+  name:      string;
+  address:   string;
+  webUrl?:   string;
+  imageUrl?: string;
+}
+
 export interface LocalizedBookPreviewImage {
   id:           string;
   url:          string;
@@ -88,7 +102,7 @@ export interface LocalizedBook {
   authors:       LocalizedBookAuthor[];
   path:          string;
   writtenLang:   BookLanguage;
-  publisher:     string;
+  publisher?:    LocalizedBookPublisher;
   publishedYear: number;
   edition?:      string;
   isbns?:        BookIsbn[];

@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
 import BookDocument from "../documents/book-document";
 import AppUserSchema from "./app-user-schema";
-import { BookAuthor, BookIsbn, BookPreviewImage } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPreviewImage, BookPublisher } from "../interfaces/i-book";
 import { localizedStringSchema } from "./localized-string-schema";
 import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
@@ -40,6 +40,31 @@ const bookAuthorSchema = new Schema<BookAuthor>(
     },
   }, {
     _id: false,
+  }
+);
+
+const bookPublisherSchema = new Schema<BookPublisher>(
+  {
+    name: {
+      type: localizedStringSchema,
+      required: [true, "Publisher name is required."],
+    },
+    address: {
+      type: localizedStringSchema,
+      required: [true, "Publisher address is required."],
+    },
+    webUrl: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    imageUrl: {
+      type:     String,
+      required: false,
+      trim:     true,
+    },
+  }, {
+    _id: false, // no separate _id — it's embedded, not a collection
   }
 );
 
@@ -138,8 +163,8 @@ const bookSchema = new Schema<BookDocument>(
       match: [/^[a-z0-9\-]+$/, 'Path must be URL-safe (lowercase letters, numbers, hyphens).'],
     },
     publisher: {
-      type: localizedStringSchema,
-      required: [true, "Publisher is required."],
+      type: bookPublisherSchema,
+      required: false,
     },
     publishedYear: {
       type: Number,

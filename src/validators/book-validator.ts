@@ -23,6 +23,12 @@ const bookAuthorSchema = z.object({
   // id and imageUrl intentionally excluded
 });
 
+const bookPublisherSchema = z.object({
+  name:     localizedStringSchema,
+  address:  localizedStringSchema,
+  webUrl:   z.url('Invalid website URL.').optional(),
+});
+
 const bookIsbnSchema = z.object({
   format: z.enum(BookIsbnFormat, {
     error: (ctx) => ({ message: `Invalid ISBN format '${ctx.input}'. Valid formats are: ${Object.values(BookIsbnFormat).join(', ')}.` })
@@ -79,7 +85,7 @@ export const createBookSchema = z.object({
   writtenLang: z.enum(BookLanguage, {
     error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
   }),
-  publisher: localizedStringSchema,
+  publisher: bookPublisherSchema,
   publishedYear: z.number()
     .int('Published year must be an integer.')
     .min(MIN_PUBLISHED_YEAR,   `Published year cannot be before ${MIN_PUBLISHED_YEAR}.`)
@@ -137,7 +143,7 @@ export const updateBookSchema = z.object({
   writtenLang:   z.enum(BookLanguage, {
     error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
   }),
-  publisher:     localizedStringSchema,
+  publisher:     bookPublisherSchema,
   publishedYear: z.number()
     .int('Published year must be an integer.')
     .min(MIN_PUBLISHED_YEAR, `Published year cannot be before ${MIN_PUBLISHED_YEAR}.`)

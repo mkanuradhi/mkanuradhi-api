@@ -103,6 +103,7 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
   }
 
   const mergedAuthors = getMergedAuthors(bookDto, existingBookDoc);
+  const mergedPublisher = getMergedPublisher(bookDto, existingBookDoc);
   const mergedPreviewImages = getMergedPreviewImages(bookDto, existingBookDoc);
 
   const bookDoc = await BookModel.findOneAndUpdate(
@@ -116,7 +117,7 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
         subject:       bookDto.subject,
         authors:       mergedAuthors,
         writtenLang:   bookDto.writtenLang,
-        publisher:     bookDto.publisher,
+        publisher:     mergedPublisher,
         publishedYear: bookDto.publishedYear,
         edition:       bookDto.edition,
         isbns:         bookDto.isbns,
@@ -170,6 +171,30 @@ const getMergedAuthors = (bookDto: UpdateBookDto, existingBookDoc: BookDocument)
       };
     }
   });
+}
+
+const getMergedPublisher = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
+  // Field not included in the update payload at all — keep existing value
+  if (bookDto.publisher === undefined) {
+    return existingBookDoc.publisher;
+  }
+
+  // Explicitly sent as null — client wants to clear the publisher
+  if (bookDto.publisher === null) {
+    return undefined;
+  }
+
+  if (bookDto.publisher && !bookDto.publisher.name?.en?.trim()) {
+    throw new AppError('Publisher name must have en locale.', 400);
+  }
+
+  // Publisher data provided — merge, preserving server-managed imageUrl
+  return {
+    name:     bookDto.publisher.name,
+    address:  bookDto.publisher.address,
+    webUrl:   bookDto.publisher.webUrl,
+    imageUrl: existingBookDoc.publisher?.imageUrl,
+  };
 }
 
 const getMergedPreviewImages = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
@@ -562,7 +587,12 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     })),
     path:          doc.path,
     writtenLang:   doc.writtenLang,
-    publisher:     localizeField(doc.publisher, locale),
+    publisher:     {
+      name:     localizeField(doc.publisher?.name, locale),
+      address:  localizeField(doc.publisher?.address, locale),
+      webUrl:   doc.publisher?.webUrl,
+      imageUrl: doc.publisher?.imageUrl,
+    },
     publishedYear: doc.publishedYear,
     edition:       doc.edition,
     isbns:         doc.isbns ?? [],
