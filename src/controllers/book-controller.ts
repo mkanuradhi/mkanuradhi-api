@@ -109,6 +109,18 @@ export const deleteAuthorImage = asyncErrorHandler(async (req: Request, res: Res
   res.status(200).json(updatedBook);
 });
 
+export const uploadPublisherImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadPublisherImage(bookId, req.file);
+  res.status(200).json(updatedBook);
+});
+
+export const deletePublisherImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.deletePublisherImage(bookId);
+  res.status(200).json(updatedBook);
+});
+
 export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
   const bookId = req.params.id;
   const updatedBook = await bookService.uploadPreviewImages(bookId, req.files as Express.Multer.File[]);

@@ -443,6 +443,59 @@ export const deleteAuthorImage = async (bookId: string, authorId: string): Promi
   return mapDocumentToBook(bookDoc);
 };
 
+export const uploadPublisherImage = async (bookId: string, imageFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No publisher image file provided.', 400);
+  }
+
+  if (!bookDoc.publisher) {
+    throw new AppError(`Book '${bookId}' has no publisher set. Add a publisher before uploading an image.`, 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload publisher image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old publisher image URL is simply overwritten
+  bookDoc.publisher.imageUrl = imageUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded publisher image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const deletePublisherImage = async (bookId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!bookDoc.publisher) {
+    throw new AppError(`Book '${bookId}' has no publisher set.`, 400);
+  }
+
+  if (!bookDoc.publisher.imageUrl) {
+    // Already in the desired state — no-op, return as-is
+    return mapDocumentToBook(bookDoc);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  bookDoc.publisher.imageUrl = undefined;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted publisher image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
 export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.Multer.File[]): Promise<Book> => {
   const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
   if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
