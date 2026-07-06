@@ -1,6 +1,6 @@
 import { BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
-import { BookAuthor } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPreviewImage, BookPublisher } from "../interfaces/i-book";
 import { LocalizedString } from "../types/locale.types";
 import BaseDocument from "./base-document";
 
@@ -14,17 +14,17 @@ interface BookDocument extends BaseDocument {
   writtenLang: BookLanguage;
   path: string;
 
-  publisher: LocalizedString;
+  publisher?: BookPublisher;
   publishedYear: number;
   edition: string;
-  isbn: string;
+  isbns?: BookIsbn[];
   pages: number;
   tags: string[];
 
   // Media & links
   coverImage?:    string;
-  previewImages?:  string[];
-  buyLink?:        string;
+  previewImages?: BookPreviewImage[];
+  buyLink?:       string;
   pdfTeaser?:     string;
 
   // Portfolio display

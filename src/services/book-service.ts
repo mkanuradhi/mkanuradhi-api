@@ -1,16 +1,17 @@
 import AppUser from "../interfaces/i-app-user";
 import AppError from "../errors/app-error";
-import Book, { LocalizedBook, LocalizedSummaryBook } from "../interfaces/i-book";
+import Book, { BookPreviewImage, LocalizedBook, LocalizedSummaryBook } from "../interfaces/i-book";
 import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
-import { generateUniquePath, localizeField } from "../utils/common-util";
+import { generateUniquePath, localizeField, uploadImageToCloudService } from "../utils/common-util";
 import BookDocument from "../documents/book-document";
 import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
-import { ActivationBookDto, CreateBookDto, UpdateBookDto } from "../validators/book-validator";
+import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
+import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -25,25 +26,27 @@ export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | nul
       throw new AppError(`A book already exists with the title: ${titleTextEn}`, 400);
   }
 
-  // isbn uniqueness check — only if provided
-  if (bookDto.isbn) {
-    const isbnConflict = await BookModel.findOne({ isbn: bookDto.isbn.trim() });
-    if (isbnConflict) {
-      throw new AppError(`A book already exists for ISBN: ${bookDto.isbn}`, 400);
-    }
-  }
-
   // generate unique path — checks DB for conflicts automatically
   const uniquePath = await generateUniquePath(
     titleTextEn,
     async (slug) => !!(await BookModel.exists({ path: slug }))
   );
 
+  // generate id for each author — imageUrl not accepted on create
+  const authorsWithIds = bookDto.authors.map(author => ({
+    id:         uuidv4(),
+    name:       author.name,
+    role:       author.role,
+    profileUrl: author.profileUrl,
+    // imageUrl intentionally omitted — handled via separate upload endpoint
+  }));
+
   const bookDoc = await BookModel.create({
     ...bookDto,
-    path:          uniquePath,
-    createdBy:     appUser ?? undefined,
-    updatedBy:     appUser ?? undefined,
+    authors:   authorsWithIds,
+    path:      uniquePath,
+    createdBy: appUser ?? undefined,
+    updatedBy: appUser ?? undefined,
   });
 
   logger.info(`Book created for ${titleTextEn}`);
@@ -83,32 +86,25 @@ export const getBooks = async (page: number, size: number): Promise<{ items: Boo
 
 export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser?: AppUser | null): Promise<Book> => {
   // Verify book exists first
-  const bookExists = await BookModel.exists({ _id: bookId, deleted: false });
-  if (!bookExists) throw new AppError(`Book not found for id: ${bookId}`, 404);
+  const existingBookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!existingBookDoc) throw new AppError(`Book not found for id: ${bookId}`, 404);
 
   const titleTextEn = bookDto.title?.en?.trim();
   if (!titleTextEn) throw new AppError('Title must have en locale.', 400);
 
   // Duplicate title check — exclude current doc
-  const existingDoc = await BookModel.findOne({
+  const existingDuplicateDoc = await BookModel.findOne({
     'title.en': titleTextEn,
     _id:        { $ne: bookId }, // exclude the current doc
     deleted:    false,
   });
-  if (existingDoc) {
+  if (existingDuplicateDoc) {
     throw new AppError(`A book already exists with the title: "${titleTextEn}"`, 400);
   }
 
-  // check for duplicate ISBN
-  if (bookDto.isbn) {
-    const isbnConflict = await BookModel.findOne({
-      isbn: bookDto.isbn.trim(),
-      _id:  { $ne: bookId },
-    });
-    if (isbnConflict) {
-      throw new AppError(`A book already exists for ISBN: ${bookDto.isbn}`, 400);
-    }
-  }
+  const mergedAuthors = getMergedAuthors(bookDto, existingBookDoc);
+  const mergedPublisher = getMergedPublisher(bookDto, existingBookDoc);
+  const mergedPreviewImages = getMergedPreviewImages(bookDto, existingBookDoc);
 
   const bookDoc = await BookModel.findOneAndUpdate(
     { _id: bookId, __v: bookDto.v, deleted: false },  // atomic version check
@@ -119,20 +115,18 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
         description:   bookDto.description,
         content:       bookDto.content,
         subject:       bookDto.subject,
-        authors:       bookDto.authors,
+        authors:       mergedAuthors,
         writtenLang:   bookDto.writtenLang,
-        publisher:     bookDto.publisher,
+        publisher:     mergedPublisher,
         publishedYear: bookDto.publishedYear,
         edition:       bookDto.edition,
-        isbn:          bookDto.isbn,
+        isbns:         bookDto.isbns,
         pages:         bookDto.pages,
         tags:          bookDto.tags,
-        coverImage:    bookDto.coverImage,
-        previewImages: bookDto.previewImages,
         buyLink:       bookDto.buyLink,
-        pdfTeaser:     bookDto.pdfTeaser,
         featured:      bookDto.featured,
         displayOrder:  bookDto.displayOrder,
+        previewImages: mergedPreviewImages,
         updatedBy:     appUser ?? undefined,
       },
       $inc: { __v: 1 },
@@ -146,6 +140,92 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
 
   logger.info(`Book updated: ${bookId}`);
   return mapDocumentToBook(bookDoc);
+}
+
+const getMergedAuthors = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
+  const existingAuthorMap = new Map(
+    existingBookDoc.authors.map(a => [a.id, a])
+  );
+
+  return bookDto.authors.map(dtoAuthor => {
+    if (dtoAuthor.id) {
+      // existing author — validate id exists and preserve imageUrl
+      const existingAuthor = existingAuthorMap.get(dtoAuthor.id);
+      if (!existingAuthor) {
+        throw new AppError(`Author not found: ${dtoAuthor.id}`, 400);
+      }
+      return {
+        id:         existingAuthor.id,
+        name:       dtoAuthor.name,
+        role:       dtoAuthor.role,
+        profileUrl: dtoAuthor.profileUrl,
+        imageUrl:   existingAuthor.imageUrl,  // preserved — never from client
+      };
+    } else {
+      // new author — generate id, no imageUrl yet
+      return {
+        id:         uuidv4(),
+        name:       dtoAuthor.name,
+        role:       dtoAuthor.role,
+        profileUrl: dtoAuthor.profileUrl,
+      };
+    }
+  });
+}
+
+const getMergedPublisher = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
+  // Field not included in the update payload at all — keep existing value
+  if (bookDto.publisher === undefined) {
+    return existingBookDoc.publisher;
+  }
+
+  // Explicitly sent as null — client wants to clear the publisher
+  if (bookDto.publisher === null) {
+    return undefined;
+  }
+
+  if (bookDto.publisher && !bookDto.publisher.name?.en?.trim()) {
+    throw new AppError('Publisher name must have en locale.', 400);
+  }
+
+  // Publisher data provided — merge, preserving server-managed imageUrl
+  return {
+    name:     bookDto.publisher.name,
+    address:  bookDto.publisher.address,
+    webUrl:   bookDto.publisher.webUrl,
+    imageUrl: existingBookDoc.publisher?.imageUrl,
+  };
+}
+
+const getMergedPreviewImages = (bookDto: UpdateBookDto, existingBookDoc: BookDocument) => {
+  if (!bookDto.previewImages)
+    return existingBookDoc.previewImages ?? [];
+
+  const existingImages = existingBookDoc.previewImages ?? [];
+
+  const existingImageMap = new Map(
+    existingImages.map(img => [img.id, img])
+  );
+
+  const submittedIds = bookDto.previewImages.map(img => img.id);
+  const missingId     = submittedIds.find(id => !existingImageMap.has(id));
+  if (missingId) {
+    throw new AppError(`Preview image not found: ${missingId}`, 400);
+  }
+
+  if (submittedIds.length !== existingImages.length) {
+    throw new AppError('Preview images update must include all existing images.', 400);
+  }
+
+  return bookDto.previewImages.map(dtoImg => {
+    const existingImg = existingImageMap.get(dtoImg.id)!;
+    return {
+      id:           existingImg.id,
+      url:          existingImg.url,
+      caption:      dtoImg.caption,
+      displayOrder: dtoImg.displayOrder,
+    };
+  });
 }
 
 export const getBook = async (bookId: string): Promise<Book> => {
@@ -192,24 +272,25 @@ export const deleteBook = async (bookId: string, appUser?: AppUser | null): Prom
 }
 
 export const toggleBookActivation = async (bookId: string, bookDto: ActivationBookDto, appUser?: AppUser | null): Promise<Book> => {
-  const updatedBookDoc = await BookModel.findOneAndUpdate(
-    { _id: bookId, deleted: false },    // condition + existence check in one
-    {
-      $set: {
-        status:    bookDto.status,
-        updatedBy: appUser ?? undefined,
-      },
-      $inc: { __v: 1 },
-    },
-    { new: true }
-  );
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
 
-  if (!updatedBookDoc) {
+  if (!bookDoc) {
     throw new AppError(`Cannot find the book with ID: ${bookId}.`, 404);
   }
 
+  // cover image is required before a book can be made active
+  if (bookDto.status === DocumentStatus.ACTIVE && !bookDoc.coverImage) {
+    throw new AppError('Cannot activate a book without a cover image.', 400);
+  }
+
+  bookDoc.status    = bookDto.status;
+  bookDoc.updatedBy = appUser ?? undefined;
+  bookDoc.increment(); // Increment the version for optimistic concurrency control
+
+  await bookDoc.save({ validateModifiedOnly: true });
+
   logger.info(`Book status updated for ID: ${bookId}`);
-  return mapDocumentToBook(updatedBookDoc);
+  return mapDocumentToBook(bookDoc);
 }
 
 export const getLocalizedBooks = async (lang: string, page: number, size: number): Promise<{ items: LocalizedSummaryBook[], totalCount: number }> => {
@@ -262,6 +343,286 @@ export const getLocalizedBookByPath = async (lang: string, bookPath: string): Pr
   return toLocalizedBook(bookDoc, locale);
 }
 
+export const uploadCoverImage = async (bookId: string, imageFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No cover image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload cover image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old cover image URL is simply overwritten
+  bookDoc.coverImage = imageUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded cover image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const deleteCoverImage = async (bookId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!bookDoc.coverImage) {
+    throw new AppError('This book has no cover image to delete.', 400);
+  }
+
+  bookDoc.coverImage = undefined;
+  bookDoc.status = DocumentStatus.INACTIVE; // Deactivate the book if cover image is deleted
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted cover image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const uploadAuthorImage = async (bookId: string, authorId: string, imageFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  // find the author within the book
+  const authorIndex = bookDoc.authors.findIndex(a => a.id === authorId);
+  if (authorIndex === -1) {
+    throw new AppError(`Author: '${authorId}' not found for the book ${bookId}.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No author image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload author image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old cover image URL is simply overwritten
+  bookDoc.authors[authorIndex].imageUrl = imageUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded image for author ID: ${authorId} in book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const deleteAuthorImage = async (bookId: string, authorId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  // find the author within the book
+  const authorIndex = bookDoc.authors.findIndex(a => a.id === authorId);
+  if (authorIndex === -1) {
+    throw new AppError(`Author: '${authorId}' not found for the book ${bookId}.`, 404);
+  }
+
+  if (!bookDoc.authors[authorIndex].imageUrl) {
+    throw new AppError('This author has no image to delete.', 400);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  bookDoc.authors[authorIndex].imageUrl = undefined;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted author image for author: ${authorId} in book: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const uploadPublisherImage = async (bookId: string, imageFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No publisher image file provided.', 400);
+  }
+
+  if (!bookDoc.publisher) {
+    throw new AppError(`Book '${bookId}' has no publisher set. Add a publisher before uploading an image.`, 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload publisher image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old publisher image URL is simply overwritten
+  bookDoc.publisher.imageUrl = imageUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded publisher image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const deletePublisherImage = async (bookId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!bookDoc.publisher) {
+    throw new AppError(`Book '${bookId}' has no publisher set.`, 400);
+  }
+
+  if (!bookDoc.publisher.imageUrl) {
+    // Already in the desired state — no-op, return as-is
+    return mapDocumentToBook(bookDoc);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  bookDoc.publisher.imageUrl = undefined;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted publisher image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.Multer.File[]): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+
+  if (!imageFiles || imageFiles.length === 0) {
+    throw new AppError('No preview image files provided.', 400);
+  }
+
+  const currentCount = bookDoc.previewImages?.length ?? 0;
+  if (currentCount + imageFiles.length > MAX_BOOK_PREVIEW_IMAGES) {
+    throw new AppError(`Cannot exceed ${MAX_BOOK_PREVIEW_IMAGES} preview images. Currently has ${currentCount}.`, 400);
+  }
+
+  // upload all files concurrently
+  const uploadedUrls = await Promise.all(
+    imageFiles.map(file => uploadImageToCloudService(file))
+  );
+
+  // map each uploaded URL to a BookPreviewImage sub-document
+  const newImages: BookPreviewImage[] = uploadedUrls.map((url, index) => ({
+    id: uuidv4(),
+    url,
+    displayOrder: currentCount + index,  // append after existing images
+  }));
+
+  bookDoc.previewImages = [...(bookDoc.previewImages ?? []), ...newImages];
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded ${uploadedUrls.length} preview image(s) for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const deletePreviewImage = async (bookId: string, previewImageId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+
+  const existingImages = bookDoc.previewImages ?? [];
+
+  const imageExists = existingImages.some(img => img.id === previewImageId);
+  if (!imageExists) {
+    throw new AppError('Preview image not found for this book.', 404);
+  }
+
+  bookDoc.previewImages = existingImages.filter(img => img.id !== previewImageId);
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted preview image for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const reorderPreviewImages = async (bookId: string, dto: ReorderPreviewImagesDto): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+
+  const existingImages = bookDoc.previewImages ?? [];
+
+  // ensure submitted IDs exactly match existing ones — no additions or removals
+  const existingIdSet  = new Set(existingImages.map(img => img.id));
+  const submittedIdSet = new Set(dto.ids);
+
+  const sameLength = existingIdSet.size === submittedIdSet.size;
+  const sameIds    = [...submittedIdSet].every(id => existingIdSet.has(id));
+
+  if (!sameLength || !sameIds) {
+    throw new AppError('Reorder list must contain exactly the same IDs as existing preview images.', 400);
+  }
+
+  // rebuild array in submitted order with updated displayOrder
+  bookDoc.previewImages = dto.ids.map((id, index) => {
+    const img = existingImages.find(img => img.id === id)!;
+    return { ...img, displayOrder: index };
+  });
+
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Reordered preview images for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const uploadPdfTeaser = async (bookId: string, pdfFile?: Express.Multer.File): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!pdfFile) {
+    throw new AppError('No PDF file provided.', 400);
+  }
+
+  // delete old PDF from R2 before uploading new one
+  if (bookDoc.pdfTeaser) {
+    await deleteFileFromR2(bookDoc.pdfTeaser);
+  }
+
+  const pdfUrl = await uploadFileToR2(pdfFile, 'books/pdf-teasers');
+
+  bookDoc.pdfTeaser = pdfUrl;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded PDF teaser for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
+export const deletePdfTeaser = async (bookId: string): Promise<Book> => {
+  const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
+  if (!bookDoc) {
+    throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+
+  if (!bookDoc.pdfTeaser) {
+    throw new AppError('This book has no PDF teaser to delete.', 400);
+  }
+
+  await deleteFileFromR2(bookDoc.pdfTeaser);
+
+  bookDoc.pdfTeaser = undefined;
+  bookDoc.increment();
+  await bookDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted PDF teaser for book ID: ${bookId}`);
+  return mapDocumentToBook(bookDoc);
+};
+
 const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
   return {
     id:            doc._id.toString(),
@@ -271,20 +632,32 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     content:       localizeField(doc.content, locale),
     subject:       doc.subject.map((s) => localizeField(s, locale)),
     authors:       doc.authors.map(a => ({
+      id:          a.id,
       name:        localizeField(a.name, locale),
       role:        a.role,
       profileUrl:  a.profileUrl,
+      imageUrl:    a.imageUrl,
     })),
     path:          doc.path,
     writtenLang:   doc.writtenLang,
-    publisher:     localizeField(doc.publisher, locale),
+    publisher:     {
+      name:     localizeField(doc.publisher?.name, locale),
+      address:  localizeField(doc.publisher?.address, locale),
+      webUrl:   doc.publisher?.webUrl,
+      imageUrl: doc.publisher?.imageUrl,
+    },
     publishedYear: doc.publishedYear,
     edition:       doc.edition,
-    isbn:          doc.isbn,
+    isbns:         doc.isbns ?? [],
     pages:         doc.pages,
     tags:          doc.tags,
     coverImage:    doc.coverImage,
-    previewImages: doc.previewImages ?? [],
+    previewImages: doc.previewImages?.map(pi => ({
+      id:      pi.id,
+      url:     pi.url,
+      caption: localizeField(pi.caption, locale),
+      displayOrder: pi.displayOrder,
+    })),
     buyLink:       doc.buyLink,
     pdfTeaser:     doc.pdfTeaser,
     featured:      doc.featured,
@@ -298,9 +671,11 @@ const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSum
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
     description:   localizeField(doc.description, locale),
     authors:       doc.authors.map(a => ({
+      id:          a.id,
       name:        localizeField(a.name, locale),
       role:        a.role,
       profileUrl:  a.profileUrl,
+      imageUrl:    a.imageUrl,
     })),
     path:          doc.path,
     writtenLang:   doc.writtenLang,

@@ -9,3 +9,9 @@ export enum BookLanguage {
   ENGLISH = "en",
   SINHALA = "si",
 }
+
+export enum BookIsbnFormat {
+  PAPERBACK = "paperback",
+  HARDCOVER = "hardcover",
+  EBOOK     = "ebook",
+}

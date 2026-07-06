@@ -4,6 +4,7 @@ import * as bookService from "../services/book-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Book, { LocalizedSummaryBook } from "../interfaces/i-book";
 import { parseLangQueryParam } from "../utils/common-util";
+import { ReorderPreviewImagesDto } from "../validators/book-validator";
 
 export const createBook = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const addedBook = await bookService.createBook(req.body, req.appUser);
@@ -80,4 +81,74 @@ export const getLocalizedBooks = asyncErrorHandler( async (req: Request, res: Re
   };
 
   res.status(200).json(result);
+});
+
+export const uploadCoverImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadCoverImage(bookId, req.file);
+  res.status(200).json(updatedBook);
+});
+
+export const deleteCoverImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.deleteCoverImage(bookId);
+  res.status(200).json(updatedBook);
+});
+
+export const uploadAuthorImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const authorId = req.params.authorId;
+  const updatedBook = await bookService.uploadAuthorImage(bookId, authorId, req.file);
+  res.status(200).json(updatedBook);
+});
+
+export const deleteAuthorImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const authorId = req.params.authorId;
+  const updatedBook = await bookService.deleteAuthorImage(bookId, authorId);
+  res.status(200).json(updatedBook);
+});
+
+export const uploadPublisherImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadPublisherImage(bookId, req.file);
+  res.status(200).json(updatedBook);
+});
+
+export const deletePublisherImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.deletePublisherImage(bookId);
+  res.status(200).json(updatedBook);
+});
+
+export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadPreviewImages(bookId, req.files as Express.Multer.File[]);
+  res.status(200).json(updatedBook);
+});
+
+export const deletePreviewImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const previewImageId = req.params.previewImageId;
+  const updatedBook = await bookService.deletePreviewImage(bookId, previewImageId);
+  res.status(200).json(updatedBook);
+});
+
+export const reorderPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const dto = req.body as ReorderPreviewImagesDto;
+  const updatedBook = await bookService.reorderPreviewImages(bookId, dto);
+  res.status(200).json(updatedBook);
+});
+
+export const uploadPdfTeaser = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.uploadPdfTeaser(bookId, req.file);
+  res.status(200).json(updatedBook);
+});
+
+export const deletePdfTeaser = asyncErrorHandler(async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  const updatedBook = await bookService.deletePdfTeaser(bookId);
+  res.status(200).json(updatedBook);
 });

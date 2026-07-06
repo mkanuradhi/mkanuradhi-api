@@ -1,12 +1,33 @@
-import { BookAuthorRole, BookLanguage } from "../enums/book-enums";
+import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
 import { LocalizedString } from "../types/locale.types";
 import AppUser from "./i-app-user";
 
 export interface BookAuthor {
-  name: LocalizedString;
-  role: BookAuthorRole;
+  id:          string;
+  name:        LocalizedString;
+  role:        BookAuthorRole;
   profileUrl?: string;
+  imageUrl?:   string;
+}
+
+export interface BookPublisher {
+  name:      LocalizedString;
+  address:   LocalizedString;
+  webUrl?:   string;
+  imageUrl?: string;
+}
+
+export interface BookIsbn {
+  format: BookIsbnFormat;
+  value: string;
+}
+
+export interface BookPreviewImage {
+  id:           string;
+  url:          string;
+  caption?:     LocalizedString;
+  displayOrder: number;
 }
 
 interface Book {
@@ -21,16 +42,16 @@ interface Book {
   writtenLang: BookLanguage;
   path: string;
 
-  publisher: LocalizedString;
+  publisher?: BookPublisher;
   publishedYear: number;
   edition?: string;
-  isbn?: string;
+  isbns?: BookIsbn[];
   pages?: number;
   tags: string[];
 
   // Media & links
   coverImage?:    string;
-  previewImages?:  string[];
+  previewImages?:  BookPreviewImage[];
   buyLink?:        string;
   pdfTeaser?:     string;
 
@@ -49,9 +70,25 @@ interface Book {
 
 // Shared author shape for localized DTOs
 export interface LocalizedBookAuthor {
-  name:       string;
-  role:       BookAuthorRole;
+  id:          string;
+  name:        string;
+  role:        BookAuthorRole;
   profileUrl?: string;
+  imageUrl?:   string;
+}
+
+export interface LocalizedBookPublisher {
+  name:      string;
+  address:   string;
+  webUrl?:   string;
+  imageUrl?: string;
+}
+
+export interface LocalizedBookPreviewImage {
+  id:           string;
+  url:          string;
+  caption?:     string;
+  displayOrder: number;
 }
 
 // Public detail page — full, one locale resolved
@@ -65,14 +102,14 @@ export interface LocalizedBook {
   authors:       LocalizedBookAuthor[];
   path:          string;
   writtenLang:   BookLanguage;
-  publisher:     string;
+  publisher?:    LocalizedBookPublisher;
   publishedYear: number;
   edition?:      string;
-  isbn?:         string;
+  isbns?:        BookIsbn[];
   pages?:        number;
   tags:          string[];
   coverImage?:   string;
-  previewImages: string[];
+  previewImages?: LocalizedBookPreviewImage[];
   buyLink?:      string;
   pdfTeaser?:    string;
   featured:      boolean;
