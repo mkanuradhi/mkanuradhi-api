@@ -117,15 +117,14 @@ export interface LocalizedBook {
 
 // Public list/card — light, one locale resolved
 export interface LocalizedSummaryBook {
-  id:            string;
   title:         string;
   subtitle?:     string;
   description:   string;
-  authors:       LocalizedBookAuthor[];
   writtenLang:   BookLanguage;
   path:          string;
+  publisher?:    LocalizedBookPublisher;
   publishedYear: number;
-  tags:          string[];
+  subject:       string[];
   coverImage?:   string;
   featured:      boolean;
   displayOrder?: number;
