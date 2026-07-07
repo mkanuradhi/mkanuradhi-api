@@ -233,7 +233,7 @@ const bookSchema = new Schema<BookDocument>(
         values: Object.values(DocumentStatus),
         message: 'Book status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.ACTIVE,
+      default: DocumentStatus.INACTIVE,
     },
     deleted: {
       type: Boolean,
