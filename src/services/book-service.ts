@@ -12,6 +12,7 @@ import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
 import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
+import { BookLanguage } from "../enums/book-enums";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -629,8 +630,10 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     id:            doc._id.toString(),
     title:         localizeField(doc.title, locale),
     titleEn:       doc.title.en ?? '',
+    titleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.title.si ?? '') : (doc.title.en ?? ''),
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
     subtitleEn:    doc.subtitle ? doc.subtitle.en : undefined,
+    subtitleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.subtitle?.si ?? '') : (doc.subtitle?.en ?? ''),
     description:   localizeField(doc.description, locale),
     content:       localizeField(doc.content, locale),
     subject:       doc.subject.map((s) => localizeField(s, locale)),
@@ -672,7 +675,9 @@ const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSum
   return {
     title:         localizeField(doc.title, locale),
     titleEn:       doc.title.en ?? '',
+    titleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.title.si ?? '') : (doc.title.en ?? ''),
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
+    subtitleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.subtitle?.si ?? '') : (doc.subtitle?.en ?? ''),
     description:   localizeField(doc.description, locale),
     path:          doc.path,
     writtenLang:   doc.writtenLang,

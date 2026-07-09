@@ -102,8 +102,10 @@ export interface LocalizedBook {
   id:            string;
   title:         string;
   titleEn:       string;
+  titleOriginal: string;
   subtitle?:     string;
   subtitleEn?:   string;
+  subtitleOriginal?: string;
   description:   string;
   content:       string;
   subject:       string[];
@@ -128,7 +130,9 @@ export interface LocalizedBook {
 export interface LocalizedSummaryBook {
   title:         string;
   titleEn:       string;
+  titleOriginal: string;
   subtitle?:     string;
+  subtitleOriginal?: string;
   description:   string;
   writtenLang:   BookLanguage;
   path:          string;
