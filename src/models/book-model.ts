@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
 import BookDocument from "../documents/book-document";
 import AppUserSchema from "./app-user-schema";
-import { BookAuthor, BookIsbn, BookPreviewImage, BookPublisher } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPreviewImage, BookPrice, BookPublisher } from "../interfaces/i-book";
 import { localizedStringSchema } from "./localized-string-schema";
 import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
@@ -113,6 +113,25 @@ const previewImageSchema = new Schema<BookPreviewImage>(
   { _id: false }
 );
 
+const bookPriceSchema = new Schema<BookPrice>(
+  {
+    amount: {
+      type:     Number,
+      required: [true, "Price amount is required."],
+      min:      [0, "Price cannot be negative."],
+    },
+    currency: {
+      type:      String,
+      required:  [true, "Currency is required."],
+      trim:      true,
+      uppercase: true,
+      maxlength: [3, "Currency code cannot exceed 3 characters."],
+      match:     [/^[A-Z]{3}$/, "Currency must be a valid ISO 4217 code."],
+    },
+  },
+  { _id: false }
+);
+
 const bookSchema = new Schema<BookDocument>(
   {
     title: {
@@ -199,6 +218,10 @@ const bookSchema = new Schema<BookDocument>(
     tags: {
       type: [String],
       default: [],
+    },
+    price: {
+      type:     bookPriceSchema,
+      required: false,
     },
     coverImage: {
       type: String,

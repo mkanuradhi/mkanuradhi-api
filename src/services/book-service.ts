@@ -123,6 +123,7 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
         isbns:         bookDto.isbns,
         pages:         bookDto.pages,
         tags:          bookDto.tags,
+        price:         bookDto.price,
         buyLink:       bookDto.buyLink,
         featured:      bookDto.featured,
         displayOrder:  bookDto.displayOrder,
@@ -627,7 +628,9 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
   return {
     id:            doc._id.toString(),
     title:         localizeField(doc.title, locale),
+    titleEn:       doc.title.en ?? '',
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
+    subtitleEn:    doc.subtitle ? doc.subtitle.en : undefined,
     description:   localizeField(doc.description, locale),
     content:       localizeField(doc.content, locale),
     subject:       doc.subject.map((s) => localizeField(s, locale)),
@@ -651,6 +654,7 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     isbns:         doc.isbns ?? [],
     pages:         doc.pages,
     tags:          doc.tags,
+    price:         doc.price,
     coverImage:    doc.coverImage,
     previewImages: doc.previewImages?.map(pi => ({
       id:      pi.id,
@@ -667,6 +671,7 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
 const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSummaryBook => {
   return {
     title:         localizeField(doc.title, locale),
+    titleEn:       doc.title.en ?? '',
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
     description:   localizeField(doc.description, locale),
     path:          doc.path,

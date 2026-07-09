@@ -9,6 +9,7 @@ const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_CONTENT_LENGTH     = 5000;
 const MAX_ISBN_LENGTH        = 20;
 const MIN_PUBLISHED_YEAR     = 2010;
+const MAX_PRICE              = 1_000_000_00 // 1,000,000.00 in cents
 
 export const MAX_BOOK_PREVIEW_IMAGES = 20;
 
@@ -61,6 +62,20 @@ const bookAuthorArraySchema = z.array(bookAuthorSchema)
     }
   );
 
+const bookPriceSchema = z.object({
+  amount: z.number()
+    .int('Amount must be an integer.')
+    .min(0, `Amount cannot be negative.`)
+    .max(MAX_PRICE, `Amount cannot exceed ${MAX_PRICE}`),
+  currency: z.string().trim()
+    .transform(v => v.toUpperCase())
+    .pipe(
+      z.string()
+        .length(3, 'Currency code must be exactly 3 characters.')
+        .regex(/^[A-Z]{3}$/, 'Currency code must be valid ISO 4217 code (e.g. LKR, USD).')
+    ),
+}).optional();
+
 const localizedDescriptionSchema = localizedStringSchema.refine(
   data => (!data.en || data.en.length <= MAX_DESCRIPTION_LENGTH) &&
           (!data.si || data.si.length <= MAX_DESCRIPTION_LENGTH),
@@ -95,6 +110,7 @@ export const createBookSchema = z.object({
   isbns:    isbnArraySchema,
   pages:    z.number().int().min(1, 'Pages must be at least 1.').optional(),
   tags:     z.array(z.string().trim()).default([]),
+  price:    bookPriceSchema,
 
   buyLink:       z.string().trim().optional(),
   featured:     z.boolean().default(false),
@@ -153,6 +169,7 @@ export const updateBookSchema = z.object({
   isbns:   isbnArraySchema,
   pages:   z.number().int().min(1, 'Pages must be at least 1.').optional(),
   tags:    z.array(z.string().trim()),
+  price:    bookPriceSchema,
 
   buyLink:       z.string().trim().optional(),
   featured:      z.boolean(),
