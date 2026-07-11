@@ -138,8 +138,19 @@ const bookSchema = new Schema<BookDocument>(
       type: localizedStringSchema,
       required: [true, "Book title is required."],
     },
+    titleOriginal: {
+      type: String,
+      trim: true,
+      maxLength: [MAX_TITLE_LENGTH, `Original title cannot exceed ${MAX_TITLE_LENGTH} characters.`],
+      required: [true, "Original title is required."],
+    },
     subtitle: {
       type: localizedStringSchema,
+      required: false
+    },
+    subtitleOriginal: {
+      type: String,
+      trim: true,
       required: false
     },
     description: {
@@ -150,7 +161,7 @@ const bookSchema = new Schema<BookDocument>(
       type: localizedStringSchema,
       required: [true, "Book content is required."],
     },
-    subject: {
+    subjects: {
       type: [localizedStringSchema],
       default: []
     },
@@ -221,6 +232,14 @@ const bookSchema = new Schema<BookDocument>(
     },
     price: {
       type:     bookPriceSchema,
+      required: false,
+    },
+    audiences: {
+      type: [localizedStringSchema],
+      default: []
+    },
+    dimensions: {
+      type: localizedStringSchema,
       required: false,
     },
     coverImage: {

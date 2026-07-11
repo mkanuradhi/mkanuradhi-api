@@ -39,10 +39,12 @@ interface Book {
   id: string;
 
   title: LocalizedString;
+  titleOriginal: string;
   subtitle?: LocalizedString;
+  subtitleOriginal?: string;
   description: LocalizedString;
   content: LocalizedString;
-  subject: LocalizedString[];
+  subjects: LocalizedString[];
   authors: BookAuthor[];
   writtenLang: BookLanguage;
   path: string;
@@ -54,6 +56,8 @@ interface Book {
   pages?: number;
   tags: string[];
   price?: BookPrice;
+  audiences?: LocalizedString[];
+  dimensions?: LocalizedString;
 
   // Media & links
   coverImage?:    string;
@@ -108,7 +112,7 @@ export interface LocalizedBook {
   subtitleOriginal?: string;
   description:   string;
   content:       string;
-  subject:       string[];
+  subjects:      string[];
   authors:       LocalizedBookAuthor[];
   path:          string;
   writtenLang:   BookLanguage;
@@ -119,6 +123,8 @@ export interface LocalizedBook {
   pages?:        number;
   tags:          string[];
   price?:        BookPrice;
+  audiences?:    string[];
+  dimensions?:   string;
   coverImage?:   string;
   previewImages?: LocalizedBookPreviewImage[];
   buyLink?:      string;
@@ -138,7 +144,7 @@ export interface LocalizedSummaryBook {
   path:          string;
   publisher?:    LocalizedBookPublisher;
   publishedYear: number;
-  subject:       string[];
+  subjects:      string[];
   coverImage?:   string;
   featured:      boolean;
   displayOrder?: number;

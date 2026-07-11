@@ -12,7 +12,6 @@ import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
 import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
-import { BookLanguage } from "../enums/book-enums";
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -63,7 +62,9 @@ export const getBooks = async (page: number, size: number): Promise<{ items: Boo
         { deleted: false  }, 
         {
           title: 1,
+          titleOriginal: 1,
           subtitle: 1,
+          subtitleOriginal: 1,
           description: 1,
           authors: 1,
           writtenLang: 1,
@@ -112,10 +113,12 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
     {
       $set: {
         title:         bookDto.title,
+        titleOriginal: bookDto.titleOriginal,
         subtitle:      bookDto.subtitle,
+        subtitleOriginal: bookDto.subtitleOriginal,
         description:   bookDto.description,
         content:       bookDto.content,
-        subject:       bookDto.subject,
+        subjects:      bookDto.subjects,
         authors:       mergedAuthors,
         writtenLang:   bookDto.writtenLang,
         publisher:     mergedPublisher,
@@ -125,6 +128,8 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
         pages:         bookDto.pages,
         tags:          bookDto.tags,
         price:         bookDto.price,
+        audiences:     bookDto.audiences,
+        dimensions:    bookDto.dimensions,
         buyLink:       bookDto.buyLink,
         featured:      bookDto.featured,
         displayOrder:  bookDto.displayOrder,
@@ -307,13 +312,15 @@ export const getLocalizedBooks = async (lang: string, page: number, size: number
         { deleted: false, status: DocumentStatus.ACTIVE },
         {
           title:         1,
+          titleOriginal: 1,
           subtitle:      1,
+          subtitleOriginal: 1,
           description:   1,
           writtenLang:   1,
           path:          1,
           publisher:     1,
           publishedYear: 1,
-          subject:       1,
+          subjects:      1,
           coverImage:    1,
           featured:      1,
           displayOrder:  1,
@@ -630,13 +637,13 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     id:            doc._id.toString(),
     title:         localizeField(doc.title, locale),
     titleEn:       doc.title.en ?? '',
-    titleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.title.si ?? '') : (doc.title.en ?? ''),
+    titleOriginal: doc.titleOriginal,
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
     subtitleEn:    doc.subtitle ? doc.subtitle.en : undefined,
-    subtitleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.subtitle?.si ?? '') : (doc.subtitle?.en ?? ''),
+    subtitleOriginal: doc.subtitleOriginal,
     description:   localizeField(doc.description, locale),
     content:       localizeField(doc.content, locale),
-    subject:       doc.subject.map((s) => localizeField(s, locale)),
+    subjects:      doc.subjects.map((s) => localizeField(s, locale)),
     authors:       doc.authors.map(a => ({
       id:          a.id,
       name:        localizeField(a.name, locale),
@@ -658,6 +665,8 @@ const toLocalizedBook = (doc: BookDocument, locale: Locale): LocalizedBook => {
     pages:         doc.pages,
     tags:          doc.tags,
     price:         doc.price,
+    audiences:     doc.audiences.map((a) => localizeField(a, locale)),
+    dimensions:    localizeField(doc.dimensions, locale),
     coverImage:    doc.coverImage,
     previewImages: doc.previewImages?.map(pi => ({
       id:      pi.id,
@@ -675,9 +684,9 @@ const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSum
   return {
     title:         localizeField(doc.title, locale),
     titleEn:       doc.title.en ?? '',
-    titleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.title.si ?? '') : (doc.title.en ?? ''),
+    titleOriginal: doc.titleOriginal,
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
-    subtitleOriginal: doc.writtenLang === BookLanguage.SINHALA ? (doc.subtitle?.si ?? '') : (doc.subtitle?.en ?? ''),
+    subtitleOriginal: doc.subtitleOriginal,
     description:   localizeField(doc.description, locale),
     path:          doc.path,
     writtenLang:   doc.writtenLang,
@@ -688,7 +697,7 @@ const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSum
       imageUrl: doc.publisher.imageUrl,
     } : undefined,
     publishedYear: doc.publishedYear,
-    subject:       doc.subject.map((s) => localizeField(s, locale)),
+    subjects:      doc.subjects.map((s) => localizeField(s, locale)),
     coverImage:    doc.coverImage,
     featured:      doc.featured,
     displayOrder:  doc.displayOrder,

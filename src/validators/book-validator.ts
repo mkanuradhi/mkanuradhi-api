@@ -6,7 +6,7 @@ import DocumentStatus from '../enums/document-status';
 
 const MAX_TITLE_LENGTH       = 500;
 const MAX_DESCRIPTION_LENGTH = 2000;
-const MAX_CONTENT_LENGTH     = 5000;
+const MAX_CONTENT_LENGTH     = 7000;
 const MAX_ISBN_LENGTH        = 20;
 const MIN_PUBLISHED_YEAR     = 2010;
 const MAX_PRICE              = 1_000_000_00 // 1,000,000.00 in cents
@@ -92,10 +92,12 @@ const localizedContentSchema = localizedStringSchema.refine(
 
 export const createBookSchema = z.object({
   title: localizedStringSchema,
+  titleOriginal: z.string().trim().max(MAX_TITLE_LENGTH),
   subtitle: optionalLocalizedStringSchema,
+  subtitleOriginal: z.string().trim().max(MAX_TITLE_LENGTH).optional(),
   description: localizedDescriptionSchema,
   content: localizedContentSchema,
-  subject: z.array(localizedStringSchema).default([]),
+  subjects: z.array(localizedStringSchema).default([]),
   authors: bookAuthorArraySchema,
   writtenLang: z.enum(BookLanguage, {
     error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
@@ -111,6 +113,8 @@ export const createBookSchema = z.object({
   pages:    z.number().int().min(1, 'Pages must be at least 1.').optional(),
   tags:     z.array(z.string().trim()).default([]),
   price:    bookPriceSchema,
+  audiences: z.array(localizedStringSchema).default([]),
+  dimensions: optionalLocalizedStringSchema,
 
   buyLink:       z.string().trim().optional(),
   featured:     z.boolean().default(false),
@@ -151,10 +155,12 @@ const updateBookPreviewImageSchema = z.object({
 
 export const updateBookSchema = z.object({
   title:         localizedStringSchema,
+  titleOriginal: z.string().trim().max(MAX_TITLE_LENGTH),
   subtitle:      optionalLocalizedStringSchema,
+  subtitleOriginal: z.string().trim().max(MAX_TITLE_LENGTH).optional(),
   description:   localizedDescriptionSchema,
   content:       localizedContentSchema,
-  subject:       z.array(localizedStringSchema),
+  subjects:      z.array(localizedStringSchema),
   authors:       updateBookAuthorArraySchema,
   writtenLang:   z.enum(BookLanguage, {
     error: (ctx) => ({ message: `Invalid written language '${ctx.input}'. Valid languages are: ${Object.values(BookLanguage).join(', ')}.` })
@@ -169,7 +175,9 @@ export const updateBookSchema = z.object({
   isbns:   isbnArraySchema,
   pages:   z.number().int().min(1, 'Pages must be at least 1.').optional(),
   tags:    z.array(z.string().trim()),
-  price:    bookPriceSchema,
+  price:   bookPriceSchema,
+  audiences: z.array(localizedStringSchema).default([]),
+  dimensions: optionalLocalizedStringSchema,
 
   buyLink:       z.string().trim().optional(),
   featured:      z.boolean(),

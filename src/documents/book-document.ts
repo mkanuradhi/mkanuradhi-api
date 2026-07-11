@@ -6,10 +6,12 @@ import BaseDocument from "./base-document";
 
 interface BookDocument extends BaseDocument {
   title: LocalizedString;
+  titleOriginal: string;
   subtitle?: LocalizedString;
+  subtitleOriginal?: string;
   description: LocalizedString;
   content: LocalizedString;
-  subject: LocalizedString[];
+  subjects: LocalizedString[];
   authors: BookAuthor[];
   writtenLang: BookLanguage;
   path: string;
@@ -21,6 +23,8 @@ interface BookDocument extends BaseDocument {
   pages: number;
   tags: string[];
   price: BookPrice;
+  audiences: LocalizedString[];
+  dimensions?: LocalizedString;
 
   // Media & links
   coverImage?:    string;
