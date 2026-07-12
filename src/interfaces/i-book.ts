@@ -30,14 +30,21 @@ export interface BookPreviewImage {
   displayOrder: number;
 }
 
+export interface BookPrice {
+  amount:   number;    // in smallest unit — e.g. 150000 = LKR 1500.00
+  currency: string;    // ISO 4217 — "LKR", "USD", etc.
+}
+
 interface Book {
   id: string;
 
   title: LocalizedString;
+  titleOriginal: string;
   subtitle?: LocalizedString;
+  subtitleOriginal?: string;
   description: LocalizedString;
   content: LocalizedString;
-  subject: LocalizedString[];
+  subjects: LocalizedString[];
   authors: BookAuthor[];
   writtenLang: BookLanguage;
   path: string;
@@ -48,6 +55,9 @@ interface Book {
   isbns?: BookIsbn[];
   pages?: number;
   tags: string[];
+  price?: BookPrice;
+  audiences?: LocalizedString[];
+  dimensions?: LocalizedString;
 
   // Media & links
   coverImage?:    string;
@@ -95,10 +105,14 @@ export interface LocalizedBookPreviewImage {
 export interface LocalizedBook {
   id:            string;
   title:         string;
+  titleEn:       string;
+  titleOriginal: string;
   subtitle?:     string;
+  subtitleEn?:   string;
+  subtitleOriginal?: string;
   description:   string;
   content:       string;
-  subject:       string[];
+  subjects:      string[];
   authors:       LocalizedBookAuthor[];
   path:          string;
   writtenLang:   BookLanguage;
@@ -108,6 +122,9 @@ export interface LocalizedBook {
   isbns?:        BookIsbn[];
   pages?:        number;
   tags:          string[];
+  price?:        BookPrice;
+  audiences?:    string[];
+  dimensions?:   string;
   coverImage?:   string;
   previewImages?: LocalizedBookPreviewImage[];
   buyLink?:      string;
@@ -117,15 +134,17 @@ export interface LocalizedBook {
 
 // Public list/card — light, one locale resolved
 export interface LocalizedSummaryBook {
-  id:            string;
   title:         string;
+  titleEn:       string;
+  titleOriginal: string;
   subtitle?:     string;
+  subtitleOriginal?: string;
   description:   string;
-  authors:       LocalizedBookAuthor[];
   writtenLang:   BookLanguage;
   path:          string;
+  publisher?:    LocalizedBookPublisher;
   publishedYear: number;
-  tags:          string[];
+  subjects:      string[];
   coverImage?:   string;
   featured:      boolean;
   displayOrder?: number;

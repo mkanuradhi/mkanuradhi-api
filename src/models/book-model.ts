@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
 import BookDocument from "../documents/book-document";
 import AppUserSchema from "./app-user-schema";
-import { BookAuthor, BookIsbn, BookPreviewImage, BookPublisher } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPreviewImage, BookPrice, BookPublisher } from "../interfaces/i-book";
 import { localizedStringSchema } from "./localized-string-schema";
 import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
@@ -113,14 +113,44 @@ const previewImageSchema = new Schema<BookPreviewImage>(
   { _id: false }
 );
 
+const bookPriceSchema = new Schema<BookPrice>(
+  {
+    amount: {
+      type:     Number,
+      required: [true, "Price amount is required."],
+      min:      [0, "Price cannot be negative."],
+    },
+    currency: {
+      type:      String,
+      required:  [true, "Currency is required."],
+      trim:      true,
+      uppercase: true,
+      maxlength: [3, "Currency code cannot exceed 3 characters."],
+      match:     [/^[A-Z]{3}$/, "Currency must be a valid ISO 4217 code."],
+    },
+  },
+  { _id: false }
+);
+
 const bookSchema = new Schema<BookDocument>(
   {
     title: {
       type: localizedStringSchema,
       required: [true, "Book title is required."],
     },
+    titleOriginal: {
+      type: String,
+      trim: true,
+      maxLength: [MAX_TITLE_LENGTH, `Original title cannot exceed ${MAX_TITLE_LENGTH} characters.`],
+      required: [true, "Original title is required."],
+    },
     subtitle: {
       type: localizedStringSchema,
+      required: false
+    },
+    subtitleOriginal: {
+      type: String,
+      trim: true,
       required: false
     },
     description: {
@@ -131,7 +161,7 @@ const bookSchema = new Schema<BookDocument>(
       type: localizedStringSchema,
       required: [true, "Book content is required."],
     },
-    subject: {
+    subjects: {
       type: [localizedStringSchema],
       default: []
     },
@@ -200,6 +230,18 @@ const bookSchema = new Schema<BookDocument>(
       type: [String],
       default: [],
     },
+    price: {
+      type:     bookPriceSchema,
+      required: false,
+    },
+    audiences: {
+      type: [localizedStringSchema],
+      default: []
+    },
+    dimensions: {
+      type: localizedStringSchema,
+      required: false,
+    },
     coverImage: {
       type: String,
       trim: true,
@@ -233,7 +275,7 @@ const bookSchema = new Schema<BookDocument>(
         values: Object.values(DocumentStatus),
         message: 'Book status `{VALUE}` is not valid.',
       },
-      default: DocumentStatus.ACTIVE,
+      default: DocumentStatus.INACTIVE,
     },
     deleted: {
       type: Boolean,
