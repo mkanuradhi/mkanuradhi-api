@@ -19,6 +19,7 @@ import homeRoute from './routes/home-route';
 import mongoose from 'mongoose';
 import { clerkMiddleware } from '@clerk/express'
 import { getCacheStrategy } from './cache/cache-factory';
+import statRoute from './routes/stat-route';
 
 const validateEnvVariables = (): void => {
   const requiredEnvVars = ["PORT", "DB_URI"];
@@ -59,6 +60,7 @@ app.use('/publications', publicationRoute);
 app.use('/research', researchRoute);
 app.use('/awards', awardRoute);
 app.use('/books', bookRoute);
+app.use('/stats', statRoute);
 
 // handling errors
 app.use(notFoundHandler);
