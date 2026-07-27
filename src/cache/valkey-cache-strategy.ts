@@ -46,6 +46,24 @@ export const createValkeyCacheStrategy = (config: ValkeyConfig): CacheStrategy =
     }
   };
 
+  const deleteByPrefix = async (prefix: string): Promise<void> => {
+    try {
+      const pattern = `${prefix}*`;
+      let cursor = '0';
+
+      do {
+        const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = nextCursor;
+
+        if (keys.length > 0) {
+          await client.del(...keys);
+        }
+      } while (cursor !== '0');
+    } catch (err) {
+      console.error(`[valkeyCacheStrategy] deleteByPrefix failed for prefix "${prefix}":`, err);
+    }
+  };
+
   const has = async (key: string): Promise<boolean> => {
     try {
       const exists = await client.exists(key);
@@ -68,5 +86,5 @@ export const createValkeyCacheStrategy = (config: ValkeyConfig): CacheStrategy =
     await client.quit();
   };
 
-  return { get, set, delete: del, has, flush, close };
+  return { get, set, delete: del, deleteByPrefix, has, flush, close };
 };

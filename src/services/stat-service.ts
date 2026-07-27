@@ -1,6 +1,6 @@
 import { getCacheStrategy } from "../cache/cache-factory";
 import logger from "../config/logger-config";
-import { SUMMARY_STATS_KEY } from "../constants/common-vars";
+import { SUMMARY_STATS_CACHE_KEY } from "../constants/common-vars";
 import { SummaryStats, WeightedLabelValueStat } from "../interfaces/i-stat";
 import AwardModel from "../models/award-model";
 import BookModel from "../models/book-model";
@@ -22,7 +22,7 @@ const STAT_WEIGHTS: Record<StatLabel, number> = {
 
 export const getSummaryStats = async (): Promise<SummaryStats> => {
   const cache = getCacheStrategy();
-  const cached = await cache.get<SummaryStats>(SUMMARY_STATS_KEY);
+  const cached = await cache.get<SummaryStats>(SUMMARY_STATS_CACHE_KEY);
   if (cached) return cached;
 
   logger.info('No cache summary stat data found, hitting db to get summary stats');
@@ -58,7 +58,12 @@ export const getSummaryStats = async (): Promise<SummaryStats> => {
     }));
 
   const result: SummaryStats = { stats };
-  await cache.set(SUMMARY_STATS_KEY, result, SUMMARY_STATS_CACHE_TTL_SECONDS);
+  await cache.set(SUMMARY_STATS_CACHE_KEY, result, SUMMARY_STATS_CACHE_TTL_SECONDS);
 
   return result;
 }
+
+export const invalidateSummaryStatsCache = async (): Promise<void> => {
+  const cache = getCacheStrategy();
+  await cache.delete(SUMMARY_STATS_CACHE_KEY);
+};

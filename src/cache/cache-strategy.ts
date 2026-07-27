@@ -6,6 +6,8 @@ export interface CacheStrategy {
 
   delete(key: string): Promise<void>;
 
+  deleteByPrefix(prefix: string): Promise<void>;
+
   has(key: string): Promise<boolean>;
 
   flush(): Promise<void>;

@@ -17,6 +17,13 @@ export const createMemoryCacheStrategy = (): CacheStrategy => {
     store.del(key);
   };
 
+  const deleteByPrefix = async (prefix: string): Promise<void> => {
+    const matchingKeys = store.keys().filter((key) => key.startsWith(prefix));
+    if (matchingKeys.length > 0) {
+      store.del(matchingKeys);
+    }
+  };
+
   const has = async (key: string): Promise<boolean> => {
     return store.has(key);
   };
@@ -30,5 +37,5 @@ export const createMemoryCacheStrategy = (): CacheStrategy => {
     store.close();
   };
 
-  return { get, set, delete: del, has, flush, close };
+  return { get, set, delete: del, deleteByPrefix, has, flush, close };
 };
