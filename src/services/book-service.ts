@@ -329,6 +329,8 @@ export const getLocalizedBooks = async (lang: string, page: number, size: number
   const cached = await cache.get<{ items: LocalizedSummaryBook[]; totalCount: number }>(cacheKey);
   if (cached) return cached;
 
+  logger.info(`No cache books list found for locale: ${lang}, hitting db to get books list`);
+
   const [totalCount, bookDocs] = await Promise.all([
     BookModel.countDocuments({ deleted: false, status: DocumentStatus.ACTIVE }),
     BookModel
@@ -371,6 +373,8 @@ export const getLocalizedBookByPath = async (lang: string, bookPath: string): Pr
 
   const cached = await cache.get<LocalizedBook>(cacheKey);
   if (cached) return cached;
+
+  logger.info(`No cached book found for path: ${bookPath}, hitting db to get books list`);
 
   const bookDoc = await BookModel.findOne({
     path:    bookPath.trim(),
