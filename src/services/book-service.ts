@@ -12,6 +12,16 @@ import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
 import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
+import { invalidateSummaryStatsCache } from "./stat-service";
+import { getCacheStrategy } from "../cache/cache-factory";
+import { BOOK_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
+
+const BOOK_DETAIL_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
+const BOOK_LIST_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
+
+const bookDetailCacheKey = (path: string, locale: Locale) => `book:detail:${locale}:${path}`;
+const bookListCacheKey = (locale: Locale, page: number, size: number) =>
+  `${BOOK_LIST_CACHE_KEY_PREFIX}${locale}:${page}:${size}`;
 
 export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | null): Promise<Book> => {
   const titleTextEn = bookDto.title.en?.trim();
@@ -50,6 +60,8 @@ export const createBook = async (bookDto: CreateBookDto, appUser?: AppUser | nul
   });
 
   logger.info(`Book created for ${titleTextEn}`);
+  await invalidateSummaryStatsCache();
+  await invalidateBookListCache();
   return mapDocumentToBook(bookDoc);
 }
 
@@ -146,6 +158,8 @@ export const updateBook = async (bookId: string, bookDto: UpdateBookDto, appUser
   }
 
   logger.info(`Book updated: ${bookId}`);
+  await invalidateBookDetailCache(bookDoc.path);
+  await invalidateBookListCache();
   return mapDocumentToBook(bookDoc);
 }
 
@@ -276,6 +290,9 @@ export const deleteBook = async (bookId: string, appUser?: AppUser | null): Prom
     throw new AppError('Failed to delete book.', 500);
   }
   logger.info(`Book deleted: ${bookId}`);
+  await invalidateSummaryStatsCache();
+  await invalidateBookListCache();
+  await invalidateBookDetailCache(bookDoc.path); // original path, before the DELETED- suffix was applied
 }
 
 export const toggleBookActivation = async (bookId: string, bookDto: ActivationBookDto, appUser?: AppUser | null): Promise<Book> => {
@@ -297,6 +314,8 @@ export const toggleBookActivation = async (bookId: string, bookDto: ActivationBo
   await bookDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Book status updated for ID: ${bookId}`);
+  await invalidateBookDetailCache(bookDoc.path);
+  await invalidateBookListCache();
   return mapDocumentToBook(bookDoc);
 }
 
@@ -304,6 +323,11 @@ export const getLocalizedBooks = async (lang: string, page: number, size: number
   validatePaginationDetails(page, size);
 
   const locale = resolveLocale(lang);
+  const cache = getCacheStrategy();
+  const cacheKey = bookListCacheKey(locale, page, size);
+
+  const cached = await cache.get<{ items: LocalizedSummaryBook[]; totalCount: number }>(cacheKey);
+  if (cached) return cached;
 
   const [totalCount, bookDocs] = await Promise.all([
     BookModel.countDocuments({ deleted: false, status: DocumentStatus.ACTIVE }),
@@ -331,14 +355,22 @@ export const getLocalizedBooks = async (lang: string, page: number, size: number
       .limit(size)
   ]);
 
-  return {
+  const result = {
     items: bookDocs.map(doc => toLocalizedSummaryBook(doc, locale)),
     totalCount,
   };
+
+  await cache.set(cacheKey, result, BOOK_LIST_CACHE_TTL_SECONDS);
+  return result;
 };
 
 export const getLocalizedBookByPath = async (lang: string, bookPath: string): Promise<LocalizedBook> => {
   const locale = resolveLocale(lang);
+  const cache = getCacheStrategy();
+  const cacheKey = bookDetailCacheKey(bookPath.trim(), locale);
+
+  const cached = await cache.get<LocalizedBook>(cacheKey);
+  if (cached) return cached;
 
   const bookDoc = await BookModel.findOne({
     path:    bookPath.trim(),
@@ -348,8 +380,11 @@ export const getLocalizedBookByPath = async (lang: string, bookPath: string): Pr
 
   if (!bookDoc) throw new AppError(`Book not found for path: ${bookPath}`, 404);
 
+  const result = toLocalizedBook(bookDoc, locale);
+  await cache.set(cacheKey, result, BOOK_DETAIL_CACHE_TTL_SECONDS);
+
   logger.info(`Book fetched by path: ${bookPath}`);
-  return toLocalizedBook(bookDoc, locale);
+  return result;
 }
 
 export const uploadCoverImage = async (bookId: string, imageFile?: Express.Multer.File): Promise<Book> => {
@@ -374,6 +409,8 @@ export const uploadCoverImage = async (bookId: string, imageFile?: Express.Multe
   await bookDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Uploaded cover image for book ID: ${bookId}`);
+  await invalidateBookDetailCache(bookDoc.path);
+  await invalidateBookListCache();
   return mapDocumentToBook(bookDoc);
 };
 
@@ -393,6 +430,8 @@ export const deleteCoverImage = async (bookId: string): Promise<Book> => {
   await bookDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Deleted cover image for book ID: ${bookId}`);
+  await invalidateBookDetailCache(bookDoc.path);
+  await invalidateBookListCache();
   return mapDocumentToBook(bookDoc);
 };
 
@@ -708,4 +747,16 @@ const resolveLocale = (lang: string): Locale => {
   return SUPPORTED_LOCALES.includes(lang as Locale)
     ? (lang as Locale)
     : DEFAULT_LOCALE;
+};
+
+const invalidateBookDetailCache = async (path: string): Promise<void> => {
+  const cache = getCacheStrategy();
+  await Promise.all(
+    SUPPORTED_LOCALES.map(locale => cache.delete(bookDetailCacheKey(path, locale)))
+  );
+};
+
+export const invalidateBookListCache = async (): Promise<void> => {
+  const cache = getCacheStrategy();
+  await cache.deleteByPrefix(BOOK_LIST_CACHE_KEY_PREFIX);
 };
