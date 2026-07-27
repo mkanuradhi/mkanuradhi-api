@@ -1,6 +1,7 @@
 import { getCacheStrategy } from "../cache/cache-factory";
 import logger from "../config/logger-config";
 import { SUMMARY_STATS_CACHE_KEY } from "../constants/common-vars";
+import DocumentStatus from "../enums/document-status";
 import { SummaryStats, WeightedLabelValueStat } from "../interfaces/i-stat";
 import AwardModel from "../models/award-model";
 import BookModel from "../models/book-model";
@@ -27,14 +28,14 @@ export const getSummaryStats = async (): Promise<SummaryStats> => {
 
   logger.info('No cache summary stat data found, hitting db to get summary stats');
 
-  const notDeleted = { deleted: false };
+  const notDeletedAndActive = { deleted: false, status: DocumentStatus.ACTIVE };
 
   const jobs = {
-    books: BookModel.countDocuments(notDeleted),
-    publications: PublicationModel.countDocuments(notDeleted),
-    research: ResearchModel.countDocuments(notDeleted),
-    awards: AwardModel.countDocuments(notDeleted),
-    courses: CourseModel.countDocuments(notDeleted),
+    books: BookModel.countDocuments(notDeletedAndActive),
+    publications: PublicationModel.countDocuments(notDeletedAndActive),
+    research: ResearchModel.countDocuments(notDeletedAndActive),
+    awards: AwardModel.countDocuments(notDeletedAndActive),
+    courses: CourseModel.countDocuments(notDeletedAndActive),
   };
 
   const keys = Object.keys(jobs) as Array<keyof typeof jobs>;
