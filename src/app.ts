@@ -18,6 +18,8 @@ import errorHandler from './middleware/error-handler';
 import homeRoute from './routes/home-route';
 import mongoose from 'mongoose';
 import { clerkMiddleware } from '@clerk/express'
+import { getCacheStrategy } from './cache/cache-factory';
+import statRoute from './routes/stat-route';
 
 const validateEnvVariables = (): void => {
   const requiredEnvVars = ["PORT", "DB_URI"];
@@ -58,6 +60,7 @@ app.use('/publications', publicationRoute);
 app.use('/research', researchRoute);
 app.use('/awards', awardRoute);
 app.use('/books', bookRoute);
+app.use('/stats', statRoute);
 
 // handling errors
 app.use(notFoundHandler);
@@ -69,9 +72,48 @@ const startServer = async () => {
     const conn = await mongoose.connect(mongoUri);
     logger.info(`Connected host: ${conn.connection.host} on port: ${conn.connection.port} to database: ${conn.connection.name}`);
 
-    app.listen(port, () => {
+    logger.info('Initializing cache strategy...');
+    getCacheStrategy();
+    logger.info(`Cache strategy ready: ${process.env.CACHE_STRATEGY ?? 'memory'}`);
+
+    const server = app.listen(port, () => {
       logger.info(`App is running on port ${port}`);
     });
+
+    const shutdown = async (signal: string) => {
+      logger.info(`Received ${signal}, shutting down gracefully...`);
+
+      server.close(async (err) => {
+        if (err) {
+          logger.error(`Error closing HTTP server: ${err}`);
+        }
+
+        try {
+          await getCacheStrategy().close();
+          logger.info('Cache connection closed');
+        } catch (cacheErr) {
+          logger.error(`Error closing cache: ${cacheErr}`);
+        }
+
+        try {
+          await mongoose.connection.close();
+          logger.info('MongoDB connection closed');
+        } catch (dbErr) {
+          logger.error(`Error closing MongoDB connection: ${dbErr}`);
+        }
+
+        process.exit(0);
+      });
+
+      // Safety net: force-exit if something hangs (e.g. a stuck connection)
+      setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000).unref();
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT')); // Ctrl+C in local dev
   } catch (error) {
     logger.error(`Error connecting with db ${error}`);
     process.exit(1);
