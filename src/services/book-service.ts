@@ -316,6 +316,7 @@ export const toggleBookActivation = async (bookId: string, bookDto: ActivationBo
   logger.info(`Book status updated for ID: ${bookId}`);
   await invalidateBookDetailCache(bookDoc.path);
   await invalidateBookListCache();
+  await invalidateSummaryStatsCache();
   return mapDocumentToBook(bookDoc);
 }
 
