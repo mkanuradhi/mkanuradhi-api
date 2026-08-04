@@ -7,6 +7,9 @@ import upload from '../middleware/file-upload';
 
 const awardRoute = express.Router();
 
+// Fetch active localized awards (public)
+awardRoute.get('/localized', awardController.getLocalizedAwards);
+
 // Search awards by query
 awardRoute.get('/search', awardController.searchAwards);
 

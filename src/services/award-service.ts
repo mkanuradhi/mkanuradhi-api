@@ -1,6 +1,6 @@
 import { ActivationAwardDto, CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDto } from "../dtos/award-dto";
 import AppError from "../errors/app-error";
-import Award from "../interfaces/i-award";
+import Award, { LocalizedAward } from "../interfaces/i-award";
 import AwardView from "../interfaces/i-award-view";
 import AwardModel from "../models/award-model";
 import { mapDocumentsToAwards, mapDocumentsToAwardViews, mapDocumentToAward } from "../mappers/award-mapper";
@@ -9,9 +9,17 @@ import { validatePaginationDetails } from "../validators/common-validator";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { SearchParamsDto } from "../dtos/search-params-dto";
-import { buildSearchFilter, capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
+import { Locale } from "../types/locale.types";
+import { buildSearchFilter, capitalizeLang, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
 import AppUser from "../interfaces/i-app-user";
+import { getCacheStrategy } from "../cache/cache-factory";
+import { AWARD_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
+import AwardDocument from "../documents/award-document";
+import { invalidateSummaryStatsCache } from "./stat-service";
 
+const AWARD_LIST_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
+const awardListCacheKey = (locale: Locale, page: number, size: number) =>
+  `${AWARD_LIST_CACHE_KEY_PREFIX}${locale}:${page}:${size}`;
 
 export const createAwardEn = async (awardDto: CreateAwardEnDto, appUser?: AppUser | null): Promise<Award> => {
   const existingAwardDoc = await AwardModel.findOne({
@@ -49,6 +57,8 @@ export const createAwardEn = async (awardDto: CreateAwardEnDto, appUser?: AppUse
   });
 
   logger.info(`Award created for ${awardDto.titleEn}`);
+  await invalidateSummaryStatsCache();
+  await invalidateAwardListCache();
   return mapDocumentToAward(awardDoc);
 }
 
@@ -140,6 +150,104 @@ export const getAward = async (awardId: string): Promise<Award> => {
   }
 }
 
+export const getLocalizedAwards = async (lang: string, page: number, size: number): Promise<{ items: LocalizedAward[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+
+  const locale = resolveLocale(lang);
+  const cache = getCacheStrategy();
+  const cacheKey = awardListCacheKey(locale, page, size);
+
+  const cached = await cache.get<{ items: LocalizedAward[]; totalCount: number }>(cacheKey);
+  if (cached) return cached;
+
+  logger.info(`No cached awards list found for locale: ${lang}, hitting db to get awards list`);
+
+  const localeProps: Record<string, number> = lang === 'si'
+    ? {
+        titleSi: 1,
+        descriptionSi: 1,
+        issuerSi: 1,
+        issuerLocationSi: 1,
+        ceremonyLocationSi: 1,
+        coRecipientsSi: 1,
+      }
+    : {
+        titleEn: 1,
+        descriptionEn: 1,
+        issuerEn: 1,
+        issuerLocationEn: 1,
+        ceremonyLocationEn: 1,
+        coRecipientsEn: 1,
+      };
+
+  const [totalCount, awardDocs] = await Promise.all([
+    AwardModel.countDocuments({ deleted: false, status: DocumentStatus.ACTIVE }),
+    AwardModel
+      .find(
+        { deleted: false, status: DocumentStatus.ACTIVE },
+        {
+          ...localeProps,
+          year: 1,
+          receivedDate: 1,
+          type: 1,
+          scope: 1,
+          role: 1,
+          result: 1,
+          category: 1,
+          eventUrl: 1,
+          relatedWorkUrl: 1,
+          monetaryValue: 1,
+          issuerImage: 1,
+          primaryImage: 1,
+        }
+      )
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .skip(page * size)
+      .limit(size)
+  ]);
+
+  const result = {
+    items: awardDocs.map(doc => toLocalizedAward(doc, locale)),
+    totalCount,
+  };
+
+  await cache.set(cacheKey, result, AWARD_LIST_CACHE_TTL_SECONDS);
+  return result;
+};
+
+const toLocalizedAward = (doc: AwardDocument, lang: string): LocalizedAward => {
+  let coRecipientsProp = 'coRecipientsEn';
+  if (lang === 'si') {
+    coRecipientsProp = 'coRecipientsSi';
+  }
+  return {
+    title:         getLocalizedField(doc, 'title', lang),
+    description:   getLocalizedField(doc, 'description', lang),
+    issuer:        getLocalizedField(doc, 'issuer', lang),
+    issuerLocation: getLocalizedField(doc, 'issuerLocation', lang),
+    ceremonyLocation: getLocalizedField(doc, 'ceremonyLocation', lang),
+    coRecipients: lang === 'si' ? doc.coRecipientsSi : doc.coRecipientsEn,
+
+    year: doc.year,
+    receivedDate: doc.receivedDate,
+    type: doc.type,
+    scope: doc.scope,
+    role: doc.role,
+    result: doc.result,
+    category: doc.category,
+    eventUrl: doc.eventUrl,
+    relatedWorkUrl: doc.relatedWorkUrl,
+    monetaryValue: doc.monetaryValue,
+    issuerImage: doc.issuerImage,
+    primaryImage: doc.primaryImage,
+  };
+};
+
+const getLocalizedField = (obj: any, prefix: string, lang: string): string => {
+  const suffix = lang.charAt(0).toUpperCase() + lang.slice(1); // 'en' -> 'En', 'si' -> 'Si'
+  return obj[`${prefix}${suffix}`];
+};
+
 export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto, appUser?: AppUser | null): Promise<Award> => {
   const existingAwardDoc = await AwardModel.findOne({
     _id: awardId,
@@ -198,6 +306,7 @@ export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto,
   }
 
   logger.info(`Award updated for ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -247,6 +356,7 @@ export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto,
   }
 
   logger.info(`Award updated for ID: ${awardId} and title Si: ${awardDto.titleSi}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -282,6 +392,8 @@ export const toggleAwardActivation = async (awardId: string, awardDto: Activatio
   }
 
   logger.info(`Award updated for status for ID: ${awardId}`);
+  await invalidateSummaryStatsCache();
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -309,6 +421,7 @@ export const uploadPrimaryImage = async (awardId: string, imageFile?: Express.Mu
   await awardDoc.save();
 
   logger.info(`Uploaded primary image for award ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(awardDoc);
 }
 
@@ -346,6 +459,7 @@ export const uploadIssuerImage = async (awardId: string, imageFile?: Express.Mul
   }
 
   logger.info(`Uploaded issuer image for award ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -381,6 +495,8 @@ export const deleteAward = async (awardId: string, appUser?: AppUser | null): Pr
   if (!updatedAwardDoc) {
     throw new AppError('Failed to delete award document.', 500);
   }
+  await invalidateSummaryStatsCache();
+  await invalidateAwardListCache();
 }
 
 export const deletePrimaryImage = async (awardId: string, appUser?: AppUser | null): Promise<Award> => {
@@ -408,6 +524,7 @@ export const deletePrimaryImage = async (awardId: string, appUser?: AppUser | nu
   }
 
   logger.info(`Deleted the primary image of the award for ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -436,6 +553,7 @@ export const deleteIssuerImage = async (awardId: string, appUser?: AppUser | nul
   }
 
   logger.info(`Deleted the issuer image of the award for ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -509,3 +627,8 @@ const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
     default: return defaultSort;
   }
 }
+
+export const invalidateAwardListCache = async (): Promise<void> => {
+  const cache = getCacheStrategy();
+  await cache.deleteByPrefix(AWARD_LIST_CACHE_KEY_PREFIX);
+};

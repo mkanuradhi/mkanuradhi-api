@@ -3,7 +3,7 @@ import asyncErrorHandler from "../utils/async-error-handler";
 import { ActivationAwardDto, CreateAwardEnDto, UpdateAwardEnDto, UpdateAwardSiDto } from "../dtos/award-dto";
 import * as awardService from "../services/award-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
-import Award from "../interfaces/i-award";
+import Award, { LocalizedAward } from "../interfaces/i-award";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import { parseLangQueryParam, parseSearchParams } from "../utils/common-util";
 import AwardView from "../interfaces/i-award-view";
@@ -78,6 +78,27 @@ export const getAward = asyncErrorHandler( async (req: Request, res: Response, n
   const awardId = req.params.id;
   const award = await awardService.getAward(awardId);
   res.status(200).json(award);
+});
+
+export const getLocalizedAwards = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const lang: string = parseLangQueryParam(req);
+  const page = parseInt(req.query.page as string) || 0;
+  const size = Math.min(parseInt(req.query.size as string) || 10, 200);
+
+  const { items, totalCount } = await awardService.getLocalizedAwards(lang, page, size);
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
+
+  const result: PaginatedResult<LocalizedAward> = {
+    items,
+    pagination: {
+      totalCount,
+      totalPages,
+      currentPage: page,
+      currentPageSize: items.length,
+    },
+  };
+
+  res.status(200).json(result);
 });
 
 export const updateAwardEn = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
