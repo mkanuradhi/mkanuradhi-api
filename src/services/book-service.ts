@@ -5,9 +5,9 @@ import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
-import { generateUniquePath, localizeField, uploadImageToCloudService } from "../utils/common-util";
+import { generateUniquePath, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
 import BookDocument from "../documents/book-document";
-import { DEFAULT_LOCALE, Locale, SUPPORTED_LOCALES } from "../types/locale.types";
+import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, ReorderPreviewImagesDto, UpdateBookDto } from "../validators/book-validator";
@@ -746,12 +746,6 @@ const toLocalizedSummaryBook = (doc: BookDocument, locale: Locale): LocalizedSum
     featured:      doc.featured,
     displayOrder:  doc.displayOrder,
   };
-};
-
-const resolveLocale = (lang: string): Locale => {
-  return SUPPORTED_LOCALES.includes(lang as Locale)
-    ? (lang as Locale)
-    : DEFAULT_LOCALE;
 };
 
 const invalidateBookDetailCache = async (path: string): Promise<void> => {

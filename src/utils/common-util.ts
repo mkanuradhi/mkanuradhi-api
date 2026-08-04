@@ -6,7 +6,7 @@ import { Request } from "express";
 import { AVAILABLE_LANGS, DEFAULT_LANG } from "../constants/common-vars";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import DocumentStatus from "../enums/document-status";
-import { DEFAULT_LOCALE, Locale, LocalizedString } from "../types/locale.types";
+import { DEFAULT_LOCALE, Locale, LocalizedString, SUPPORTED_LOCALES } from "../types/locale.types";
 
 export const uploadImageToCloudService = async (file: Express.Multer.File): Promise<string> => {
   const formData = new FormData();
@@ -130,4 +130,10 @@ export const generateUniquePath = async (
 export const localizeField = (field: LocalizedString | undefined, locale: Locale): string => {
   if (!field) return "";
   return field[locale] ?? field[DEFAULT_LOCALE] ?? Object.values(field).find(v => !!v) ?? '';
+};
+
+export const resolveLocale = (lang: string): Locale => {
+  return SUPPORTED_LOCALES.includes(lang as Locale)
+    ? (lang as Locale)
+    : DEFAULT_LOCALE;
 };

@@ -47,4 +47,28 @@ interface Award {
   v: number;
 }
 
+export interface LocalizedAward {
+  title: string;
+  description: string;
+  issuer: string;
+  issuerLocation: string;
+  ceremonyLocation: string;
+  coRecipients: string[];
+
+  year: number;
+  receivedDate: Date;
+  type: AwardType;
+  scope: AwardScope;
+  role: AwardRole;
+  result: AwardResult;
+  category: AwardCategory;
+
+  eventUrl: string;
+  relatedWorkUrl: string;
+  monetaryValue: string;
+
+  issuerImage: string;
+  primaryImage: string;
+}
+
 export default Award;
