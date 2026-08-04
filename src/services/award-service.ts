@@ -15,6 +15,7 @@ import AppUser from "../interfaces/i-app-user";
 import { getCacheStrategy } from "../cache/cache-factory";
 import { AWARD_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
 import AwardDocument from "../documents/award-document";
+import { invalidateSummaryStatsCache } from "./stat-service";
 
 const AWARD_LIST_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
 const awardListCacheKey = (locale: Locale, page: number, size: number) =>
@@ -56,6 +57,8 @@ export const createAwardEn = async (awardDto: CreateAwardEnDto, appUser?: AppUse
   });
 
   logger.info(`Award created for ${awardDto.titleEn}`);
+  await invalidateSummaryStatsCache();
+  await invalidateAwardListCache();
   return mapDocumentToAward(awardDoc);
 }
 
@@ -303,6 +306,7 @@ export const updateAwardEn = async (awardId: string, awardDto: UpdateAwardEnDto,
   }
 
   logger.info(`Award updated for ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -352,6 +356,7 @@ export const updateAwardSi = async (awardId: string, awardDto: UpdateAwardSiDto,
   }
 
   logger.info(`Award updated for ID: ${awardId} and title Si: ${awardDto.titleSi}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -387,6 +392,8 @@ export const toggleAwardActivation = async (awardId: string, awardDto: Activatio
   }
 
   logger.info(`Award updated for status for ID: ${awardId}`);
+  await invalidateSummaryStatsCache();
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -414,6 +421,7 @@ export const uploadPrimaryImage = async (awardId: string, imageFile?: Express.Mu
   await awardDoc.save();
 
   logger.info(`Uploaded primary image for award ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(awardDoc);
 }
 
@@ -451,6 +459,7 @@ export const uploadIssuerImage = async (awardId: string, imageFile?: Express.Mul
   }
 
   logger.info(`Uploaded issuer image for award ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -486,6 +495,8 @@ export const deleteAward = async (awardId: string, appUser?: AppUser | null): Pr
   if (!updatedAwardDoc) {
     throw new AppError('Failed to delete award document.', 500);
   }
+  await invalidateSummaryStatsCache();
+  await invalidateAwardListCache();
 }
 
 export const deletePrimaryImage = async (awardId: string, appUser?: AppUser | null): Promise<Award> => {
@@ -513,6 +524,7 @@ export const deletePrimaryImage = async (awardId: string, appUser?: AppUser | nu
   }
 
   logger.info(`Deleted the primary image of the award for ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -541,6 +553,7 @@ export const deleteIssuerImage = async (awardId: string, appUser?: AppUser | nul
   }
 
   logger.info(`Deleted the issuer image of the award for ID: ${awardId}`);
+  await invalidateAwardListCache();
   return mapDocumentToAward(updatedAwardDoc);
 }
 
@@ -614,3 +627,8 @@ const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
     default: return defaultSort;
   }
 }
+
+export const invalidateAwardListCache = async (): Promise<void> => {
+  const cache = getCacheStrategy();
+  await cache.deleteByPrefix(AWARD_LIST_CACHE_KEY_PREFIX);
+};
