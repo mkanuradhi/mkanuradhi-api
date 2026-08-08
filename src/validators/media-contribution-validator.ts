@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { localizedStringSchema, optionalLocalizedStringSchema } from './common-validator';
 import { AUTHORED_ROLES, MEDIA_CONTRIBUTION_LANGUAGES, MEDIA_CONTRIBUTION_ROLES, MEDIA_CONTRIBUTION_TYPES } from '../enums/media-contribution-enums';
+import DocumentStatus from '../enums/document-status';
 
 const MAX_TITLE_LENGTH       = 500;
 const MAX_DESCRIPTION_LENGTH = 2000;
@@ -84,3 +85,75 @@ export const createMediaContributionSchema = z.object({
   { message: 'authors is required when role is sole_author or co_author.', path: ['authors'] }
 );
 
+const updateMediaContributionAuthorSchema = z.object({
+  id:         z.string().trim().min(1, 'Author ID is required.').optional(), // absent = new author
+  name:       localizedStringSchema,
+  profileUrl: z.url('Invalid profile URL.').optional(),
+  // imageUrl intentionally excluded — handled via separate upload endpoint
+});
+
+const updateMediaContributionAuthorArraySchema = z.array(updateMediaContributionAuthorSchema)
+  .refine(uniqueAuthorNames, { message: 'Author names must be unique.' });
+
+const updateMediaContributionInterviewerArraySchema = z.array(updateMediaContributionAuthorSchema)
+  .refine(uniqueAuthorNames, { message: 'Interviewer names must be unique.' });
+
+const updateMediaContributionPreviewImageSchema = z.object({
+  id:           z.string().trim().min(1, 'Preview image ID is required.'),
+  displayOrder: z.number().int().min(0, 'Display order cannot be negative.'),
+  // url intentionally excluded — handled via separate update endpoint
+});
+
+// ----------------------- Update schema -----------------------
+export const updateMediaContributionSchema = z.object({
+  title: localizedStringSchema,
+  titleOriginal: z.string().trim().max(MAX_TITLE_LENGTH),
+  subtitle: optionalLocalizedStringSchema,
+  subtitleOriginal: z.string().trim().max(MAX_TITLE_LENGTH).optional(),
+  description: localizedDescriptionSchema,
+  content: localizedContentSchema.optional(),
+
+  type: z.enum(MEDIA_CONTRIBUTION_TYPES, {
+    error: (ctx) => ({ message: `Invalid type '${ctx.input}'. Valid types are: ${MEDIA_CONTRIBUTION_TYPES.join(', ')}.` })
+  }),
+  role: z.enum(MEDIA_CONTRIBUTION_ROLES, {
+    error: (ctx) => ({ message: `Invalid role '${ctx.input}'. Valid roles are: ${MEDIA_CONTRIBUTION_ROLES.join(', ')}.` })
+  }),
+  
+  topics:       z.array(localizedStringSchema).default([]),
+  authors:      updateMediaContributionAuthorArraySchema.optional(),
+  language: z.enum(MEDIA_CONTRIBUTION_LANGUAGES, {
+    error: (ctx) => ({ message: `Invalid language '${ctx.input}'. Valid languages are: ${MEDIA_CONTRIBUTION_LANGUAGES.join(', ')}.` })
+  }),
+  interviewers: updateMediaContributionInterviewerArraySchema.optional(),
+
+  outlet:           mediaContributionOutletSchema.optional(),
+  publishedDate:    z.coerce.date().max(new Date(), 'Published date cannot be in the future.'),
+  durationSeconds:  z.number().int().min(0, 'Duration cannot be negative.').optional(),
+  highlightQuote:   optionalLocalizedStringSchema,
+  previewImages:    z.array(updateMediaContributionPreviewImageSchema).optional(),
+
+  sourceUrl:     z.url('Invalid source URL.').optional(),
+  featured:     z.boolean().default(false),
+  displayOrder: z.number().int().min(0).optional(),
+
+  // v defined at same level — never dropped
+  v: z.number({ error: 'Version (v) is required and must be a number.' })
+     .int('Version must be an integer.')
+     .min(0, 'Version cannot be negative.'),
+}).refine(
+  data => {
+    if (AUTHORED_ROLES.includes(data.role)) {
+      return !!data.authors && data.authors.length > 0;
+    }
+    return true;
+  },
+  { message: 'authors is required when role is sole_author or co_author.', path: ['authors'] }
+);
+
+// ----------------------- Activation schema -----------------------
+export const activationMediaContributionSchema = z.object({
+  status: z.enum(DocumentStatus, {
+    error: (ctx) => ({ message: `Invalid status '${ctx.input}'. Valid values are: ${Object.values(DocumentStatus).join(', ')}.` })
+  }),
+});
