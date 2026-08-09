@@ -60,19 +60,19 @@ export const createMediaContributionSchema = z.object({
     error: (ctx) => ({ message: `Invalid role '${ctx.input}'. Valid roles are: ${MEDIA_CONTRIBUTION_ROLES.join(', ')}.` })
   }),
   
-  topics:       z.array(localizedStringSchema).default([]),
-  authors:      mediaContributionAuthorArraySchema.optional(),
+  topics:   z.array(localizedStringSchema).default([]),
+  authors:  mediaContributionAuthorArraySchema.optional(),
   language: z.enum(MEDIA_CONTRIBUTION_LANGUAGES, {
     error: (ctx) => ({ message: `Invalid language '${ctx.input}'. Valid languages are: ${MEDIA_CONTRIBUTION_LANGUAGES.join(', ')}.` })
   }),
   interviewers: mediaContributionInterviewerArraySchema.optional(),
 
-  outlet:           mediaContributionOutletSchema.optional(),
-  publishedDate:    z.coerce.date().max(new Date(), 'Published date cannot be in the future.'),
-  durationSeconds:  z.number().int().min(0, 'Duration cannot be negative.').optional(),
-  highlightQuote:   optionalLocalizedStringSchema,
+  outlet:          mediaContributionOutletSchema.optional(),
+  publishedDate:   z.coerce.date().max(new Date(), 'Published date cannot be in the future.'),
+  durationSeconds: z.number().int().min(0, 'Duration cannot be negative.').optional(),
+  highlightQuote:  optionalLocalizedStringSchema,
 
-  sourceUrl:     z.url('Invalid source URL.').optional(),
+  sourceUrl:    z.url('Invalid source URL.').optional(),
   featured:     z.boolean().default(false),
   displayOrder: z.number().int().min(0).optional(),
 }).refine(
@@ -157,3 +157,8 @@ export const activationMediaContributionSchema = z.object({
     error: (ctx) => ({ message: `Invalid status '${ctx.input}'. Valid values are: ${Object.values(DocumentStatus).join(', ')}.` })
   }),
 });
+
+// Inferred types — no separate DTO interfaces needed
+export type CreateMediaContributionDto = z.infer<typeof createMediaContributionSchema>;
+export type UpdateMediaContributionDto = z.infer<typeof updateMediaContributionSchema>;
+export type ActivationMediaContributionDto = z.infer<typeof activationMediaContributionSchema>;

@@ -121,7 +121,7 @@ export interface LocalizedSummaryMediaContribution {
   path:          string;
   outlet?:       LocalizedMediaContributionOutlet;
   publishedDate: Date;
-  subjects:      string[];
+  topics:      string[];
   coverImage?:   string;
   featured:      boolean;
   displayOrder?: number;
