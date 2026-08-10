@@ -4,11 +4,15 @@ import Role from '../enums/role';
 import { validate } from '../middleware/validate-middleware';
 import { createMediaContributionSchema } from '../validators/media-contribution-validator';
 import * as mediaContributionController from '../controllers/media-contribution-controller';
+import validateObjectId from '../middleware/validate-objectid';
 
 const mediaContributionRoute = express.Router();
 
 // Add a new media contribution
 mediaContributionRoute.post('/', requireAuthenticated([Role.ADMIN]), validate(createMediaContributionSchema), mediaContributionController.createMediaContribution);
+
+// Delete an media contribution
+mediaContributionRoute.delete('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, mediaContributionController.deleteMediaContribution);
 
 // Fetch active localized media contributions (public)
 mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);

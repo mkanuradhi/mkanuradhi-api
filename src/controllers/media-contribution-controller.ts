@@ -10,6 +10,12 @@ export const createMediaContribution = asyncErrorHandler( async (req: Request, r
   res.status(201).json(addedMediaContribution);
 });
 
+export const deleteMediaContribution = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const mediaContributionId = req.params.id;
+  await mediaContributionService.deleteMediaContribution(mediaContributionId, req.appUser);
+  res.status(204).json();
+});
+
 export const getLocalizedMediaContributions = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const lang: string = parseLangQueryParam(req);
   const page = parseInt(req.query.page as string) || 0;

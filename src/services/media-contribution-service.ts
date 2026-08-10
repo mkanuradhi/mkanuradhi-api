@@ -11,7 +11,7 @@ import { getCacheStrategy } from "../cache/cache-factory";
 import { MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
 import { mapDocumentToMediaContribution } from "../mappers/media-contribution-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
-import { Locale } from "../types/locale.types";
+import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import MediaContributionDocument from "../documents/media-contribution-document";
 
@@ -63,10 +63,45 @@ export const createMediaContribution = async (mediaContributionDto: CreateMediaC
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
+export const deleteMediaContribution = async (bookId: string, appUser?: AppUser | null): Promise<void> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ 
+    _id: bookId,
+    deleted: false,
+  });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID '${bookId}' or it is already deleted.`, 404);
+  }
+
+  const deletedSuffix = `DELETED-${uuidv4()}`;
+
+  const updatedBookDoc = await MediaContributionModel.findByIdAndUpdate(
+    bookId,
+    {
+      $set: {
+        'title.en': mediaContributionDoc.title.en ? `${mediaContributionDoc.title.en}-${deletedSuffix}` : undefined,
+        'title.si': mediaContributionDoc.title.si ? `${mediaContributionDoc.title.si}-${deletedSuffix}` : undefined,
+        'path':     `${mediaContributionDoc.path}-${deletedSuffix}`,
+        deleted:    true,
+        updatedBy:  appUser ?? undefined,
+      },
+      $inc: { __v: 1 },
+    },
+    { new: true }
+  );
+
+  if (!updatedBookDoc) {
+    throw new AppError('Failed to delete media contribution.', 500);
+  }
+  logger.info(`Media contribution deleted: ${bookId}`);
+  await invalidateSummaryStatsCache();
+  await invalidateMediaContributionListCache();
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path); // original path, before the DELETED- suffix was applied
+}
+
 export const invalidateMediaContributionListCache = async (): Promise<void> => {
   const cache = getCacheStrategy();
   await cache.deleteByPrefix(MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX);
-};
+}
 
 export const getLocalizedMediaContributions = async (lang: string, page: number, size: number): Promise<{ items: LocalizedSummaryMediaContribution[], totalCount: number }> => {
   validatePaginationDetails(page, size);
@@ -113,7 +148,7 @@ export const getLocalizedMediaContributions = async (lang: string, page: number,
 
   await cache.set(cacheKey, result, MEDIA_CONTRIBUTION_LIST_CACHE_TTL_SECONDS);
   return result;
-};
+}
 
 export const getLocalizedMediaContributionByPath = async (lang: string, path: string): Promise<LocalizedMediaContribution> => {
   const locale = resolveLocale(lang);
@@ -161,7 +196,7 @@ const toLocalizedSummaryMediaContribution = (doc: MediaContributionDocument, loc
     featured:      doc.featured,
     displayOrder:  doc.displayOrder,
   };
-};
+}
 
 const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Locale): LocalizedMediaContribution => {
   return {
@@ -199,4 +234,11 @@ const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Lo
     })),
     featured:      doc.featured,
   };
-};
+}
+
+const invalidateMediaContributionDetailCache = async (path: string): Promise<void> => {
+  const cache = getCacheStrategy();
+  await Promise.all(
+    SUPPORTED_LOCALES.map(locale => cache.delete(mediaContributionDetailCacheKey(path, locale)))
+  );
+}
