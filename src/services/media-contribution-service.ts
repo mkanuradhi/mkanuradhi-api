@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
 import { MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
-import { mapDocumentToMediaContribution } from "../mappers/media-contribution-mapper";
+import { mapDocumentsToMediaContributions, mapDocumentToMediaContribution } from "../mappers/media-contribution-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
@@ -21,6 +21,49 @@ const MEDIA_CONTRIBUTION_DETAIL_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
 const mediaContributionListCacheKey = (locale: Locale, page: number, size: number) =>
   `${MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX}${locale}:${page}:${size}`;
 const mediaContributionDetailCacheKey = (path: string, locale: Locale) => `media-contribution:detail:${locale}:${path}`;
+
+export const getMediaContributions = async (page: number, size: number): Promise<{ items: MediaContribution[], totalCount: number }> => {
+  validatePaginationDetails(page, size);
+  const [totalCount, mediaContributionDocs] = await Promise.all([
+    MediaContributionModel.countDocuments({ deleted: false }),
+    MediaContributionModel
+      .find(
+        { deleted: false  }, 
+        {
+          title: 1,
+          titleOriginal: 1,
+          subtitle: 1,
+          subtitleOriginal: 1,
+          description: 1,
+          authors: 1,
+          language: 1,
+          path: 1,
+          publishedDate: 1,
+          coverImage: 1,
+          featured: 1,
+          displayOrder: 1,
+          status: 1,
+        })
+      .sort({ displayOrder: 1, createdAt: -1  })
+      .skip(page * size)
+      .limit(size)
+  ]);
+  return {
+    items: mapDocumentsToMediaContributions(mediaContributionDocs),
+    totalCount
+  };
+}
+
+export const getMediaContribution = async (mediaContributionId: string): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({
+    _id:     mediaContributionId,
+    deleted: false,
+  });
+
+  if (!mediaContributionDoc) throw new AppError(`Media contribution not found for id: ${mediaContributionId}`, 404);
+
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+};
 
 export const createMediaContribution = async (mediaContributionDto: CreateMediaContributionDto, appUser?: AppUser | null): Promise<MediaContribution> => {
   const titleTextEn = mediaContributionDto.title.en?.trim();

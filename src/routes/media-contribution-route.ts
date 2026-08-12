@@ -8,6 +8,12 @@ import validateObjectId from '../middleware/validate-objectid';
 
 const mediaContributionRoute = express.Router();
 
+// Fetch all media contributions
+mediaContributionRoute.get('/', requireAuthenticated([Role.ADMIN]), mediaContributionController.getMediaContributions);
+
+// Fetch a specific media contribution by ID
+mediaContributionRoute.get('/:id', requireAuthenticated([Role.ADMIN]), validateObjectId, mediaContributionController.getMediaContribution);
+
 // Add a new media contribution
 mediaContributionRoute.post('/', requireAuthenticated([Role.ADMIN]), validate(createMediaContributionSchema), mediaContributionController.createMediaContribution);
 
