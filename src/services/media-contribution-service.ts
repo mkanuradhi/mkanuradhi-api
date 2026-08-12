@@ -70,11 +70,11 @@ export const createMediaContribution = async (mediaContributionDto: CreateMediaC
   if (!titleTextEn) throw new AppError('Title must have en locale.', 400);
 
   // duplicate check — title is the stable unique identifier
-  const existingBookDoc = await MediaContributionModel.findOne({
+  const existingMediaContributionDoc = await MediaContributionModel.findOne({
     'title.en': titleTextEn,
     deleted: false
   });
-  if (existingBookDoc) {
+  if (existingMediaContributionDoc) {
       throw new AppError(`A media contribution already exists with the title: ${titleTextEn}`, 400);
   }
 
@@ -106,19 +106,19 @@ export const createMediaContribution = async (mediaContributionDto: CreateMediaC
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
-export const deleteMediaContribution = async (bookId: string, appUser?: AppUser | null): Promise<void> => {
+export const deleteMediaContribution = async (mediaContributionId: string, appUser?: AppUser | null): Promise<void> => {
   const mediaContributionDoc = await MediaContributionModel.findOne({ 
-    _id: bookId,
+    _id: mediaContributionId,
     deleted: false,
   });
   if (!mediaContributionDoc) {
-    throw new AppError(`Cannot find the media contribution with ID '${bookId}' or it is already deleted.`, 404);
+    throw new AppError(`Cannot find the media contribution with ID '${mediaContributionId}' or it is already deleted.`, 404);
   }
 
   const deletedSuffix = `DELETED-${uuidv4()}`;
 
-  const updatedBookDoc = await MediaContributionModel.findByIdAndUpdate(
-    bookId,
+  const updatedMediaContributionDoc = await MediaContributionModel.findByIdAndUpdate(
+    mediaContributionId,
     {
       $set: {
         'title.en': mediaContributionDoc.title.en ? `${mediaContributionDoc.title.en}-${deletedSuffix}` : undefined,
@@ -132,10 +132,10 @@ export const deleteMediaContribution = async (bookId: string, appUser?: AppUser 
     { new: true }
   );
 
-  if (!updatedBookDoc) {
+  if (!updatedMediaContributionDoc) {
     throw new AppError('Failed to delete media contribution.', 500);
   }
-  logger.info(`Media contribution deleted: ${bookId}`);
+  logger.info(`Media contribution deleted: ${mediaContributionId}`);
   await invalidateSummaryStatsCache();
   await invalidateMediaContributionListCache();
   await invalidateMediaContributionDetailCache(mediaContributionDoc.path); // original path, before the DELETED- suffix was applied
@@ -158,7 +158,7 @@ export const getLocalizedMediaContributions = async (lang: string, page: number,
 
   logger.info(`No cached media contribution list found for locale: ${lang}, hitting db to get media contributions list`);
 
-  const [totalCount, bookDocs] = await Promise.all([
+  const [totalCount, mediaContributionDocs] = await Promise.all([
     MediaContributionModel.countDocuments({ deleted: false, status: DocumentStatus.ACTIVE }),
     MediaContributionModel
       .find(
@@ -185,7 +185,7 @@ export const getLocalizedMediaContributions = async (lang: string, page: number,
   ]);
 
   const result = {
-    items: bookDocs.map(doc => toLocalizedSummaryMediaContribution(doc, locale)),
+    items: mediaContributionDocs.map(doc => toLocalizedSummaryMediaContribution(doc, locale)),
     totalCount,
   };
 
@@ -206,7 +206,7 @@ export const getLocalizedMediaContributionByPath = async (lang: string, path: st
   const mediaContributionDoc = await MediaContributionModel.findOne({
     path:    path.trim(),
     deleted: false,
-    status:  DocumentStatus.ACTIVE,   // public only sees active books
+    status:  DocumentStatus.ACTIVE,   // public only sees active media contributions
   });
 
   if (!mediaContributionDoc) throw new AppError(`Media contribution not found for path: ${path}`, 404);

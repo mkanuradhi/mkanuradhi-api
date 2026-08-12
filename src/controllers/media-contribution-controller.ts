@@ -65,7 +65,7 @@ export const getLocalizedMediaContributions = asyncErrorHandler( async (req: Req
 
 export const getLocalizedMediaContributionByPath = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const lang: string = parseLangQueryParam(req);
-  const bookPath = req.params.path;
-  const mediaContribution = await mediaContributionService.getLocalizedMediaContributionByPath(lang, bookPath);
+  const mediaContributionPath = req.params.path;
+  const mediaContribution = await mediaContributionService.getLocalizedMediaContributionByPath(lang, mediaContributionPath);
   res.status(200).json(mediaContribution);
 });
