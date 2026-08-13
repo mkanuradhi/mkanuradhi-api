@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { MediaContributionAuthor, MediaContributionOutlet, MediaContributionPreviewImage } from "../interfaces/i-media-contribution";
+import { MediaContributionAuthor, MediaContributionInterviewer, MediaContributionOutlet, MediaContributionPreviewImage } from "../interfaces/i-media-contribution";
 import { localizedStringSchema } from "./localized-string-schema";
 import AppUserSchema from "./app-user-schema";
 import DocumentStatus from "../enums/document-status";
@@ -10,6 +10,35 @@ const MAX_TITLE_LENGTH = 500;
 const MAX_PATH_LENGTH = MAX_TITLE_LENGTH + 10; // number length
 
 const mediaContributionAuthorSchema = new Schema<MediaContributionAuthor>(
+  {
+    id: {
+      type:     String,
+      required: [true, "Author ID is required."],
+    },
+    name: {
+      type: localizedStringSchema,
+      required: [true, "Author name is required."],
+    },
+    isMe: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    profileUrl: {
+      type: String,
+      trim: true,
+    },
+    imageUrl: {
+      type:     String,
+      required: false,
+      trim:     true,
+    },
+  }, {
+    _id: false,
+  }
+);
+
+const mediaContributionInterviewerSchema = new Schema<MediaContributionInterviewer>(
   {
     id: {
       type:     String,
@@ -137,7 +166,7 @@ const mediaContributionSchema = new Schema<MediaContributionDocument>(
       required: [true, "Language is required."],
     },
     interviewers: {
-      type: [mediaContributionAuthorSchema],
+      type: [mediaContributionInterviewerSchema],
       default: [],
       required: false,
     },

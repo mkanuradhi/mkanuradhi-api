@@ -6,6 +6,14 @@ import AppUser from "./i-app-user";
 export interface MediaContributionAuthor {
   id:          string;
   name:        LocalizedString;
+  isMe:        boolean;
+  profileUrl?: string;
+  imageUrl?:   string;
+}
+
+export interface MediaContributionInterviewer {
+  id:          string;
+  name:        LocalizedString;
   profileUrl?: string;
   imageUrl?:   string;
 }
@@ -38,7 +46,7 @@ interface MediaContribution {
   topics:        LocalizedString[];
   authors?:      MediaContributionAuthor[];
   language:      MediaContributionLanguage;
-  interviewers?: MediaContributionAuthor[];
+  interviewers?: MediaContributionInterviewer[];
   path:          string;
 
   outlet?:          MediaContributionOutlet;
@@ -64,6 +72,14 @@ interface MediaContribution {
 }
 
 export interface LocalizedMediaContributionAuthor {
+  id:          string;
+  name:        string;
+  isMe:        boolean;
+  profileUrl?: string;
+  imageUrl?:   string;
+}
+
+export interface LocalizedMediaContributionInterviewer {
   id:          string;
   name:        string;
   profileUrl?: string;
@@ -94,7 +110,7 @@ export interface LocalizedMediaContribution {
   topics:        string[];
   authors?:      LocalizedMediaContributionAuthor[];
   language:      MediaContributionLanguage;
-  interviewers?: LocalizedMediaContributionAuthor[];
+  interviewers?: LocalizedMediaContributionInterviewer[];
   path:          string;
 
   outlet?:          LocalizedMediaContributionOutlet;

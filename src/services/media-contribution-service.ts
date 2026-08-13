@@ -63,7 +63,7 @@ export const getMediaContribution = async (mediaContributionId: string): Promise
   if (!mediaContributionDoc) throw new AppError(`Media contribution not found for id: ${mediaContributionId}`, 404);
 
   return mapDocumentToMediaContribution(mediaContributionDoc);
-};
+}
 
 export const createMediaContribution = async (mediaContributionDto: CreateMediaContributionDto, appUser?: AppUser | null): Promise<MediaContribution> => {
   const titleTextEn = mediaContributionDto.title.en?.trim();
@@ -88,13 +88,23 @@ export const createMediaContribution = async (mediaContributionDto: CreateMediaC
   const authorsWithIds = mediaContributionDto.authors?.map(author => ({
     id:         uuidv4(),
     name:       author.name,
+    isMe:       author.isMe,
     profileUrl: author.profileUrl,
+    // imageUrl intentionally omitted — handled via separate upload endpoint
+  }));
+
+  // generate id for each interviewer — imageUrl not accepted on create
+  const interviewersWithIds = mediaContributionDto.interviewers?.map(interviewer => ({
+    id:         uuidv4(),
+    name:       interviewer.name,
+    profileUrl: interviewer.profileUrl,
     // imageUrl intentionally omitted — handled via separate upload endpoint
   }));
 
   const mediaContributionDoc = await MediaContributionModel.create({
     ...mediaContributionDto,
     authors:   authorsWithIds,
+    interviewers: interviewersWithIds,
     path:      uniquePath,
     createdBy: appUser ?? undefined,
     updatedBy: appUser ?? undefined,
@@ -185,6 +195,7 @@ const getMergedAuthors = (mediaContributionDto: UpdateMediaContributionDto, exis
       return {
         id:         existingAuthor.id,
         name:       dtoAuthor.name,
+        isMe:       dtoAuthor.isMe,
         profileUrl: dtoAuthor.profileUrl,
         imageUrl:   existingAuthor.imageUrl,  // preserved — never from client
       };
@@ -193,6 +204,7 @@ const getMergedAuthors = (mediaContributionDto: UpdateMediaContributionDto, exis
       return {
         id:         uuidv4(),
         name:       dtoAuthor.name,
+        isMe:       dtoAuthor.isMe,
         profileUrl: dtoAuthor.profileUrl,
       };
     }
@@ -433,6 +445,7 @@ const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Lo
     authors:       doc.authors?.map(a => ({
       id:          a.id,
       name:        localizeField(a.name, locale),
+      isMe:        a.isMe,
       profileUrl:  a.profileUrl,
       imageUrl:    a.imageUrl,
     })),

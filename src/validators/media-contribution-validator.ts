@@ -10,6 +10,13 @@ const MAX_CONTENT_LENGTH     = 7000;
 // ----------------------- Sub-schemas -----------------------
 const mediaContributionAuthorSchema = z.object({
   name:       localizedStringSchema,
+  isMe:       z.boolean(),
+  profileUrl: z.url('Invalid profile URL.').optional(),
+  // id and imageUrl intentionally excluded
+});
+
+const mediaContributionInterviewerSchema = z.object({
+  name:       localizedStringSchema,
   profileUrl: z.url('Invalid profile URL.').optional(),
   // id and imageUrl intentionally excluded
 });
@@ -26,10 +33,23 @@ function uniqueAuthorNames(authors: { name: { en?: string } }[]) {
 }
 
 const mediaContributionAuthorArraySchema = z.array(mediaContributionAuthorSchema)
-  .refine(uniqueAuthorNames, { message: 'Author names must be unique.' });
+  .refine(uniqueAuthorNames, { message: 'Author names must be unique.' })
+  .refine(
+    authors => {
+      const isMeCount = authors.filter(a => a.isMe).length;
+      return isMeCount <= 1;
+    },
+    { message: 'Only one author can have isMe set to true.' }
+  )
+  .refine(
+    authors => {
+      if (authors.length === 0) return true;
+      return authors.some(a => a.isMe === true); // if not empty, at least one must be isMe
+    },
+    { message: 'At least one author must have isMe set to true when authors are provided.' }
+  );
 
-
-const mediaContributionInterviewerArraySchema = z.array(mediaContributionAuthorSchema)
+const mediaContributionInterviewerArraySchema = z.array(mediaContributionInterviewerSchema)
   .refine(uniqueAuthorNames, { message: 'Interviewer names must be unique.' });
 
 const localizedDescriptionSchema = localizedStringSchema.refine(
@@ -88,14 +108,29 @@ export const createMediaContributionSchema = z.object({
 const updateMediaContributionAuthorSchema = z.object({
   id:         z.string().trim().min(1, 'Author ID is required.').optional(), // absent = new author
   name:       localizedStringSchema,
+  isMe:       z.boolean(),
+  profileUrl: z.url('Invalid profile URL.').optional(),
+  // imageUrl intentionally excluded — handled via separate upload endpoint
+});
+
+const updateMediaContributionInterviewerSchema = z.object({
+  id:         z.string().trim().min(1, 'Author ID is required.').optional(), // absent = new author
+  name:       localizedStringSchema,
   profileUrl: z.url('Invalid profile URL.').optional(),
   // imageUrl intentionally excluded — handled via separate upload endpoint
 });
 
 const updateMediaContributionAuthorArraySchema = z.array(updateMediaContributionAuthorSchema)
-  .refine(uniqueAuthorNames, { message: 'Author names must be unique.' });
+  .refine(uniqueAuthorNames, { message: 'Author names must be unique.' })
+  .refine(
+    authors => {
+      const isMeCount = authors.filter(a => a.isMe).length;
+      return isMeCount <= 1;
+    },
+    { message: 'Only one author can have isMe set to true.' }
+  );
 
-const updateMediaContributionInterviewerArraySchema = z.array(updateMediaContributionAuthorSchema)
+const updateMediaContributionInterviewerArraySchema = z.array(updateMediaContributionInterviewerSchema)
   .refine(uniqueAuthorNames, { message: 'Interviewer names must be unique.' });
 
 const updateMediaContributionPreviewImageSchema = z.object({
