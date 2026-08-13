@@ -3,7 +3,7 @@ import AppError from "../errors/app-error";
 import AppUser from "../interfaces/i-app-user";
 import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution } from "../interfaces/i-media-contribution";
 import MediaContributionModel from "../models/media-contribution-model";
-import { generateUniquePath, localizeField, resolveLocale } from "../utils/common-util";
+import { generateUniquePath, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
 import { ActivationMediaContributionDto, CreateMediaContributionDto, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { invalidateSummaryStatsCache } from "./stat-service";
@@ -350,6 +350,54 @@ export const toggleMediaContributionActivation = async (mediaContributionId: str
   await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
   await invalidateMediaContributionListCache();
   await invalidateSummaryStatsCache();
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const uploadCoverImage = async (mediaContributionId: string, imageFile?: Express.Multer.File): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the book with ID: '${mediaContributionId}'.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No cover image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload cover image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old cover image URL is simply overwritten
+  mediaContributionDoc.coverImage = imageUrl;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded cover image for book ID: ${mediaContributionId}`);
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+  await invalidateMediaContributionListCache();
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const deleteCoverImage = async (mediaContributionId: string): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+
+  if (!mediaContributionDoc.coverImage) {
+    throw new AppError('This media contribution has no cover image to delete.', 400);
+  }
+
+  mediaContributionDoc.coverImage = undefined;
+  mediaContributionDoc.status = DocumentStatus.INACTIVE; // Deactivate the media contribution if cover image is deleted
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted cover image for book ID: ${mediaContributionId}`);
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+  await invalidateMediaContributionListCache();
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 

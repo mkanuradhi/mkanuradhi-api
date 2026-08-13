@@ -54,6 +54,18 @@ export const toggleMediaContributionActivation = asyncErrorHandler( async (req: 
   res.status(200).json(updatedMediaContribution);
 });
 
+export const uploadCoverImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const updatedMediaContribution = await mediaContributionService.uploadCoverImage(mediaContributionId, req.file);
+  res.status(200).json(updatedMediaContribution);
+});
+
+export const deleteCoverImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const updatedMediaContribution = await mediaContributionService.deleteCoverImage(mediaContributionId);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const getLocalizedMediaContributions = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const lang: string = parseLangQueryParam(req);
   const page = parseInt(req.query.page as string) || 0;
