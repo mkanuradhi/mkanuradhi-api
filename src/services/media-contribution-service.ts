@@ -4,7 +4,7 @@ import AppUser from "../interfaces/i-app-user";
 import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution } from "../interfaces/i-media-contribution";
 import MediaContributionModel from "../models/media-contribution-model";
 import { generateUniquePath, localizeField, resolveLocale } from "../utils/common-util";
-import { CreateMediaContributionDto, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
+import { ActivationMediaContributionDto, CreateMediaContributionDto, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
@@ -326,6 +326,31 @@ export const deleteMediaContribution = async (mediaContributionId: string, appUs
   await invalidateSummaryStatsCache();
   await invalidateMediaContributionListCache();
   await invalidateMediaContributionDetailCache(mediaContributionDoc.path); // original path, before the DELETED- suffix was applied
+}
+
+export const toggleMediaContributionActivation = async (mediaContributionId: string, mediaContributionDto: ActivationMediaContributionDto, appUser?: AppUser | null): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: ${mediaContributionId}.`, 404);
+  }
+
+  // cover image is required before a media contribution can be made active
+  if (mediaContributionDto.status === DocumentStatus.ACTIVE && !mediaContributionDoc.coverImage) {
+    throw new AppError('Cannot activate a media contribution without a cover image.', 400);
+  }
+
+  mediaContributionDoc.status    = mediaContributionDto.status;
+  mediaContributionDoc.updatedBy = appUser ?? undefined;
+  mediaContributionDoc.increment(); // Increment the version for optimistic concurrency control
+
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Media contribution status updated for ID: ${mediaContributionId}`);
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+  await invalidateMediaContributionListCache();
+  await invalidateSummaryStatsCache();
+  return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
 export const invalidateMediaContributionListCache = async (): Promise<void> => {

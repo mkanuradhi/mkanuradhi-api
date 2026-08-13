@@ -48,6 +48,12 @@ export const deleteMediaContribution = asyncErrorHandler( async (req: Request, r
   res.status(204).json();
 });
 
+export const toggleMediaContributionActivation = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
+  const mediaContributionId = req.params.id;  
+  const updatedMediaContribution = await mediaContributionService.toggleMediaContributionActivation(mediaContributionId, req.body, req.appUser);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const getLocalizedMediaContributions = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const lang: string = parseLangQueryParam(req);
   const page = parseInt(req.query.page as string) || 0;
