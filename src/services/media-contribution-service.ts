@@ -4,7 +4,7 @@ import AppUser from "../interfaces/i-app-user";
 import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution } from "../interfaces/i-media-contribution";
 import MediaContributionModel from "../models/media-contribution-model";
 import { generateUniquePath, localizeField, resolveLocale } from "../utils/common-util";
-import { CreateMediaContributionDto } from "../validators/media-contribution-validator";
+import { CreateMediaContributionDto, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
@@ -104,6 +104,181 @@ export const createMediaContribution = async (mediaContributionDto: CreateMediaC
   await invalidateSummaryStatsCache();
   await invalidateMediaContributionListCache();
   return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const updateMediaContribution = async (mediaContributionId: string, mediaContributionDto: UpdateMediaContributionDto, appUser?: AppUser | null): Promise<MediaContribution> => {
+  // Verify media contribution exists first
+  const existingMediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!existingMediaContributionDoc) throw new AppError(`Media contribution not found for id: ${mediaContributionId}`, 404);
+
+  const titleTextEn = mediaContributionDto.title?.en?.trim();
+  if (!titleTextEn) throw new AppError('Title must have en locale.', 400);
+
+  // Duplicate title check — exclude current doc
+  const existingDuplicateDoc = await MediaContributionModel.findOne({
+    'title.en': titleTextEn,
+    _id:        { $ne: mediaContributionId }, // exclude the current doc
+    deleted:    false,
+  });
+  if (existingDuplicateDoc) {
+    throw new AppError(`A media contribution already exists with the title: "${titleTextEn}"`, 400);
+  }
+
+  const mergedAuthors = getMergedAuthors(mediaContributionDto, existingMediaContributionDoc);
+  const mergedInterviewers = getMergedInterviewers(mediaContributionDto, existingMediaContributionDoc);
+  const mergedOutlet = getMergedOutlet(mediaContributionDto, existingMediaContributionDoc);
+  const mergedPreviewImages = getMergedPreviewImages(mediaContributionDto, existingMediaContributionDoc);
+
+  const mediaContributionDoc = await MediaContributionModel.findOneAndUpdate(
+    { _id: mediaContributionId, __v: mediaContributionDto.v, deleted: false },  // atomic version check
+    {
+      $set: {
+        title:         mediaContributionDto.title,
+        titleOriginal: mediaContributionDto.titleOriginal,
+        subtitle:      mediaContributionDto.subtitle,
+        subtitleOriginal: mediaContributionDto.subtitleOriginal,
+        description:   mediaContributionDto.description,
+        content:       mediaContributionDto.content,
+        type:          mediaContributionDto.type,
+        role:          mediaContributionDto.role,
+        topics:        mediaContributionDto.topics,
+        authors:       mergedAuthors,
+        language:      mediaContributionDto.language,
+        interviewers:  mergedInterviewers,
+        outlet:        mergedOutlet,
+        publishedDate: mediaContributionDto.publishedDate,
+        durationSeconds: mediaContributionDto.durationSeconds,
+        highlightQuote:  mediaContributionDto.highlightQuote,
+        previewImages: mergedPreviewImages,
+        sourceUrl:     mediaContributionDto.sourceUrl,
+        featured:      mediaContributionDto.featured,
+        displayOrder:  mediaContributionDto.displayOrder,
+        updatedBy:     appUser ?? undefined,
+      },
+      $inc: { __v: 1 },
+    },
+    { new: true, runValidators: true }
+  );
+
+  if (!mediaContributionDoc) {
+    throw new AppError('Media contribution was modified by another request. Please refresh and try again.', 409);
+  }
+
+  logger.info(`Media contribution updated: ${mediaContributionId}`);
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+  await invalidateMediaContributionListCache();
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+const getMergedAuthors = (mediaContributionDto: UpdateMediaContributionDto, existingMediaContributionDoc: MediaContributionDocument) => {
+  const existingAuthorMap = new Map(
+    existingMediaContributionDoc.authors?.map(a => [a.id, a])
+  );
+
+  return mediaContributionDto.authors?.map(dtoAuthor => {
+    if (dtoAuthor.id) {
+      // existing author — validate id exists and preserve imageUrl
+      const existingAuthor = existingAuthorMap.get(dtoAuthor.id);
+      if (!existingAuthor) {
+        throw new AppError(`Author not found: ${dtoAuthor.id}`, 400);
+      }
+      return {
+        id:         existingAuthor.id,
+        name:       dtoAuthor.name,
+        profileUrl: dtoAuthor.profileUrl,
+        imageUrl:   existingAuthor.imageUrl,  // preserved — never from client
+      };
+    } else {
+      // new author — generate id, no imageUrl yet
+      return {
+        id:         uuidv4(),
+        name:       dtoAuthor.name,
+        profileUrl: dtoAuthor.profileUrl,
+      };
+    }
+  });
+}
+
+const getMergedInterviewers = (mediaContributionDto: UpdateMediaContributionDto, existingMediaContributionDoc: MediaContributionDocument) => {
+  const existingInterviewerMap = new Map(
+    existingMediaContributionDoc.interviewers?.map(a => [a.id, a])
+  );
+
+  return mediaContributionDto.interviewers?.map(dtoInterviewer => {
+    if (dtoInterviewer.id) {
+      // existing interviewer — validate id exists and preserve imageUrl
+      const existingInterviewer = existingInterviewerMap.get(dtoInterviewer.id);
+      if (!existingInterviewer) {
+        throw new AppError(`Interviewer not found: ${dtoInterviewer.id}`, 400);
+      }
+      return {
+        id:         existingInterviewer.id,
+        name:       dtoInterviewer.name,
+        profileUrl: dtoInterviewer.profileUrl,
+        imageUrl:   existingInterviewer.imageUrl,  // preserved — never from client
+      };
+    } else {
+      // new interviewer — generate id, no imageUrl yet
+      return {
+        id:         uuidv4(),
+        name:       dtoInterviewer.name,
+        profileUrl: dtoInterviewer.profileUrl,
+      };
+    }
+  });
+}
+
+const getMergedOutlet = (mediaContributionDto: UpdateMediaContributionDto, existingMediaContributionDoc: MediaContributionDocument) => {
+  // Field not included in the update payload at all — keep existing value
+  if (mediaContributionDto.outlet === undefined) {
+    return existingMediaContributionDoc.outlet;
+  }
+
+  // Explicitly sent as null — client wants to clear the outlet
+  if (mediaContributionDto.outlet === null) {
+    return undefined;
+  }
+
+  if (mediaContributionDto.outlet && !mediaContributionDto.outlet.name?.en?.trim()) {
+    throw new AppError('Outlet name must have en locale.', 400);
+  }
+
+  // Outlet data provided — merge, preserving server-managed imageUrl
+  return {
+    name:     mediaContributionDto.outlet.name,
+    webUrl:   mediaContributionDto.outlet.webUrl,
+    imageUrl: existingMediaContributionDoc.outlet?.imageUrl,
+  };
+}
+
+const getMergedPreviewImages = (mediaContributionDto: UpdateMediaContributionDto, existingMediaContributionDoc: MediaContributionDocument) => {
+  if (!mediaContributionDto.previewImages)
+    return existingMediaContributionDoc.previewImages ?? [];
+
+  const existingImages = existingMediaContributionDoc.previewImages ?? [];
+
+  const existingImageMap = new Map(
+    existingImages.map(img => [img.id, img])
+  );
+
+  const submittedIds = mediaContributionDto.previewImages.map(img => img.id);
+  const missingId     = submittedIds.find(id => !existingImageMap.has(id));
+  if (missingId) {
+    throw new AppError(`Preview image not found: ${missingId}`, 400);
+  }
+
+  if (submittedIds.length !== existingImages.length) {
+    throw new AppError('Preview images update must include all existing images.', 400);
+  }
+
+  return mediaContributionDto.previewImages.map(dtoImg => {
+    const existingImg = existingImageMap.get(dtoImg.id)!;
+    return {
+      id:           existingImg.id,
+      url:          existingImg.url,
+      displayOrder: dtoImg.displayOrder,
+    };
+  });
 }
 
 export const deleteMediaContribution = async (mediaContributionId: string, appUser?: AppUser | null): Promise<void> => {

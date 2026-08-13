@@ -36,6 +36,12 @@ export const createMediaContribution = asyncErrorHandler( async (req: Request, r
   res.status(201).json(addedMediaContribution);
 });
 
+export const updateMediaContribution = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const mediaContributionId = req.params.id;
+  const updatedMediaContribution = await mediaContributionService.updateMediaContribution(mediaContributionId, req.body, req.appUser);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const deleteMediaContribution = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const mediaContributionId = req.params.id;
   await mediaContributionService.deleteMediaContribution(mediaContributionId, req.appUser);
