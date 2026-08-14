@@ -41,7 +41,10 @@ mediaContributionRoute.patch('/:id/author-image/:authorId', requireAuthenticated
 mediaContributionRoute.delete('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), mediaContributionController.deleteAuthorImage);
 
 // Update the preview images for a media contribution
-mediaContributionRoute.patch('/:id/preview-images', validateObjectId, uploadImage.array('previewImages', MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES), mediaContributionController.uploadPreviewImages);
+mediaContributionRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.array('previewImages', MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES), mediaContributionController.uploadPreviewImages);
+
+// Delete a preview image for a media contribution
+mediaContributionRoute.delete('/:id/preview-images/:previewImageId', requireAuthenticated([Role.ADMIN]), validateObjectId, mediaContributionController.deletePreviewImage);
 
 // Fetch active localized media contributions (public)
 mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);

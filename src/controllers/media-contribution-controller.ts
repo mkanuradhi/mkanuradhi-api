@@ -86,6 +86,13 @@ export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: R
   res.status(200).json(updatedMediaContribution);
 });
 
+export const deletePreviewImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const previewImageId = req.params.previewImageId;
+  const updatedMediaContribution = await mediaContributionService.deletePreviewImage(mediaContributionId, previewImageId);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const getLocalizedMediaContributions = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const lang: string = parseLangQueryParam(req);
   const page = parseInt(req.query.page as string) || 0;

@@ -498,7 +498,26 @@ export const uploadPreviewImages = async (mediaContributionId: string, imageFile
 
   logger.info(`Uploaded ${uploadedUrls.length} preview image(s) for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
-};
+}
+
+export const deletePreviewImage = async (mediaContributionId: string, previewImageId: string): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+
+  const existingImages = mediaContributionDoc.previewImages ?? [];
+
+  const imageExists = existingImages.some(img => img.id === previewImageId);
+  if (!imageExists) {
+    throw new AppError('Preview image not found for this media contribution.', 404);
+  }
+
+  mediaContributionDoc.previewImages = existingImages.filter(img => img.id !== previewImageId);
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted preview image for media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
 
 export const invalidateMediaContributionListCache = async (): Promise<void> => {
   const cache = getCacheStrategy();
