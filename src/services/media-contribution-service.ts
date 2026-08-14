@@ -14,6 +14,7 @@ import { ReorderPreviewImagesDto, validatePaginationDetails } from "../validator
 import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import MediaContributionDocument from "../documents/media-contribution-document";
+import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
 
 const MEDIA_CONTRIBUTION_LIST_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
 const MEDIA_CONTRIBUTION_DETAIL_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
@@ -546,6 +547,51 @@ export const reorderPreviewImages = async (mediaContributionId: string, dto: Reo
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Reordered preview images for media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const uploadPdfFile = async (mediaContributionId: string, pdfFile?: Express.Multer.File): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+
+  if (!pdfFile) {
+    throw new AppError('No PDF file provided.', 400);
+  }
+
+  // delete old PDF from R2 before uploading new one
+  if (mediaContributionDoc.pdfLink) {
+    await deleteFileFromR2(mediaContributionDoc.pdfLink);
+  }
+
+  const pdfUrl = await uploadFileToR2(pdfFile, 'media-contributions/pdf-files');
+
+  mediaContributionDoc.pdfLink = pdfUrl;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded PDF file for media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const deletePdfFile = async (mediaContributionId: string): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+
+  if (!mediaContributionDoc.pdfLink) {
+    throw new AppError('This media contribution has no PDF file to delete.', 400);
+  }
+
+  await deleteFileFromR2(mediaContributionDoc.pdfLink);
+
+  mediaContributionDoc.pdfLink = undefined;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted PDF teaser for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 

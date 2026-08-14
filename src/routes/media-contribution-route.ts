@@ -5,7 +5,7 @@ import { validate } from '../middleware/validate-middleware';
 import { activationMediaContributionSchema, createMediaContributionSchema, MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES, updateMediaContributionSchema } from '../validators/media-contribution-validator';
 import * as mediaContributionController from '../controllers/media-contribution-controller';
 import validateObjectId from '../middleware/validate-objectid';
-import { uploadImage } from '../middleware/file-upload';
+import { uploadImage, uploadPdf } from '../middleware/file-upload';
 import validateUuid from '../middleware/validate-uuid';
 import { reorderPreviewImagesSchema } from '../validators/common-validator';
 
@@ -50,6 +50,13 @@ mediaContributionRoute.delete('/:id/preview-images/:previewImageId', requireAuth
 // Reorder preview images for a media contribution
 mediaContributionRoute.patch('/:id/preview-images/reorder', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(reorderPreviewImagesSchema), mediaContributionController.reorderPreviewImages);
 
+// Upload a PDF file for a media contribution
+mediaContributionRoute.patch('/:id/pdf-file', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadPdf.single('pdfFile'), mediaContributionController.uploadPdfFile);
+
+// Delete the PDF file for a media contribution
+mediaContributionRoute.delete('/:id/pdf-file', requireAuthenticated([Role.ADMIN]), validateObjectId, mediaContributionController.deletePdfFile);
+
+// -------------------------- public --------------------------
 // Fetch active localized media contributions (public)
 mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);
 
