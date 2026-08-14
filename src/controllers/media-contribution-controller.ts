@@ -66,6 +66,20 @@ export const deleteCoverImage = asyncErrorHandler(async (req: Request, res: Resp
   res.status(200).json(updatedMediaContribution);
 });
 
+export const uploadAuthorImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const authorId = req.params.authorId;
+  const updatedMediaContribution = await mediaContributionService.uploadAuthorImage(mediaContributionId, authorId, req.file);
+  res.status(200).json(updatedMediaContribution);
+});
+
+export const deleteAuthorImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const authorId = req.params.authorId;
+  const updatedMediaContribution = await mediaContributionService.deleteAuthorImage(mediaContributionId, authorId);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const getLocalizedMediaContributions = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const lang: string = parseLangQueryParam(req);
   const page = parseInt(req.query.page as string) || 0;

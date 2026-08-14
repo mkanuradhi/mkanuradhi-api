@@ -6,6 +6,7 @@ import { activationMediaContributionSchema, createMediaContributionSchema, updat
 import * as mediaContributionController from '../controllers/media-contribution-controller';
 import validateObjectId from '../middleware/validate-objectid';
 import { uploadImage } from '../middleware/file-upload';
+import validateUuid from '../middleware/validate-uuid';
 
 const mediaContributionRoute = express.Router();
 
@@ -32,6 +33,12 @@ mediaContributionRoute.patch('/:id/cover-image', requireAuthenticated([Role.ADMI
 
 // Delete the cover image from a media contribution
 mediaContributionRoute.delete('/:id/cover-image', requireAuthenticated([Role.ADMIN]), validateObjectId, mediaContributionController.deleteCoverImage);
+
+// Update the author image for a media contribution
+mediaContributionRoute.patch('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), uploadImage.single('authorImage'), mediaContributionController.uploadAuthorImage);
+
+// Delete the author image from a media contribution
+mediaContributionRoute.delete('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), mediaContributionController.deleteAuthorImage);
 
 // Fetch active localized media contributions (public)
 mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);

@@ -401,6 +401,72 @@ export const deleteCoverImage = async (mediaContributionId: string): Promise<Med
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
+export const uploadAuthorImage = async (mediaContributionId: string, authorId: string, imageFile?: Express.Multer.File): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+  if (!mediaContributionDoc.authors) {
+    throw new AppError(`Media contribution with ID: '${mediaContributionId}' has no authors.`, 400);
+  }
+
+  console.log(`mc id: ${mediaContributionId}`);
+  console.log(`author id: ${authorId}`);
+  console.log(`authors: ${JSON.stringify(mediaContributionDoc.authors)}`);
+
+  // find the author within the media contribution
+  const authorIndex = mediaContributionDoc.authors.findIndex(a => a.id === authorId);
+  if (authorIndex === -1) {
+    throw new AppError(`Author: '${authorId}' not found for the media contribution ${mediaContributionId}.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No author image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload author image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old cover image URL is simply overwritten
+  mediaContributionDoc.authors[authorIndex].imageUrl = imageUrl;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded image for author ID: ${authorId} in book ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const deleteAuthorImage = async (mediaContributionId: string, authorId: string): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the book with ID: '${mediaContributionId}'.`, 404);
+  }
+  if (!mediaContributionDoc.authors) {
+    throw new AppError(`Media contribution with ID: '${mediaContributionId}' has no authors.`, 400);
+  }
+
+  // find the author within the media contribution
+  const authorIndex = mediaContributionDoc.authors.findIndex(a => a.id === authorId);
+  if (authorIndex === -1) {
+    throw new AppError(`Author: '${authorId}' not found for the book ${mediaContributionId}.`, 404);
+  }
+
+  if (!mediaContributionDoc.authors[authorIndex].imageUrl) {
+    throw new AppError('This author has no image to delete.', 400);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  mediaContributionDoc.authors[authorIndex].imageUrl = undefined;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted author image for author: ${authorId} in book: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
 export const invalidateMediaContributionListCache = async (): Promise<void> => {
   const cache = getCacheStrategy();
   await cache.deleteByPrefix(MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX);
