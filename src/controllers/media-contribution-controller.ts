@@ -80,6 +80,12 @@ export const deleteAuthorImage = asyncErrorHandler(async (req: Request, res: Res
   res.status(200).json(updatedMediaContribution);
 });
 
+export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const updatedMediaContribution = await mediaContributionService.uploadPreviewImages(mediaContributionId, req.files as Express.Multer.File[]);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const getLocalizedMediaContributions = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const lang: string = parseLangQueryParam(req);
   const page = parseInt(req.query.page as string) || 0;

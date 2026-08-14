@@ -27,6 +27,7 @@ export interface MediaContributionOutlet {
 export interface MediaContributionPreviewImage {
   id:           string;
   url:          string;
+  caption?:     LocalizedString;
   displayOrder: number;
 }
 
@@ -92,6 +93,13 @@ export interface LocalizedMediaContributionOutlet {
   imageUrl?: string;
 }
 
+export interface LocalizedMediaContributionPreviewImage {
+  id:           string;
+  url:          string;
+  caption?:     string;
+  displayOrder: number;
+}
+
 // Public detail page — full, one locale resolved
 export interface LocalizedMediaContribution {
   id:            string;
@@ -119,7 +127,7 @@ export interface LocalizedMediaContribution {
   highlightQuote?:  LocalizedString;
 
   coverImage?:    string;
-  previewImages?: MediaContributionPreviewImage[];
+  previewImages?: LocalizedMediaContributionPreviewImage[];
   pdfLink?:       string;
   sourceUrl?:     string;
 

@@ -94,6 +94,10 @@ const previewImageSchema = new Schema<MediaContributionPreviewImage>(
       required: [true, "Preview image URL is required."],
       trim:     true,
     },
+    caption: {
+      type:     localizedStringSchema,
+      required: false,
+    },
     displayOrder: {
       type:    Number,
       default: 0,

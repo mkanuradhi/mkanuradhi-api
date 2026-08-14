@@ -7,6 +7,8 @@ const MAX_TITLE_LENGTH       = 500;
 const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_CONTENT_LENGTH     = 7000;
 
+export const MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES = 10;
+
 // ----------------------- Sub-schemas -----------------------
 const mediaContributionAuthorSchema = z.object({
   name:       localizedStringSchema,
@@ -135,6 +137,7 @@ const updateMediaContributionInterviewerArraySchema = z.array(updateMediaContrib
 
 const updateMediaContributionPreviewImageSchema = z.object({
   id:           z.string().trim().min(1, 'Preview image ID is required.'),
+  caption:      optionalLocalizedStringSchema,
   displayOrder: z.number().int().min(0, 'Display order cannot be negative.'),
   // url intentionally excluded — handled via separate update endpoint
 });

@@ -1,10 +1,10 @@
 import logger from "../config/logger-config";
 import AppError from "../errors/app-error";
 import AppUser from "../interfaces/i-app-user";
-import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution } from "../interfaces/i-media-contribution";
+import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution, MediaContributionPreviewImage } from "../interfaces/i-media-contribution";
 import MediaContributionModel from "../models/media-contribution-model";
 import { generateUniquePath, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
-import { ActivationMediaContributionDto, CreateMediaContributionDto, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
+import { ActivationMediaContributionDto, CreateMediaContributionDto, MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
@@ -467,6 +467,39 @@ export const deleteAuthorImage = async (mediaContributionId: string, authorId: s
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
+export const uploadPreviewImages = async (mediaContributionId: string, imageFiles?: Express.Multer.File[]): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+
+  if (!imageFiles || imageFiles.length === 0) {
+    throw new AppError('No preview image files provided.', 400);
+  }
+
+  const currentCount = mediaContributionDoc.previewImages?.length ?? 0;
+  if (currentCount + imageFiles.length > MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES) {
+    throw new AppError(`Cannot exceed ${MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES} preview images. Currently has ${currentCount}.`, 400);
+  }
+
+  // upload all files concurrently
+  const uploadedUrls = await Promise.all(
+    imageFiles.map(file => uploadImageToCloudService(file))
+  );
+
+  // map each uploaded URL to a BookPreviewImage sub-document
+  const newImages: MediaContributionPreviewImage[] = uploadedUrls.map((url, index) => ({
+    id: uuidv4(),
+    url,
+    displayOrder: currentCount + index,  // append after existing images
+  }));
+
+  mediaContributionDoc.previewImages = [...(mediaContributionDoc.previewImages ?? []), ...newImages];
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded ${uploadedUrls.length} preview image(s) for media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+};
+
 export const invalidateMediaContributionListCache = async (): Promise<void> => {
   const cache = getCacheStrategy();
   await cache.deleteByPrefix(MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX);
@@ -600,6 +633,7 @@ const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Lo
     previewImages: doc.previewImages?.map(pi => ({
       id:      pi.id,
       url:     pi.url,
+      caption: pi.caption ? localizeField(pi.caption, locale) : undefined,
       displayOrder: pi.displayOrder,
     })),
     featured:      doc.featured,

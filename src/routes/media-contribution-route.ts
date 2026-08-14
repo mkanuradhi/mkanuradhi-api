@@ -2,7 +2,7 @@ import express from 'express';
 import requireAuthenticated from '../middleware/require-authenticated';
 import Role from '../enums/role';
 import { validate } from '../middleware/validate-middleware';
-import { activationMediaContributionSchema, createMediaContributionSchema, updateMediaContributionSchema } from '../validators/media-contribution-validator';
+import { activationMediaContributionSchema, createMediaContributionSchema, MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES, updateMediaContributionSchema } from '../validators/media-contribution-validator';
 import * as mediaContributionController from '../controllers/media-contribution-controller';
 import validateObjectId from '../middleware/validate-objectid';
 import { uploadImage } from '../middleware/file-upload';
@@ -39,6 +39,9 @@ mediaContributionRoute.patch('/:id/author-image/:authorId', requireAuthenticated
 
 // Delete the author image from a media contribution
 mediaContributionRoute.delete('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), mediaContributionController.deleteAuthorImage);
+
+// Update the preview images for a media contribution
+mediaContributionRoute.patch('/:id/preview-images', validateObjectId, uploadImage.array('previewImages', MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES), mediaContributionController.uploadPreviewImages);
 
 // Fetch active localized media contributions (public)
 mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);
