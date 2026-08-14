@@ -357,7 +357,7 @@ export const toggleMediaContributionActivation = async (mediaContributionId: str
 export const uploadCoverImage = async (mediaContributionId: string, imageFile?: Express.Multer.File): Promise<MediaContribution> => {
   const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
   if (!mediaContributionDoc) {
-    throw new AppError(`Cannot find the book with ID: '${mediaContributionId}'.`, 404);
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
   }
 
   if (!imageFile) {
@@ -375,7 +375,7 @@ export const uploadCoverImage = async (mediaContributionId: string, imageFile?: 
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Uploaded cover image for book ID: ${mediaContributionId}`);
+  logger.info(`Uploaded cover image for media contribution ID: ${mediaContributionId}`);
   await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
   await invalidateMediaContributionListCache();
   return mapDocumentToMediaContribution(mediaContributionDoc);
@@ -396,7 +396,7 @@ export const deleteCoverImage = async (mediaContributionId: string): Promise<Med
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Deleted cover image for book ID: ${mediaContributionId}`);
+  logger.info(`Deleted cover image for media contribution ID: ${mediaContributionId}`);
   await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
   await invalidateMediaContributionListCache();
   return mapDocumentToMediaContribution(mediaContributionDoc);
@@ -436,14 +436,14 @@ export const uploadAuthorImage = async (mediaContributionId: string, authorId: s
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Uploaded image for author ID: ${authorId} in book ID: ${mediaContributionId}`);
+  logger.info(`Uploaded image for author ID: ${authorId} in media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
 export const deleteAuthorImage = async (mediaContributionId: string, authorId: string): Promise<MediaContribution> => {
   const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
   if (!mediaContributionDoc) {
-    throw new AppError(`Cannot find the book with ID: '${mediaContributionId}'.`, 404);
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
   }
   if (!mediaContributionDoc.authors) {
     throw new AppError(`Media contribution with ID: '${mediaContributionId}' has no authors.`, 400);
@@ -452,7 +452,7 @@ export const deleteAuthorImage = async (mediaContributionId: string, authorId: s
   // find the author within the media contribution
   const authorIndex = mediaContributionDoc.authors.findIndex(a => a.id === authorId);
   if (authorIndex === -1) {
-    throw new AppError(`Author: '${authorId}' not found for the book ${mediaContributionId}.`, 404);
+    throw new AppError(`Author: '${authorId}' not found for the media contribution ${mediaContributionId}.`, 404);
   }
 
   if (!mediaContributionDoc.authors[authorIndex].imageUrl) {
@@ -464,9 +464,62 @@ export const deleteAuthorImage = async (mediaContributionId: string, authorId: s
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Deleted author image for author: ${authorId} in book: ${mediaContributionId}`);
+  logger.info(`Deleted author image for author: ${authorId} in media contribution: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
+
+export const uploadOutletImage = async (mediaContributionId: string, imageFile?: Express.Multer.File): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No outlet image file provided.', 400);
+  }
+
+  if (!mediaContributionDoc.outlet) {
+    throw new AppError(`Media contribution '${mediaContributionId}' has no outlet set. Add an outlet before uploading an image.`, 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload outlet image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old publisher image URL is simply overwritten
+  mediaContributionDoc.outlet.imageUrl = imageUrl;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded publisher image for media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const deleteOutletImage = async (mediaContributionId: string): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+
+  if (!mediaContributionDoc.outlet) {
+    throw new AppError(`Media contribution '${mediaContributionId}' has no publisher set.`, 400);
+  }
+
+  if (!mediaContributionDoc.outlet.imageUrl) {
+    // Already in the desired state — no-op, return as-is
+    return mapDocumentToMediaContribution(mediaContributionDoc);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  mediaContributionDoc.outlet.imageUrl = undefined;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted outlet image for media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+};
 
 export const uploadPreviewImages = async (mediaContributionId: string, imageFiles?: Express.Multer.File[]): Promise<MediaContribution> => {
   const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
@@ -486,7 +539,7 @@ export const uploadPreviewImages = async (mediaContributionId: string, imageFile
     imageFiles.map(file => uploadImageToCloudService(file))
   );
 
-  // map each uploaded URL to a BookPreviewImage sub-document
+  // map each uploaded URL to a MediaContributionPreviewImage sub-document
   const newImages: MediaContributionPreviewImage[] = uploadedUrls.map((url, index) => ({
     id: uuidv4(),
     url,

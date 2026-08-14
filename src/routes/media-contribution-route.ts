@@ -41,6 +41,12 @@ mediaContributionRoute.patch('/:id/author-image/:authorId', requireAuthenticated
 // Delete the author image from a media contribution
 mediaContributionRoute.delete('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), mediaContributionController.deleteAuthorImage);
 
+// Update the outlet image for a media contribution
+mediaContributionRoute.patch('/:id/outlet-image', validateObjectId, uploadImage.single('outletImage'), mediaContributionController.uploadOutletImage);
+
+// Delete the publisher image from a media contribution
+mediaContributionRoute.delete('/:id/outlet-image', validateObjectId, mediaContributionController.deleteOutletImage);
+
 // Update the preview images for a media contribution
 mediaContributionRoute.patch('/:id/preview-images', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.array('previewImages', MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES), mediaContributionController.uploadPreviewImages);
 

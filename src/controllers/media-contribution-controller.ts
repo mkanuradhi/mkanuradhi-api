@@ -81,6 +81,18 @@ export const deleteAuthorImage = asyncErrorHandler(async (req: Request, res: Res
   res.status(200).json(updatedMediaContribution);
 });
 
+export const uploadOutletImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const updatedMediaContribution = await mediaContributionService.uploadOutletImage(mediaContributionId, req.file);
+  res.status(200).json(updatedMediaContribution);
+});
+
+export const deleteOutletImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const updatedMediaContribution = await mediaContributionService.deleteOutletImage(mediaContributionId);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const uploadPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
   const mediaContributionId = req.params.id;
   const updatedMediaContribution = await mediaContributionService.uploadPreviewImages(mediaContributionId, req.files as Express.Multer.File[]);
