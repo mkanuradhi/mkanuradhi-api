@@ -4,6 +4,7 @@ import * as mediaContributionService from "../services/media-contribution-servic
 import { parseLangQueryParam } from "../utils/common-util";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import MediaContribution, { LocalizedSummaryMediaContribution } from "../interfaces/i-media-contribution";
+import { ReorderPreviewImagesDto } from "../validators/common-validator";
 
 export const getMediaContributions = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const page = parseInt(req.query.page as string) || 0;
@@ -90,6 +91,13 @@ export const deletePreviewImage = asyncErrorHandler(async (req: Request, res: Re
   const mediaContributionId = req.params.id;
   const previewImageId = req.params.previewImageId;
   const updatedMediaContribution = await mediaContributionService.deletePreviewImage(mediaContributionId, previewImageId);
+  res.status(200).json(updatedMediaContribution);
+});
+
+export const reorderPreviewImages = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const dto = req.body as ReorderPreviewImagesDto;
+  const updatedMediaContribution = await mediaContributionService.reorderPreviewImages(mediaContributionId, dto);
   res.status(200).json(updatedMediaContribution);
 });
 

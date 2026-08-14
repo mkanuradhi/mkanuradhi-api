@@ -7,6 +7,7 @@ import * as mediaContributionController from '../controllers/media-contribution-
 import validateObjectId from '../middleware/validate-objectid';
 import { uploadImage } from '../middleware/file-upload';
 import validateUuid from '../middleware/validate-uuid';
+import { reorderPreviewImagesSchema } from '../validators/common-validator';
 
 const mediaContributionRoute = express.Router();
 
@@ -45,6 +46,9 @@ mediaContributionRoute.patch('/:id/preview-images', requireAuthenticated([Role.A
 
 // Delete a preview image for a media contribution
 mediaContributionRoute.delete('/:id/preview-images/:previewImageId', requireAuthenticated([Role.ADMIN]), validateObjectId, mediaContributionController.deletePreviewImage);
+
+// Reorder preview images for a media contribution
+mediaContributionRoute.patch('/:id/preview-images/reorder', requireAuthenticated([Role.ADMIN]), validateObjectId, validate(reorderPreviewImagesSchema), mediaContributionController.reorderPreviewImages);
 
 // Fetch active localized media contributions (public)
 mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);

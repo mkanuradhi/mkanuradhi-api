@@ -10,7 +10,7 @@ import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
 import { MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
 import { mapDocumentsToMediaContributions, mapDocumentToMediaContribution } from "../mappers/media-contribution-mapper";
-import { validatePaginationDetails } from "../validators/common-validator";
+import { ReorderPreviewImagesDto, validatePaginationDetails } from "../validators/common-validator";
 import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import MediaContributionDocument from "../documents/media-contribution-document";
@@ -516,6 +516,36 @@ export const deletePreviewImage = async (mediaContributionId: string, previewIma
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
   logger.info(`Deleted preview image for media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const reorderPreviewImages = async (mediaContributionId: string, dto: ReorderPreviewImagesDto): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+
+  const existingImages = mediaContributionDoc.previewImages ?? [];
+
+  // ensure submitted IDs exactly match existing ones — no additions or removals
+  const existingIdSet  = new Set(existingImages.map(img => img.id));
+  const submittedIdSet = new Set(dto.ids);
+
+  const sameLength = existingIdSet.size === submittedIdSet.size;
+  const sameIds    = [...submittedIdSet].every(id => existingIdSet.has(id));
+
+  if (!sameLength || !sameIds) {
+    throw new AppError('Reorder list must contain exactly the same IDs as existing preview images.', 400);
+  }
+
+  // rebuild array in submitted order with updated displayOrder
+  mediaContributionDoc.previewImages = dto.ids.map((id, index) => {
+    const img = existingImages.find(img => img.id === id)!;
+    return { ...img, displayOrder: index };
+  });
+
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Reordered preview images for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
