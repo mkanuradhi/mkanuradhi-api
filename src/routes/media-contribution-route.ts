@@ -11,6 +11,14 @@ import { reorderPreviewImagesSchema } from '../validators/common-validator';
 
 const mediaContributionRoute = express.Router();
 
+// -------------------------- public --------------------------
+// Fetch active localized media contributions (public)
+mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);
+
+// Fetch active localized media contribution by path (public)
+mediaContributionRoute.get('/localized/:path', mediaContributionController.getLocalizedMediaContributionByPath);
+
+// -------------------------- admin --------------------------
 // Fetch all media contributions
 mediaContributionRoute.get('/', requireAuthenticated([Role.ADMIN]), mediaContributionController.getMediaContributions);
 
@@ -61,12 +69,5 @@ mediaContributionRoute.patch('/:id/pdf-file', requireAuthenticated([Role.ADMIN])
 
 // Delete the PDF file for a media contribution
 mediaContributionRoute.delete('/:id/pdf-file', requireAuthenticated([Role.ADMIN]), validateObjectId, mediaContributionController.deletePdfFile);
-
-// -------------------------- public --------------------------
-// Fetch active localized media contributions (public)
-mediaContributionRoute.get('/localized', mediaContributionController.getLocalizedMediaContributions);
-
-// Fetch active localized media contribution by path (public)
-mediaContributionRoute.get('/localized/:path', mediaContributionController.getLocalizedMediaContributionByPath);
 
 export default mediaContributionRoute;

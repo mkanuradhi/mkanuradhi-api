@@ -3,7 +3,7 @@ import AppError from "../errors/app-error";
 import AppUser from "../interfaces/i-app-user";
 import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution, MediaContributionPreviewImage } from "../interfaces/i-media-contribution";
 import MediaContributionModel from "../models/media-contribution-model";
-import { generateUniquePath, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
+import { generateUniquePath, localizeDate, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
 import { ActivationMediaContributionDto, CreateMediaContributionDto, MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { invalidateSummaryStatsCache } from "./stat-service";
@@ -740,7 +740,7 @@ const toLocalizedSummaryMediaContribution = (doc: MediaContributionDocument, loc
       webUrl:   doc.outlet.webUrl,
       imageUrl: doc.outlet.imageUrl,
     } : undefined,
-    publishedDate: doc.publishedDate,
+    publishedDateFormatted: localizeDate(doc.publishedDate, locale),
     topics:        doc.topics.map((s) => localizeField(s, locale)),
     coverImage:    doc.coverImage,
     featured:      doc.featured,
@@ -776,7 +776,7 @@ const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Lo
       webUrl:   doc.outlet?.webUrl,
       imageUrl: doc.outlet?.imageUrl,
     },
-    publishedDate: doc.publishedDate,
+    publishedDateFormatted: localizeDate(doc.publishedDate, locale),
     coverImage:    doc.coverImage,
     previewImages: doc.previewImages?.map(pi => ({
       id:      pi.id,
