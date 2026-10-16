@@ -190,7 +190,10 @@ const mediaContributionSchema = new Schema<MediaContributionDocument>(
     publishedDate: {
       type: Date,
       required: [true, "Published date is required."],
-      max: [new Date(), "Published date cannot be in the future."],
+      validate: {
+        validator: (value: Date) => value.getTime() <= Date.now() + 24 * 60 * 60 * 1000,
+        message: "Published date cannot be in the future.",
+      },
     },
     durationSeconds: {
       type: Number,

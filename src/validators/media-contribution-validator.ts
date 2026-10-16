@@ -91,12 +91,12 @@ export const createMediaContributionSchema = z.object({
 
   outlet:          mediaContributionOutletSchema.optional(),
   publishedDate:   z.coerce.date().max(new Date(), 'Published date cannot be in the future.'),
-  durationSeconds: z.number().int().min(0, 'Duration cannot be negative.').optional(),
+  durationSeconds: z.number().int().min(0, 'Duration cannot be negative.').nullish(),
   highlightQuote:  optionalLocalizedStringSchema,
 
-  sourceUrl:    z.url('Invalid source URL.').optional(),
+  sourceUrl:    z.url('Invalid source URL.').nullish(),
   featured:     z.boolean().default(false),
-  displayOrder: z.number().int().min(0).optional(),
+  displayOrder: z.number().int().min(0).nullish(),
 }).refine(
   data => {
     if (AUTHORED_ROLES.includes(data.role)) {
@@ -167,13 +167,13 @@ export const updateMediaContributionSchema = z.object({
 
   outlet:           mediaContributionOutletSchema.optional(),
   publishedDate:    z.coerce.date().max(new Date(), 'Published date cannot be in the future.'),
-  durationSeconds:  z.number().int().min(0, 'Duration cannot be negative.').optional(),
+  durationSeconds:  z.number().int().min(0, 'Duration cannot be negative.').nullish(),
   highlightQuote:   optionalLocalizedStringSchema,
   previewImages:    z.array(updateMediaContributionPreviewImageSchema).optional(),
 
-  sourceUrl:     z.url('Invalid source URL.').optional(),
+  sourceUrl:     z.url('Invalid source URL.').nullish(),
   featured:     z.boolean().default(false),
-  displayOrder: z.number().int().min(0).optional(),
+  displayOrder: z.number().int().min(0).nullish(),
 
   // v defined at same level — never dropped
   v: z.number({ error: 'Version (v) is required and must be a number.' })
@@ -186,7 +186,7 @@ export const updateMediaContributionSchema = z.object({
     }
     return true;
   },
-  { message: 'authors is required when role is sole_author or co_author.', path: ['authors'] }
+  { message: 'authors are required when role is sole_author or co_author.', path: ['authors'] }
 );
 
 // ----------------------- Activation schema -----------------------
