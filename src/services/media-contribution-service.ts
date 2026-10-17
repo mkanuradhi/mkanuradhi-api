@@ -411,10 +411,6 @@ export const uploadAuthorImage = async (mediaContributionId: string, authorId: s
     throw new AppError(`Media contribution with ID: '${mediaContributionId}' has no authors.`, 400);
   }
 
-  console.log(`mc id: ${mediaContributionId}`);
-  console.log(`author id: ${authorId}`);
-  console.log(`authors: ${JSON.stringify(mediaContributionDoc.authors)}`);
-
   // find the author within the media contribution
   const authorIndex = mediaContributionDoc.authors.findIndex(a => a.id === authorId);
   if (authorIndex === -1) {
