@@ -45,7 +45,7 @@ export const getMediaContributions = async (page: number, size: number): Promise
           displayOrder: 1,
           status: 1,
         })
-      .sort({ displayOrder: 1, createdAt: -1  })
+      .sort({ publishedDate: -1, displayOrder: 1 })
       .skip(page * size)
       .limit(size)
   ]);
@@ -744,7 +744,7 @@ export const getLocalizedMediaContributions = async (lang: string, page: number,
           displayOrder:  1,
         }
       )
-      .sort({ displayOrder: 1, createdAt: -1 })
+      .sort({publishedDate: -1, displayOrder: 1 })
       .skip(page * size)
       .limit(size)
   ]);
