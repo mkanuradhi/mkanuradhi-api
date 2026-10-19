@@ -81,6 +81,20 @@ export const deleteAuthorImage = asyncErrorHandler(async (req: Request, res: Res
   res.status(200).json(updatedMediaContribution);
 });
 
+export const uploadInterviewerImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const interviewerId = req.params.interviewerId;
+  const updatedMediaContribution = await mediaContributionService.uploadInterviewerImage(mediaContributionId, interviewerId, req.file);
+  res.status(200).json(updatedMediaContribution);
+});
+
+export const deleteInterviewerImage = asyncErrorHandler(async (req: Request, res: Response) => {
+  const mediaContributionId = req.params.id;
+  const interviewerId = req.params.interviewerId;
+  const updatedMediaContribution = await mediaContributionService.deleteInterviewerImage(mediaContributionId, interviewerId);
+  res.status(200).json(updatedMediaContribution);
+});
+
 export const uploadOutletImage = asyncErrorHandler(async (req: Request, res: Response) => {
   const mediaContributionId = req.params.id;
   const updatedMediaContribution = await mediaContributionService.uploadOutletImage(mediaContributionId, req.file);

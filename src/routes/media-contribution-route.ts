@@ -49,6 +49,12 @@ mediaContributionRoute.patch('/:id/author-image/:authorId', requireAuthenticated
 // Delete the author image from a media contribution
 mediaContributionRoute.delete('/:id/author-image/:authorId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('authorId'), mediaContributionController.deleteAuthorImage);
 
+// Update the interviewer image for a media contribution
+mediaContributionRoute.patch('/:id/interviewer-image/:interviewerId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('interviewerId'), uploadImage.single('interviewerImage'), mediaContributionController.uploadInterviewerImage);
+
+// Delete the interviewer image from a media contribution
+mediaContributionRoute.delete('/:id/interviewer-image/:interviewerId', requireAuthenticated([Role.ADMIN]), validateObjectId, validateUuid('interviewerId'), mediaContributionController.deleteInterviewerImage);
+
 // Update the outlet image for a media contribution
 mediaContributionRoute.patch('/:id/outlet-image', requireAuthenticated([Role.ADMIN]), validateObjectId, uploadImage.single('outletImage'), mediaContributionController.uploadOutletImage);
 

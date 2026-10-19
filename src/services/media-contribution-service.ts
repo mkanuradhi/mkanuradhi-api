@@ -464,6 +464,68 @@ export const deleteAuthorImage = async (mediaContributionId: string, authorId: s
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
+export const uploadInterviewerImage = async (mediaContributionId: string, interviewerId: string, imageFile?: Express.Multer.File): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+  if (!mediaContributionDoc.interviewers) {
+    throw new AppError(`Media contribution with ID: '${mediaContributionId}' has no interviewers.`, 400);
+  }
+
+  // find the interviewer within the media contribution
+  const interviewerIndex = mediaContributionDoc.interviewers.findIndex(a => a.id === interviewerId);
+  if (interviewerIndex === -1) {
+    throw new AppError(`Interviewer: '${interviewerId}' not found for the media contribution ${mediaContributionId}.`, 404);
+  }
+
+  if (!imageFile) {
+    throw new AppError('No interviewer image file provided.', 400);
+  }
+
+  const imageUrl = await uploadImageToCloudService(imageFile);
+  if (!imageUrl) {
+    throw new AppError('Failed to upload interviewer image. Please try again.', 500);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  // old cover image URL is simply overwritten
+  mediaContributionDoc.interviewers[interviewerIndex].imageUrl = imageUrl;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Uploaded image for interviewer ID: ${interviewerId} in media contribution ID: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
+export const deleteInterviewerImage = async (mediaContributionId: string, interviewerId: string): Promise<MediaContribution> => {
+  const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
+  if (!mediaContributionDoc) {
+    throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
+  }
+  if (!mediaContributionDoc.interviewers) {
+    throw new AppError(`Media contribution with ID: '${mediaContributionId}' has no interviewers.`, 400);
+  }
+
+  // find the interviewer within the media contribution
+  const interviewerIndex = mediaContributionDoc.interviewers.findIndex(a => a.id === interviewerId);
+  if (interviewerIndex === -1) {
+    throw new AppError(`Interviewer: '${interviewerId}' not found for the media contribution ${mediaContributionId}.`, 404);
+  }
+
+  if (!mediaContributionDoc.interviewers[interviewerIndex].imageUrl) {
+    throw new AppError('This interviewer has no image to delete.', 400);
+  }
+
+  // Note: imgbb does not support image deletion via API
+  mediaContributionDoc.interviewers[interviewerIndex].imageUrl = undefined;
+  mediaContributionDoc.increment();
+  await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  logger.info(`Deleted interviewer image for interviewer: ${interviewerId} in media contribution: ${mediaContributionId}`);
+  return mapDocumentToMediaContribution(mediaContributionDoc);
+}
+
 export const uploadOutletImage = async (mediaContributionId: string, imageFile?: Express.Multer.File): Promise<MediaContribution> => {
   const mediaContributionDoc = await MediaContributionModel.findOne({ _id: mediaContributionId, deleted: false });
   if (!mediaContributionDoc) {
