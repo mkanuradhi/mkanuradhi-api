@@ -111,6 +111,10 @@ export const createMediaContribution = async (mediaContributionDto: CreateMediaC
     updatedBy: appUser ?? undefined,
   });
 
+  if (mediaContributionDoc.featured) {
+    await unfeatureOtherMediaContributions(mediaContributionDoc.id, appUser);
+  }
+
   logger.info(`Media contribution created for ${titleTextEn}`);
   await invalidateSummaryStatsCache();
   await invalidateMediaContributionListCache();
@@ -173,6 +177,10 @@ export const updateMediaContribution = async (mediaContributionId: string, media
 
   if (!mediaContributionDoc) {
     throw new AppError('Media contribution was modified by another request. Please refresh and try again.', 409);
+  }
+
+  if (mediaContributionDoc.featured) {
+    await unfeatureOtherMediaContributions(mediaContributionDoc.id, appUser);
   }
 
   logger.info(`Media contribution updated: ${mediaContributionId}`);
@@ -851,4 +859,21 @@ const invalidateMediaContributionDetailCache = async (path: string): Promise<voi
   await Promise.all(
     SUPPORTED_LOCALES.map(locale => cache.delete(mediaContributionDetailCacheKey(path, locale)))
   );
+}
+
+const unfeatureOtherMediaContributions = async (
+  featuredId: string,
+  appUser?: AppUser | null
+): Promise<void> => {
+  const others = await MediaContributionModel
+    .find({ featured: true, deleted: false, _id: { $ne: featuredId } }, 'path')
+    .lean();
+  if (!others.length) return;
+
+  await MediaContributionModel.updateMany(
+    { _id: { $in: others.map(o => o._id) } },
+    { $set: { featured: false, updatedBy: appUser ?? undefined } }
+  );
+
+  await Promise.all(others.map(o => invalidateMediaContributionDetailCache(o.path)));
 }
