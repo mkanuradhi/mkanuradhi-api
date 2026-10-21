@@ -297,6 +297,7 @@ const getMergedPreviewImages = (mediaContributionDto: UpdateMediaContributionDto
     return {
       id:           existingImg.id,
       url:          existingImg.url,
+      caption:      dtoImg.caption,
       displayOrder: dtoImg.displayOrder,
     };
   });
