@@ -125,7 +125,7 @@ export interface LocalizedMediaContribution {
   publishedDate: Date;
   publishedDateFormatted: string;
   durationSeconds?: number;
-  highlightQuote?:  LocalizedString;
+  highlightQuote?:  string;
 
   coverImage?:    string;
   previewImages?: LocalizedMediaContributionPreviewImage[];

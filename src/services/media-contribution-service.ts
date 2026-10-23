@@ -848,6 +848,8 @@ const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Lo
     },
     publishedDate: doc.publishedDate,
     publishedDateFormatted: localizeDate(doc.publishedDate, locale),
+    durationSeconds: doc.durationSeconds,
+    highlightQuote: doc.highlightQuote ? localizeField(doc.highlightQuote, locale) : undefined,
     coverImage:    doc.coverImage,
     previewImages: doc.previewImages?.map(pi => ({
       id:      pi.id,
@@ -855,6 +857,8 @@ const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Lo
       caption: pi.caption ? localizeField(pi.caption, locale) : undefined,
       displayOrder: pi.displayOrder,
     })),
+    pdfLink:       doc.pdfLink,
+    sourceUrl:     doc.sourceUrl,
     featured:      doc.featured,
   };
 }

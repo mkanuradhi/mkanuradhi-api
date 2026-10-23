@@ -1,6 +1,7 @@
 export const MEDIA_CONTRIBUTION_TYPES = [
-  'newspaper_article',
-  'expert_interview',
+  'authored_article',
+  'expert_commentary',
+  "expert_interview",
   'tv_interview',
   'podcast',
   'radio',
