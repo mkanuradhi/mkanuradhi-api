@@ -800,6 +800,8 @@ const toLocalizedSummaryMediaContribution = (doc: MediaContributionDocument, loc
     subtitle:      doc.subtitle ? localizeField(doc.subtitle, locale) : undefined,
     subtitleOriginal: doc.subtitleOriginal,
     description:   localizeField(doc.description, locale),
+    type: doc.type,
+    role: doc.role,
     path:          doc.path,
     language:   doc.language,
     outlet:     doc.outlet ? {
@@ -807,6 +809,7 @@ const toLocalizedSummaryMediaContribution = (doc: MediaContributionDocument, loc
       webUrl:   doc.outlet.webUrl,
       imageUrl: doc.outlet.imageUrl,
     } : undefined,
+    publishedDate: doc.publishedDate,
     publishedDateFormatted: localizeDate(doc.publishedDate, locale),
     topics:        doc.topics.map((s) => localizeField(s, locale)),
     coverImage:    doc.coverImage,
@@ -843,6 +846,7 @@ const toLocalizedMediaContribution = (doc: MediaContributionDocument, locale: Lo
       webUrl:   doc.outlet?.webUrl,
       imageUrl: doc.outlet?.imageUrl,
     },
+    publishedDate: doc.publishedDate,
     publishedDateFormatted: localizeDate(doc.publishedDate, locale),
     coverImage:    doc.coverImage,
     previewImages: doc.previewImages?.map(pi => ({
