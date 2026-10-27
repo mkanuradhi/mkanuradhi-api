@@ -1,6 +1,7 @@
 import { BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
-import { BookAuthor, BookIsbn, BookPreviewImage, BookPrice, BookPublisher } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPrice, BookPublisher } from "../interfaces/i-book";
+import { PreviewImage } from "../interfaces/i-preview-image";
 import { LocalizedString } from "../types/locale.types";
 import BaseDocument from "./base-document";
 
@@ -28,7 +29,7 @@ interface BookDocument extends BaseDocument {
 
   // Media & links
   coverImage?:    string;
-  previewImages?: BookPreviewImage[];
+  previewImages?: PreviewImage[];
   buyLink?:       string;
   pdfTeaser?:     string;
 

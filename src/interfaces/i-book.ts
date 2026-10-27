@@ -2,6 +2,7 @@ import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enum
 import DocumentStatus from "../enums/document-status";
 import { LocalizedString } from "../types/locale.types";
 import AppUser from "./i-app-user";
+import { LocalizedPreviewImage, PreviewImage } from "./i-preview-image";
 
 export interface BookAuthor {
   id:          string;
@@ -21,13 +22,6 @@ export interface BookPublisher {
 export interface BookIsbn {
   format: BookIsbnFormat;
   value: string;
-}
-
-export interface BookPreviewImage {
-  id:           string;
-  url:          string;
-  caption?:     LocalizedString;
-  displayOrder: number;
 }
 
 export interface BookPrice {
@@ -61,7 +55,7 @@ interface Book {
 
   // Media & links
   coverImage?:    string;
-  previewImages?:  BookPreviewImage[];
+  previewImages?:  PreviewImage[];
   buyLink?:        string;
   pdfTeaser?:     string;
 
@@ -94,13 +88,6 @@ export interface LocalizedBookPublisher {
   imageUrl?: string;
 }
 
-export interface LocalizedBookPreviewImage {
-  id:           string;
-  url:          string;
-  caption?:     string;
-  displayOrder: number;
-}
-
 // Public detail page — full, one locale resolved
 export interface LocalizedBook {
   id:            string;
@@ -126,7 +113,7 @@ export interface LocalizedBook {
   audiences?:    string[];
   dimensions?:   string;
   coverImage?:   string;
-  previewImages?: LocalizedBookPreviewImage[];
+  previewImages?: LocalizedPreviewImage[];
   buyLink?:      string;
   pdfTeaser?:    string;
   featured:      boolean;

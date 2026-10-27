@@ -1,6 +1,6 @@
 import AppUser from "../interfaces/i-app-user";
 import AppError from "../errors/app-error";
-import Book, { BookPreviewImage, LocalizedBook, LocalizedSummaryBook } from "../interfaces/i-book";
+import Book, { LocalizedBook, LocalizedSummaryBook } from "../interfaces/i-book";
 import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
@@ -15,6 +15,7 @@ import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
 import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
 import { BOOK_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
+import { PreviewImage } from "../interfaces/i-preview-image";
 
 const BOOK_DETAIL_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
 const BOOK_LIST_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
@@ -568,7 +569,7 @@ export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.M
   );
 
   // map each uploaded URL to a BookPreviewImage sub-document
-  const newImages: BookPreviewImage[] = uploadedUrls.map((url, index) => ({
+  const newImages: PreviewImage[] = uploadedUrls.map((url, index) => ({
     id: uuidv4(),
     url,
     displayOrder: currentCount + index,  // append after existing images

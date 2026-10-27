@@ -1,7 +1,7 @@
 import logger from "../config/logger-config";
 import AppError from "../errors/app-error";
 import AppUser from "../interfaces/i-app-user";
-import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution, MediaContributionPreviewImage } from "../interfaces/i-media-contribution";
+import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution } from "../interfaces/i-media-contribution";
 import MediaContributionModel from "../models/media-contribution-model";
 import { generateUniquePath, localizeDate, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
 import { ActivationMediaContributionDto, CreateMediaContributionDto, MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
@@ -15,6 +15,7 @@ import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
 import MediaContributionDocument from "../documents/media-contribution-document";
 import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
+import { PreviewImage } from "../interfaces/i-preview-image";
 
 const MEDIA_CONTRIBUTION_LIST_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
 const MEDIA_CONTRIBUTION_DETAIL_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
@@ -607,7 +608,7 @@ export const uploadPreviewImages = async (mediaContributionId: string, imageFile
   );
 
   // map each uploaded URL to a MediaContributionPreviewImage sub-document
-  const newImages: MediaContributionPreviewImage[] = uploadedUrls.map((url, index) => ({
+  const newImages: PreviewImage[] = uploadedUrls.map((url, index) => ({
     id: uuidv4(),
     url,
     displayOrder: currentCount + index,  // append after existing images

@@ -1,10 +1,11 @@
 import { model, Schema } from "mongoose";
 import BookDocument from "../documents/book-document";
 import AppUserSchema from "./app-user-schema";
-import { BookAuthor, BookIsbn, BookPreviewImage, BookPrice, BookPublisher } from "../interfaces/i-book";
+import { BookAuthor, BookIsbn, BookPrice, BookPublisher } from "../interfaces/i-book";
 import { localizedStringSchema } from "./localized-string-schema";
 import { BookAuthorRole, BookIsbnFormat, BookLanguage } from "../enums/book-enums";
 import DocumentStatus from "../enums/document-status";
+import { PreviewImage } from "../interfaces/i-preview-image";
 
 const MAX_TITLE_LENGTH = 500;
 const MAX_PATH_LENGTH = MAX_TITLE_LENGTH + 10; // number length
@@ -89,7 +90,7 @@ const bookIsbnSchema = new Schema<BookIsbn>(
   }
 );
 
-const previewImageSchema = new Schema<BookPreviewImage>(
+const previewImageSchema = new Schema<PreviewImage>(
   {
     id: {
       type:     String,

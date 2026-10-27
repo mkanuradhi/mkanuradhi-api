@@ -1,10 +1,11 @@
 import { model, Schema } from "mongoose";
-import { MediaContributionAuthor, MediaContributionInterviewer, MediaContributionOutlet, MediaContributionPreviewImage } from "../interfaces/i-media-contribution";
+import { MediaContributionAuthor, MediaContributionInterviewer, MediaContributionOutlet } from "../interfaces/i-media-contribution";
 import { localizedStringSchema } from "./localized-string-schema";
 import AppUserSchema from "./app-user-schema";
 import DocumentStatus from "../enums/document-status";
 import MediaContributionDocument from "../documents/media-contribution-document";
 import { MEDIA_CONTRIBUTION_LANGUAGES, MEDIA_CONTRIBUTION_ROLES, MEDIA_CONTRIBUTION_TYPES } from "../enums/media-contribution-enums";
+import { PreviewImage } from "../interfaces/i-preview-image";
 
 const MAX_TITLE_LENGTH = 500;
 const MAX_PATH_LENGTH = MAX_TITLE_LENGTH + 10; // number length
@@ -83,7 +84,7 @@ const mediaContributionOutletSchema = new Schema<MediaContributionOutlet>(
   }
 );
 
-const previewImageSchema = new Schema<MediaContributionPreviewImage>(
+const previewImageSchema = new Schema<PreviewImage>(
   {
     id: {
       type:     String,

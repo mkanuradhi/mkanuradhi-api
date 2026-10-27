@@ -1,6 +1,7 @@
 import DocumentStatus from "../enums/document-status";
 import { MediaContributionLanguage, MediaContributionRole, MediaContributionType } from "../enums/media-contribution-enums";
-import { MediaContributionAuthor, MediaContributionOutlet, MediaContributionPreviewImage } from "../interfaces/i-media-contribution";
+import { MediaContributionAuthor, MediaContributionOutlet } from "../interfaces/i-media-contribution";
+import { PreviewImage } from "../interfaces/i-preview-image";
 import { LocalizedString } from "../types/locale.types";
 import BaseDocument from "./base-document";
 
@@ -28,7 +29,7 @@ interface MediaContributionDocument extends BaseDocument {
 
   // Media & links
   coverImage?:    string;
-  previewImages?: MediaContributionPreviewImage[];
+  previewImages?: PreviewImage[];
   pdfLink?:       string;
   sourceUrl?:     string;
 

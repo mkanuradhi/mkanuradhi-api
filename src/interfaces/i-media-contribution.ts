@@ -2,6 +2,7 @@ import DocumentStatus from "../enums/document-status";
 import { MediaContributionLanguage, MediaContributionRole, MediaContributionType } from "../enums/media-contribution-enums";
 import { LocalizedString } from "../types/locale.types";
 import AppUser from "./i-app-user";
+import { LocalizedPreviewImage, PreviewImage } from "./i-preview-image";
 
 export interface MediaContributionAuthor {
   id:          string;
@@ -22,13 +23,6 @@ export interface MediaContributionOutlet {
   name:      LocalizedString;
   webUrl?:   string;
   imageUrl?: string;
-}
-
-export interface MediaContributionPreviewImage {
-  id:           string;
-  url:          string;
-  caption?:     LocalizedString;
-  displayOrder: number;
 }
 
 interface MediaContribution {
@@ -56,7 +50,7 @@ interface MediaContribution {
   highlightQuote?:  LocalizedString;
 
   coverImage?:    string;
-  previewImages?: MediaContributionPreviewImage[];
+  previewImages?: PreviewImage[];
   pdfLink?:       string;
   sourceUrl?:     string;
 
@@ -93,13 +87,6 @@ export interface LocalizedMediaContributionOutlet {
   imageUrl?: string;
 }
 
-export interface LocalizedMediaContributionPreviewImage {
-  id:           string;
-  url:          string;
-  caption?:     string;
-  displayOrder: number;
-}
-
 // Public detail page — full, one locale resolved
 export interface LocalizedMediaContribution {
   id:            string;
@@ -128,7 +115,7 @@ export interface LocalizedMediaContribution {
   highlightQuote?:  string;
 
   coverImage?:    string;
-  previewImages?: LocalizedMediaContributionPreviewImage[];
+  previewImages?: LocalizedPreviewImage[];
   pdfLink?:       string;
   sourceUrl?:     string;
 
