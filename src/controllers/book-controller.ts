@@ -4,7 +4,7 @@ import * as bookService from "../services/book-service";
 import PaginatedResult from "../interfaces/i-paginated-result";
 import Book, { LocalizedSummaryBook } from "../interfaces/i-book";
 import { parseLangQueryParam } from "../utils/common-util";
-import { ReorderPreviewImagesDto } from "../validators/book-validator";
+import { ReorderPreviewImagesDto } from "../validators/common-validator";
 
 export const createBook = asyncErrorHandler( async (req: Request, res: Response, next: NextFunction) => {
   const addedBook = await bookService.createBook(req.body, req.appUser);

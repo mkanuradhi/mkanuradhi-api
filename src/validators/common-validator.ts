@@ -65,3 +65,10 @@ export const optionalLocalizedStringSchema = z.object({
   en: z.string().trim().optional(),
   si: z.string().trim().optional(),
 }).optional();
+
+export const reorderPreviewImagesSchema = z.object({
+  ids: z.array(
+    z.string().trim().min(1, 'Preview image ID cannot be empty.')
+  ).min(1, 'At least one preview image ID is required.'),
+});
+export type ReorderPreviewImagesDto = z.infer<typeof reorderPreviewImagesSchema>;

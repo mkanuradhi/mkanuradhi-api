@@ -10,6 +10,7 @@ import publicationRoute from './routes/publication-route';
 import researchRoute from './routes/research-route';
 import awardRoute from './routes/award-route';
 import bookRoute from './routes/book-route';
+import mediaContributionRoute from './routes/media-contribution-route';
 import logger from './config/logger-config';
 import limiter from './config/rate-limit-config';
 import RequestLogger from './middleware/request-logger';
@@ -60,6 +61,7 @@ app.use('/publications', publicationRoute);
 app.use('/research', researchRoute);
 app.use('/awards', awardRoute);
 app.use('/books', bookRoute);
+app.use('/media-contributions', mediaContributionRoute);
 app.use('/stats', statRoute);
 
 // handling errors

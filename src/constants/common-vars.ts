@@ -11,3 +11,4 @@ export const DEFAULT_LOCALE = LOCALE_EN;
 export const SUMMARY_STATS_CACHE_KEY = "summary:stats";
 export const BOOK_LIST_CACHE_KEY_PREFIX = "book:list:";
 export const AWARD_LIST_CACHE_KEY_PREFIX = "award:list:";
+export const MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX = "media-contribution:list:";

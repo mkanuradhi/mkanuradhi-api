@@ -137,3 +137,21 @@ export const resolveLocale = (lang: string): Locale => {
     ? (lang as Locale)
     : DEFAULT_LOCALE;
 };
+
+export const localizeDate = (date: Date, locale: Locale): string => {
+  if (!date) return "";
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+}
+
+export const localizeTime = (date: Date, locale: Locale): string => {
+  if (!date) return "";
+  return new Intl.DateTimeFormat(locale, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}

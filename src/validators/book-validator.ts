@@ -198,14 +198,7 @@ export const activationBookSchema = z.object({
   }),
 });
 
-export const reorderPreviewImagesSchema = z.object({
-  ids: z.array(
-    z.string().trim().min(1, 'Preview image ID cannot be empty.')
-  ).min(1, 'At least one preview image ID is required.'),
-});
-
 // Inferred types — no separate DTO interfaces needed
 export type CreateBookDto = z.infer<typeof createBookSchema>;
 export type UpdateBookDto = z.infer<typeof updateBookSchema>;
 export type ActivationBookDto = z.infer<typeof activationBookSchema>;
-export type ReorderPreviewImagesDto = z.infer<typeof reorderPreviewImagesSchema>;

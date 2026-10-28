@@ -4,9 +4,10 @@ import requireAuthenticated from '../middleware/require-authenticated';
 import Role from '../enums/role';
 import validateObjectId from '../middleware/validate-objectid';
 import { validate } from '../middleware/validate-middleware';
-import { activationBookSchema, createBookSchema, MAX_BOOK_PREVIEW_IMAGES, reorderPreviewImagesSchema, updateBookSchema } from '../validators/book-validator';
+import { activationBookSchema, createBookSchema, MAX_BOOK_PREVIEW_IMAGES, updateBookSchema } from '../validators/book-validator';
 import { uploadImage, uploadPdf } from '../middleware/file-upload';
 import validateUuid from '../middleware/validate-uuid';
+import { reorderPreviewImagesSchema } from '../validators/common-validator';
 
 const bookRoute = express.Router();
 
