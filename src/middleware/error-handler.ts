@@ -2,14 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import logger from "../config/logger-config";
 
 const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-    logger.error(`Error occurred when accessing ${req.url}`);
+    const statusCode = err.statusCode || err.status || 500;
 
-    const statusCode = err.statusCode || 500;
-
-    if (statusCode === 404) {
-        logger.error(err.message);
+    if (statusCode >= 500) {
+        logger.error(`Error occurred when accessing ${req.originalUrl}`);
+        logger.error(err.stack || err.message);
     } else {
-        logger.error(err.stack);
+        // 4xx (404, 400, 401, ...): client problem, log one line at warn level
+        logger.warn(`${statusCode} ${err.message} (${req.originalUrl})`);
     }
 
     const response = {
