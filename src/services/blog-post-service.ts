@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { buildSearchFilter, capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import BlogPostDocument from "../documents/blog-post-document";
+import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
+import { R2_PATHS } from "../constants/common-vars";
 
 const createBlogPostTextEn = async (blogPostDto: CreateBlogPostTextEnDto): Promise<BlogPost> => {
   const existingBlogPostDoc = await BlogPostModel.findOne({
@@ -226,7 +228,12 @@ const uploadPrimaryImage = async (blogPostId: string, imageFile?: Express.Multer
     throw new AppError('No primary image file provided.', 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  // delete old image from R2 before uploading new one
+  if (blogPostDoc.primaryImage) {
+    await deleteFileFromR2(blogPostDoc.primaryImage);
+  }
+
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.BLOG_POSTS_IMAGES);
   if (!imageUrl) {
     throw new AppError("Failed to upload the primary image. Please try again.", 500);
   }
