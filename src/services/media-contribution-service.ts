@@ -3,12 +3,12 @@ import AppError from "../errors/app-error";
 import AppUser from "../interfaces/i-app-user";
 import MediaContribution, { LocalizedMediaContribution, LocalizedSummaryMediaContribution } from "../interfaces/i-media-contribution";
 import MediaContributionModel from "../models/media-contribution-model";
-import { generateUniquePath, localizeDate, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
+import { generateUniquePath, localizeDate, localizeField, resolveLocale } from "../utils/common-util";
 import { ActivationMediaContributionDto, CreateMediaContributionDto, MAX_MEDIA_CONTRIBUTION_PREVIEW_IMAGES, UpdateMediaContributionDto } from "../validators/media-contribution-validator";
 import { v4 as uuidv4 } from 'uuid';
 import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
-import { MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
+import { MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX, R2_PATHS } from "../constants/common-vars";
 import { mapDocumentsToMediaContributions, mapDocumentToMediaContribution } from "../mappers/media-contribution-mapper";
 import { ReorderPreviewImagesDto, validatePaginationDetails } from "../validators/common-validator";
 import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
@@ -374,20 +374,30 @@ export const uploadCoverImage = async (mediaContributionId: string, imageFile?: 
     throw new AppError('No cover image file provided.', 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  const oldCoverImage = mediaContributionDoc.coverImage;
+
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.MEDIA_CONTRIBUTIONS_IMAGES);
   if (!imageUrl) {
     throw new AppError('Failed to upload cover image. Please try again.', 500);
   }
 
-  // Note: imgbb does not support image deletion via API
-  // old cover image URL is simply overwritten
   mediaContributionDoc.coverImage = imageUrl;
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Uploaded cover image for media contribution ID: ${mediaContributionId}`);
   await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
   await invalidateMediaContributionListCache();
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldCoverImage) {
+    try {
+      await deleteFileFromR2(oldCoverImage);
+    } catch (error) {
+      logger.error(`Failed to delete old cover image '${oldCoverImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
+
+  logger.info(`Uploaded cover image for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
@@ -397,7 +407,8 @@ export const deleteCoverImage = async (mediaContributionId: string): Promise<Med
     throw new AppError(`Cannot find the media contribution with ID: '${mediaContributionId}'.`, 404);
   }
 
-  if (!mediaContributionDoc.coverImage) {
+  const oldCoverImage = mediaContributionDoc.coverImage;
+  if (!oldCoverImage) {
     throw new AppError('This media contribution has no cover image to delete.', 400);
   }
 
@@ -406,9 +417,17 @@ export const deleteCoverImage = async (mediaContributionId: string): Promise<Med
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Deleted cover image for media contribution ID: ${mediaContributionId}`);
   await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
   await invalidateMediaContributionListCache();
+
+  // The DB no longer references this file, so don't fail the request if R2 deletion fails.
+  try {
+    await deleteFileFromR2(oldCoverImage);
+  } catch (error) {
+    logger.error(`Failed to delete cover image '${oldCoverImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+  }
+
+  logger.info(`Deleted cover image for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
@@ -431,16 +450,27 @@ export const uploadAuthorImage = async (mediaContributionId: string, authorId: s
     throw new AppError('No author image file provided.', 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  const oldAuthorImage = mediaContributionDoc.authors[authorIndex].imageUrl;
+
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.MEDIA_CONTRIBUTIONS_IMAGES);
   if (!imageUrl) {
     throw new AppError('Failed to upload author image. Please try again.', 500);
   }
 
-  // Note: imgbb does not support image deletion via API
-  // old cover image URL is simply overwritten
   mediaContributionDoc.authors[authorIndex].imageUrl = imageUrl;
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldAuthorImage) {
+    try {
+      await deleteFileFromR2(oldAuthorImage);
+    } catch (error) {
+      logger.error(`Failed to delete old author image '${oldAuthorImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
 
   logger.info(`Uploaded image for author ID: ${authorId} in media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
@@ -465,10 +495,22 @@ export const deleteAuthorImage = async (mediaContributionId: string, authorId: s
     throw new AppError('This author has no image to delete.', 400);
   }
 
-  // Note: imgbb does not support image deletion via API
+  const oldAuthorImage = mediaContributionDoc.authors[authorIndex].imageUrl;
+
   mediaContributionDoc.authors[authorIndex].imageUrl = undefined;
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldAuthorImage) {
+    try {
+      await deleteFileFromR2(oldAuthorImage);
+    } catch (error) {
+      logger.error(`Failed to delete old author image '${oldAuthorImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
 
   logger.info(`Deleted author image for author: ${authorId} in media contribution: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
@@ -493,7 +535,9 @@ export const uploadInterviewerImage = async (mediaContributionId: string, interv
     throw new AppError('No interviewer image file provided.', 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  const oldInterviewerImage = mediaContributionDoc.interviewers[interviewerIndex].imageUrl;
+
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.MEDIA_CONTRIBUTIONS_IMAGES);
   if (!imageUrl) {
     throw new AppError('Failed to upload interviewer image. Please try again.', 500);
   }
@@ -503,6 +547,17 @@ export const uploadInterviewerImage = async (mediaContributionId: string, interv
   mediaContributionDoc.interviewers[interviewerIndex].imageUrl = imageUrl;
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldInterviewerImage) {
+    try {
+      await deleteFileFromR2(oldInterviewerImage);
+    } catch (error) {
+      logger.error(`Failed to delete old interviewer image '${oldInterviewerImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
 
   logger.info(`Uploaded image for interviewer ID: ${interviewerId} in media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
@@ -527,10 +582,22 @@ export const deleteInterviewerImage = async (mediaContributionId: string, interv
     throw new AppError('This interviewer has no image to delete.', 400);
   }
 
-  // Note: imgbb does not support image deletion via API
+  const oldInterviewerImage = mediaContributionDoc.interviewers[interviewerIndex].imageUrl;
+  
   mediaContributionDoc.interviewers[interviewerIndex].imageUrl = undefined;
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldInterviewerImage) {
+    try {
+      await deleteFileFromR2(oldInterviewerImage);
+    } catch (error) {
+      logger.error(`Failed to delete old interviewer image '${oldInterviewerImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
 
   logger.info(`Deleted interviewer image for interviewer: ${interviewerId} in media contribution: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
@@ -550,18 +617,29 @@ export const uploadOutletImage = async (mediaContributionId: string, imageFile?:
     throw new AppError(`Media contribution '${mediaContributionId}' has no outlet set. Add an outlet before uploading an image.`, 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  const oldOutletImage = mediaContributionDoc.outlet.imageUrl;
+
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.MEDIA_CONTRIBUTIONS_IMAGES);
   if (!imageUrl) {
     throw new AppError('Failed to upload outlet image. Please try again.', 500);
   }
 
-  // Note: imgbb does not support image deletion via API
-  // old publisher image URL is simply overwritten
   mediaContributionDoc.outlet.imageUrl = imageUrl;
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Uploaded publisher image for media contribution ID: ${mediaContributionId}`);
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldOutletImage) {
+    try {
+      await deleteFileFromR2(oldOutletImage);
+    } catch (error) {
+      logger.error(`Failed to delete old outlet image '${oldOutletImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
+
+  logger.info(`Uploaded outlet image for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
@@ -580,10 +658,22 @@ export const deleteOutletImage = async (mediaContributionId: string): Promise<Me
     return mapDocumentToMediaContribution(mediaContributionDoc);
   }
 
-  // Note: imgbb does not support image deletion via API
+  const oldOutletImage = mediaContributionDoc.outlet.imageUrl;
+
   mediaContributionDoc.outlet.imageUrl = undefined;
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
+
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldOutletImage) {
+    try {
+      await deleteFileFromR2(oldOutletImage);
+    } catch (error) {
+      logger.error(`Failed to delete old outlet image '${oldOutletImage}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
 
   logger.info(`Deleted outlet image for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
@@ -604,7 +694,7 @@ export const uploadPreviewImages = async (mediaContributionId: string, imageFile
 
   // upload all files concurrently
   const uploadedUrls = await Promise.all(
-    imageFiles.map(file => uploadImageToCloudService(file))
+    imageFiles.map(file => uploadFileToR2(file, R2_PATHS.MEDIA_CONTRIBUTIONS_IMAGES))
   );
 
   // map each uploaded URL to a MediaContributionPreviewImage sub-document
@@ -618,6 +708,8 @@ export const uploadPreviewImages = async (mediaContributionId: string, imageFile
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
   logger.info(`Uploaded ${uploadedUrls.length} preview image(s) for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
@@ -628,16 +720,29 @@ export const deletePreviewImage = async (mediaContributionId: string, previewIma
 
   const existingImages = mediaContributionDoc.previewImages ?? [];
 
-  const imageExists = existingImages.some(img => img.id === previewImageId);
-  if (!imageExists) {
+  const imageToDelete = existingImages.find(img => img.id === previewImageId);
+  if (!imageToDelete) {
     throw new AppError('Preview image not found for this media contribution.', 404);
   }
+
+  const oldImageUrl = imageToDelete.url;
 
   mediaContributionDoc.previewImages = existingImages.filter(img => img.id !== previewImageId);
   mediaContributionDoc.increment();
   await mediaContributionDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Deleted preview image for media contribution ID: ${mediaContributionId}`);
+  await invalidateMediaContributionDetailCache(mediaContributionDoc.path);
+
+  // The DB no longer references this file, so don't fail the request if R2 deletion fails.
+  if (oldImageUrl) {
+    try {
+      await deleteFileFromR2(oldImageUrl);
+    } catch (error) {
+      logger.error(`Failed to delete preview image '${oldImageUrl}' from R2 for media contribution ID: ${mediaContributionId}`, error);
+    }
+  }
+
+  logger.info(`Deleted preview image ${previewImageId} for media contribution ID: ${mediaContributionId}`);
   return mapDocumentToMediaContribution(mediaContributionDoc);
 }
 
