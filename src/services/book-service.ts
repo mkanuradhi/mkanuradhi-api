@@ -5,7 +5,7 @@ import BookModel from "../models/book-model";
 import logger from "../config/logger-config";
 import { mapDocumentsToBooks, mapDocumentToBook } from "../mappers/book-mapper";
 import { ReorderPreviewImagesDto, validatePaginationDetails } from "../validators/common-validator";
-import { generateUniquePath, localizeField, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
+import { generateUniquePath, localizeField, resolveLocale } from "../utils/common-util";
 import BookDocument from "../documents/book-document";
 import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
 import DocumentStatus from "../enums/document-status";
@@ -14,7 +14,7 @@ import { ActivationBookDto, CreateBookDto, MAX_BOOK_PREVIEW_IMAGES, UpdateBookDt
 import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
 import { invalidateSummaryStatsCache } from "./stat-service";
 import { getCacheStrategy } from "../cache/cache-factory";
-import { BOOK_LIST_CACHE_KEY_PREFIX } from "../constants/common-vars";
+import { BOOK_LIST_CACHE_KEY_PREFIX, R2_PATHS } from "../constants/common-vars";
 import { PreviewImage } from "../interfaces/i-preview-image";
 
 const BOOK_DETAIL_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6h
@@ -403,20 +403,30 @@ export const uploadCoverImage = async (bookId: string, imageFile?: Express.Multe
     throw new AppError('No cover image file provided.', 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  const oldCoverImage = bookDoc.coverImage;
+  
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.BOOKS_IMAGES);
   if (!imageUrl) {
     throw new AppError('Failed to upload cover image. Please try again.', 500);
   }
 
-  // Note: imgbb does not support image deletion via API
-  // old cover image URL is simply overwritten
   bookDoc.coverImage = imageUrl;
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Uploaded cover image for book ID: ${bookId}`);
   await invalidateBookDetailCache(bookDoc.path);
   await invalidateBookListCache();
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldCoverImage) {
+    try {
+      await deleteFileFromR2(oldCoverImage);
+    } catch (error) {
+      logger.error(`Failed to delete old cover image '${oldCoverImage}' from R2 for book ID: ${bookId}`, error);
+    }
+  }
+
+  logger.info(`Uploaded cover image for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
 };
 
@@ -426,7 +436,8 @@ export const deleteCoverImage = async (bookId: string): Promise<Book> => {
     throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
   }
 
-  if (!bookDoc.coverImage) {
+  const oldCoverImage = bookDoc.coverImage;
+  if (!oldCoverImage) {
     throw new AppError('This book has no cover image to delete.', 400);
   }
 
@@ -435,9 +446,17 @@ export const deleteCoverImage = async (bookId: string): Promise<Book> => {
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Deleted cover image for book ID: ${bookId}`);
   await invalidateBookDetailCache(bookDoc.path);
   await invalidateBookListCache();
+
+  // The DB no longer references this file, so don't fail the request if R2 deletion fails.
+  try {
+    await deleteFileFromR2(oldCoverImage);
+  } catch (error) {
+    logger.error(`Failed to delete cover image '${oldCoverImage}' from R2 for book ID: ${bookId}`, error);
+  }
+
+  logger.info(`Deleted cover image for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
 };
 
@@ -445,6 +464,9 @@ export const uploadAuthorImage = async (bookId: string, authorId: string, imageF
   const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
   if (!bookDoc) {
     throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+  if (!bookDoc.authors) {
+    throw new AppError(`Book with ID: '${bookId}' has no authors.`, 400);
   }
 
   // find the author within the book
@@ -457,16 +479,27 @@ export const uploadAuthorImage = async (bookId: string, authorId: string, imageF
     throw new AppError('No author image file provided.', 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  const oldAuthorImage = bookDoc.authors[authorIndex].imageUrl;
+  
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.BOOKS_IMAGES);
   if (!imageUrl) {
     throw new AppError('Failed to upload author image. Please try again.', 500);
   }
 
-  // Note: imgbb does not support image deletion via API
-  // old cover image URL is simply overwritten
   bookDoc.authors[authorIndex].imageUrl = imageUrl;
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
+
+  await invalidateBookDetailCache(bookDoc.path);
+  
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldAuthorImage) {
+    try {
+      await deleteFileFromR2(oldAuthorImage);
+    } catch (error) {
+      logger.error(`Failed to delete old author image '${oldAuthorImage}' from R2 for book ID: ${bookId}`, error);
+    }
+  }
 
   logger.info(`Uploaded image for author ID: ${authorId} in book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
@@ -476,6 +509,9 @@ export const deleteAuthorImage = async (bookId: string, authorId: string): Promi
   const bookDoc = await BookModel.findOne({ _id: bookId, deleted: false });
   if (!bookDoc) {
     throw new AppError(`Cannot find the book with ID: '${bookId}'.`, 404);
+  }
+  if (!bookDoc.authors) {
+    throw new AppError(`Book with ID: '${bookId}' has no authors.`, 400);
   }
 
   // find the author within the book
@@ -488,10 +524,22 @@ export const deleteAuthorImage = async (bookId: string, authorId: string): Promi
     throw new AppError('This author has no image to delete.', 400);
   }
 
-  // Note: imgbb does not support image deletion via API
+  const oldAuthorImage = bookDoc.authors[authorIndex].imageUrl;
+  
   bookDoc.authors[authorIndex].imageUrl = undefined;
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
+
+  await invalidateBookDetailCache(bookDoc.path);
+
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldAuthorImage) {
+    try {
+      await deleteFileFromR2(oldAuthorImage);
+    } catch (error) {
+      logger.error(`Failed to delete old author image '${oldAuthorImage}' from R2 for book ID: ${bookId}`, error);
+    }
+  }
 
   logger.info(`Deleted author image for author: ${authorId} in book: ${bookId}`);
   return mapDocumentToBook(bookDoc);
@@ -511,16 +559,27 @@ export const uploadPublisherImage = async (bookId: string, imageFile?: Express.M
     throw new AppError(`Book '${bookId}' has no publisher set. Add a publisher before uploading an image.`, 400);
   }
 
-  const imageUrl = await uploadImageToCloudService(imageFile);
+  const oldOutletImage = bookDoc.publisher.imageUrl;
+  
+  const imageUrl = await uploadFileToR2(imageFile, R2_PATHS.BOOKS_IMAGES);
   if (!imageUrl) {
     throw new AppError('Failed to upload publisher image. Please try again.', 500);
   }
 
-  // Note: imgbb does not support image deletion via API
-  // old publisher image URL is simply overwritten
   bookDoc.publisher.imageUrl = imageUrl;
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
+
+  await invalidateBookDetailCache(bookDoc.path);
+  
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldOutletImage) {
+    try {
+      await deleteFileFromR2(oldOutletImage);
+    } catch (error) {
+      logger.error(`Failed to delete old outlet image '${oldOutletImage}' from R2 for book ID: ${bookId}`, error);
+    }
+  }
 
   logger.info(`Uploaded publisher image for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
@@ -541,10 +600,22 @@ export const deletePublisherImage = async (bookId: string): Promise<Book> => {
     return mapDocumentToBook(bookDoc);
   }
 
-  // Note: imgbb does not support image deletion via API
+  const oldOutletImage = bookDoc.publisher.imageUrl;
+  
   bookDoc.publisher.imageUrl = undefined;
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
+
+  await invalidateBookDetailCache(bookDoc.path);
+  
+  // The DB no longer references the old file, so don't fail the request if R2 deletion fails.
+  if (oldOutletImage) {
+    try {
+      await deleteFileFromR2(oldOutletImage);
+    } catch (error) {
+      logger.error(`Failed to delete old outlet image '${oldOutletImage}' from R2 for book ID: ${bookId}`, error);
+    }
+  }
 
   logger.info(`Deleted publisher image for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
@@ -565,7 +636,7 @@ export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.M
 
   // upload all files concurrently
   const uploadedUrls = await Promise.all(
-    imageFiles.map(file => uploadImageToCloudService(file))
+    imageFiles.map(file => uploadFileToR2(file, R2_PATHS.BOOKS_IMAGES))
   );
 
   // map each uploaded URL to a BookPreviewImage sub-document
@@ -579,6 +650,8 @@ export const uploadPreviewImages = async (bookId: string, imageFiles?: Express.M
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 
+  await invalidateBookDetailCache(bookDoc.path);
+
   logger.info(`Uploaded ${uploadedUrls.length} preview image(s) for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
 };
@@ -589,16 +662,29 @@ export const deletePreviewImage = async (bookId: string, previewImageId: string)
 
   const existingImages = bookDoc.previewImages ?? [];
 
-  const imageExists = existingImages.some(img => img.id === previewImageId);
-  if (!imageExists) {
+  const imageToDelete = existingImages.find(img => img.id === previewImageId);
+  if (!imageToDelete) {
     throw new AppError('Preview image not found for this book.', 404);
   }
+
+  const oldImageUrl = imageToDelete.url;
 
   bookDoc.previewImages = existingImages.filter(img => img.id !== previewImageId);
   bookDoc.increment();
   await bookDoc.save({ validateModifiedOnly: true });
 
-  logger.info(`Deleted preview image for book ID: ${bookId}`);
+  await invalidateBookDetailCache(bookDoc.path);
+  
+  // The DB no longer references this file, so don't fail the request if R2 deletion fails.
+  if (oldImageUrl) {
+    try {
+      await deleteFileFromR2(oldImageUrl);
+    } catch (error) {
+      logger.error(`Failed to delete preview image '${oldImageUrl}' from R2 for book ID: ${bookId}`, error);
+    }
+  }
+
+  logger.info(`Deleted preview image ${previewImageId} for book ID: ${bookId}`);
   return mapDocumentToBook(bookDoc);
 };
 
