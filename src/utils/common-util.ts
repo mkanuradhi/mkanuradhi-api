@@ -3,10 +3,15 @@ import axios, { AxiosResponse } from "axios";
 import { ImgbbResponseDto } from "../dtos/imgbb-response-dto";
 import AppError from "../errors/app-error";
 import { Request } from "express";
-import { AVAILABLE_LANGS, DEFAULT_LANG } from "../constants/common-vars";
+import { AVAILABLE_LANGS, DEFAULT_LANG, LANG_SI } from "../constants/common-vars";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import DocumentStatus from "../enums/document-status";
 import { DEFAULT_LOCALE, Locale, LocalizedString, SUPPORTED_LOCALES } from "../types/locale.types";
+
+const SI_MONTHS = [
+  'ජනවාරි', 'පෙබරවාරි', 'මාර්තු', 'අප්‍රේල්', 'මැයි', 'ජූනි',
+  'ජූලි', 'අගෝස්තු', 'සැප්තැම්බර්', 'ඔක්තෝබර්', 'නොවැම්බර්', 'දෙසැම්බර්',
+];
 
 export const uploadImageToCloudService = async (file: Express.Multer.File): Promise<string> => {
   const formData = new FormData();
@@ -140,6 +145,9 @@ export const resolveLocale = (lang: string): Locale => {
 
 export const localizeDate = (date: Date, locale: Locale): string => {
   if (!date) return "";
+  if (locale === LANG_SI) {
+    return `${date.getFullYear()} ${SI_MONTHS[date.getMonth()]} ${date.getDate()}`;
+  }
   return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'long',
