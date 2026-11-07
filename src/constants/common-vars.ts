@@ -12,6 +12,7 @@ export const SUMMARY_STATS_CACHE_KEY = "summary:stats";
 export const BOOK_LIST_CACHE_KEY_PREFIX = "book:list:";
 export const AWARD_LIST_CACHE_KEY_PREFIX = "award:list:";
 export const MEDIA_CONTRIBUTION_LIST_CACHE_KEY_PREFIX = "media-contribution:list:";
+export const BLOG_POST_LIST_CACHE_KEY_PREFIX = "blog-post:list:";
 
 const BLOG_POSTS = 'blog-posts';
 const BOOKS = 'books';
