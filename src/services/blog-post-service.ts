@@ -127,15 +127,15 @@ const getBlogPostByPath = async (lang: string, blogPostPath: string): Promise<Bl
     __v: 1,
   };
   const langFields = {
-    [`title${capitalizeLang(lang)}`]: 1,
-    [`summary${capitalizeLang(lang)}`]: 1,
-    [`content${capitalizeLang(lang)}`]: 1,
-    [`pageDescription${capitalizeLang(lang)}`]: 1,
+    [`title${capitalizeLang(locale)}`]: 1,
+    [`summary${capitalizeLang(locale)}`]: 1,
+    [`content${capitalizeLang(locale)}`]: 1,
+    [`pageDescription${capitalizeLang(locale)}`]: 1,
   };
   const projection = { ...commonFields, ...langFields };
 
   const blogPostDoc = await BlogPostModel.findOne(
-    { path: blogPostPath },
+    { path: blogPostPath.trim(), deleted: false },
     projection
   ) as BlogPostDocument & Record<string, any>;
 
@@ -143,7 +143,7 @@ const getBlogPostByPath = async (lang: string, blogPostPath: string): Promise<Bl
     throw new AppError(`Blog post cannot be found for path: ${blogPostPath}`, 404);
   }
 
-  const result = mapDocumentToBlogPostView(lang, blogPostDoc);
+  const result = mapDocumentToBlogPostView(locale, blogPostDoc);
   await cache.set(cacheKey, result, BLOG_POST_DETAIL_CACHE_TTL_SECONDS);
 
   logger.info(`Blog post view fetched by path: ${blogPostPath}`);
@@ -171,6 +171,8 @@ const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogP
     throw new AppError(`Existing blog post found for the title in En: ${blogPostDto.titleEn}`, 400);
   }
 
+  const oldPath = existingBlogPostDoc.path;
+
   const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
     blogPostId,
     { 
@@ -193,7 +195,7 @@ const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogP
   }
 
   logger.info(`English details updated for blog post ID: ${blogPostId}`);
-  await invalidateBlogPostDetailCache(updatedBlogPostDoc.path);
+  await invalidateBlogPostDetailCache(oldPath);
   await invalidateBlogPostListCache();
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
@@ -384,19 +386,24 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
 
 const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Promise<{ blogPostViews: BlogPostView[]; totalCount: number; }> => {
   const {page = 0, size = 10, sort, query, status} = searchParams;
-  
   validatePaginationDetails(page, size);
 
+  const locale = resolveLocale(lang);
+  const normalizedSort = resolveSortKey(sort);
+  const normalizedStatus = Object.values(DocumentStatus).includes(status as DocumentStatus)
+    ? status : undefined;
+  const normalizedQuery = query?.trim().slice(0, 100) || undefined;
+
   const cache = getCacheStrategy();
-  const cacheKey = blogPostListCacheKey(page, size, sort, query, status);
+  const cacheKey = blogPostListCacheKey(locale, page, size, normalizedSort, normalizedQuery, normalizedStatus);
 
   const cached = await cache.get<{ blogPostViews: BlogPostView[]; totalCount: number }>(cacheKey);
   if (cached) return cached;
 
   logger.info(`No cached blog post view list found, hitting db to get blog post view list`);
 
-  const searchFilter = buildSearchFilter(searchParams);
-  const sortOptions = getSortOptions(sort);
+  const searchFilter = buildSearchFilter({ ...searchParams, query: normalizedQuery, status: normalizedStatus });
+  const sortOptions = getSortOptions(normalizedSort);
 
   const commonFields = {
     path: 1,
@@ -406,8 +413,8 @@ const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Pro
   };
 
   const langFields = {
-    [`title${capitalizeLang(lang)}`]: 1,
-    [`summary${capitalizeLang(lang)}`]: 1,
+    [`title${capitalizeLang(locale)}`]: 1,
+    [`summary${capitalizeLang(locale)}`]: 1,
   };
 
   const projection = { ...commonFields, ...langFields };
@@ -424,13 +431,16 @@ const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Pro
   ]);
 
   const result = {
-    blogPostViews: mapDocumentsToBlogPostViews(lang, blogPostDocs),
+    blogPostViews: mapDocumentsToBlogPostViews(locale, blogPostDocs),
     totalCount,
   };
 
   await cache.set(cacheKey, result, BLOG_POST_LIST_CACHE_TTL_SECONDS);
   return result;
 }
+
+const resolveSortKey = (sort?: string): "latest" | "oldest" =>
+  sort === "oldest" ? "oldest" : "latest";
 
 const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
   const defaultSort: Record<string, 1 | -1> = { dateTime: -1 }; // Default to newest first
@@ -450,11 +460,12 @@ const invalidateBlogPostListCache = async (): Promise<void> => {
   await cache.deleteByPrefix(BLOG_POST_LIST_CACHE_KEY_PREFIX);
 }
 
-const blogPostListCacheKey = (page: number, size: number, sort?: string, query?: string, status?: DocumentStatus): string => {
+const blogPostListCacheKey = (lang: string, page: number, size: number, sort?: string, query?: string, status?: DocumentStatus): string => {
   const normalizedQuery = query?.trim().toLowerCase();
 
   const parts = [
     BLOG_POST_LIST_CACHE_KEY_PREFIX,
+    `lang=${lang ?? "en"}`,
     `p${page}`,
     `s${size}`,
     `sort=${sort ?? "default"}`,
