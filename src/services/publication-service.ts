@@ -10,6 +10,7 @@ import DocumentStatus from "../enums/document-status";
 import { v4 as uuidv4 } from 'uuid';
 import PublicationType from "../enums/publication-type";
 import PublicationStatus from "../enums/publication-status";
+import { invalidateSummaryStatsCache } from "./stat-service";
 
 
 export const createPublication = async (publicationDto: CreatePublicationDto): Promise<Publication> => {
@@ -51,6 +52,7 @@ export const createPublication = async (publicationDto: CreatePublicationDto): P
     await session.commitTransaction();
 
     logger.info(`Publication created for ${publicationDto.year}`);
+    await invalidateSummaryStatsCache();
     return mapDocumentToPublication(publicationDoc);
   } catch (error) {
     await session.abortTransaction();
@@ -262,6 +264,7 @@ export const togglePublicationActivation = async (publicationId: string, publica
   }
 
   logger.info(`Publication updated for status for ID: ${publicationId}`);
+  await invalidateSummaryStatsCache();
   return mapDocumentToPublication(updatedPublicationDoc);
 }
 

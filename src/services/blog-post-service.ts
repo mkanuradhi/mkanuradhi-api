@@ -7,11 +7,19 @@ import AppError from "../errors/app-error";
 import { mapDocumentToBlogPost, mapDocumentToBlogPostView, mapDocumentsToBlogPostViews, mapDocumentsToBlogPosts } from "../mappers/blog-post-mapper";
 import { validatePaginationDetails } from "../validators/common-validator";
 import { v4 as uuidv4 } from 'uuid';
-import { buildSearchFilter, capitalizeLang, uploadImageToCloudService } from "../utils/common-util";
+import { buildSearchFilter, capitalizeLang, resolveLocale, uploadImageToCloudService } from "../utils/common-util";
 import { SearchParamsDto } from "../dtos/search-params-dto";
 import BlogPostDocument from "../documents/blog-post-document";
 import { deleteFileFromR2, uploadFileToR2 } from "../utils/r2-util";
-import { R2_PATHS } from "../constants/common-vars";
+import { BLOG_POST_LIST_CACHE_KEY_PREFIX, R2_PATHS } from "../constants/common-vars";
+import { invalidateSummaryStatsCache } from "./stat-service";
+import { getCacheStrategy } from "../cache/cache-factory";
+import { Locale, SUPPORTED_LOCALES } from "../types/locale.types";
+import DocumentStatus from "../enums/document-status";
+import { createHash } from "crypto";
+
+const BLOG_POST_LIST_CACHE_TTL_SECONDS = 60 * 60 * 12; // 12h
+const BLOG_POST_DETAIL_CACHE_TTL_SECONDS = 60 * 60 * 12; // 12h
 
 const createBlogPostTextEn = async (blogPostDto: CreateBlogPostTextEnDto): Promise<BlogPost> => {
   const existingBlogPostDoc = await BlogPostModel.findOne({
@@ -33,6 +41,8 @@ const createBlogPostTextEn = async (blogPostDto: CreateBlogPostTextEnDto): Promi
   });
 
   logger.info(`Blog Post created for ${blogPostDto.titleEn}`);
+  await invalidateSummaryStatsCache();
+  await invalidateBlogPostListCache();
   return mapDocumentToBlogPost(blogPostDoc);
 }
 
@@ -95,6 +105,15 @@ const getBlogPost = async (blogPostId: string): Promise<BlogPost> => {
 }
 
 const getBlogPostByPath = async (lang: string, blogPostPath: string): Promise<BlogPostView> => {
+  const locale = resolveLocale(lang);
+  const cache = getCacheStrategy();
+  const cacheKey = blogPostDetailCacheKey(blogPostPath.trim(), locale);
+
+  const cached = await cache.get<BlogPostView>(cacheKey);
+  if (cached) return cached;
+
+  logger.info(`No cached blog post view found for path: ${blogPostPath}, hitting db to get blog post view`);
+
   const commonFields = {
     primaryImage: 1,
     images: 1,
@@ -108,23 +127,27 @@ const getBlogPostByPath = async (lang: string, blogPostPath: string): Promise<Bl
     __v: 1,
   };
   const langFields = {
-    [`title${capitalizeLang(lang)}`]: 1,
-    [`summary${capitalizeLang(lang)}`]: 1,
-    [`content${capitalizeLang(lang)}`]: 1,
-    [`pageDescription${capitalizeLang(lang)}`]: 1,
+    [`title${capitalizeLang(locale)}`]: 1,
+    [`summary${capitalizeLang(locale)}`]: 1,
+    [`content${capitalizeLang(locale)}`]: 1,
+    [`pageDescription${capitalizeLang(locale)}`]: 1,
   };
   const projection = { ...commonFields, ...langFields };
 
   const blogPostDoc = await BlogPostModel.findOne(
-    { path: blogPostPath },
+    { path: blogPostPath.trim(), deleted: false },
     projection
   ) as BlogPostDocument & Record<string, any>;
 
   if (!blogPostDoc) {
-    throw new AppError(`Blog post cannot be found for path: ${blogPostPath}`, 400);
+    throw new AppError(`Blog post cannot be found for path: ${blogPostPath}`, 404);
   }
 
-  return mapDocumentToBlogPostView(lang, blogPostDoc);
+  const result = mapDocumentToBlogPostView(locale, blogPostDoc);
+  await cache.set(cacheKey, result, BLOG_POST_DETAIL_CACHE_TTL_SECONDS);
+
+  logger.info(`Blog post view fetched by path: ${blogPostPath}`);
+  return result;
 }
 
 const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogPostTextEnDto): Promise<BlogPost> => {
@@ -148,6 +171,8 @@ const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogP
     throw new AppError(`Existing blog post found for the title in En: ${blogPostDto.titleEn}`, 400);
   }
 
+  const oldPath = existingBlogPostDoc.path;
+
   const updatedBlogPostDoc = await BlogPostModel.findByIdAndUpdate(
     blogPostId,
     { 
@@ -170,6 +195,8 @@ const updateBlogPostTextEn = async (blogPostId: string, blogPostDto: UpdateBlogP
   }
 
   logger.info(`English details updated for blog post ID: ${blogPostId}`);
+  await invalidateBlogPostDetailCache(oldPath);
+  await invalidateBlogPostListCache();
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
 
@@ -213,6 +240,8 @@ const updateBlogPostTextSi = async (blogPostId: string, blogPostDto: UpdateBlogP
   }
 
   logger.info(`Sinhala details updated for blog post ID: ${blogPostId}`);
+  await invalidateBlogPostDetailCache(updatedBlogPostDoc.path);
+  await invalidateBlogPostListCache();
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
 
@@ -245,6 +274,8 @@ const uploadPrimaryImage = async (blogPostId: string, imageFile?: Express.Multer
   await blogPostDoc.save();
 
   logger.info(`Uploaded primary image for blog post ID: ${blogPostId}`);
+  await invalidateBlogPostDetailCache(blogPostDoc.path);
+  await invalidateBlogPostListCache();
   return mapDocumentToBlogPost(blogPostDoc);
 }
 
@@ -274,6 +305,7 @@ const uploadImages = async (blogPostId: string, imageFiles?: Express.Multer.File
   await blogPostDoc.save();
 
   logger.info(`Uploaded images for blog post ID: ${blogPostId}`);
+  await invalidateBlogPostDetailCache(blogPostDoc.path);
   return mapDocumentToBlogPost(blogPostDoc);
 }
 
@@ -311,6 +343,9 @@ const toggleBlogPostActivation = async (blogPostId: string, blogPostDto: Activat
   }
 
   logger.info(`Updated status for blog post ID: ${blogPostId}`);
+  await invalidateSummaryStatsCache();
+  await invalidateBlogPostListCache();
+  await invalidateBlogPostDetailCache(updatedBlogPostDoc.path);
   return mapDocumentToBlogPost(updatedBlogPostDoc);
 }
 
@@ -338,20 +373,37 @@ const deleteBlogPost = async (blogPostId: string): Promise<void> => {
     },
     { new: true }
   );
+
   if (!updatedBlogPostDoc) {
     throw new AppError('Failed to delete blog post document.', 500);
   } else {
+    await invalidateSummaryStatsCache();
+    await invalidateBlogPostListCache();
+    await invalidateBlogPostDetailCache(updatedBlogPostDoc.path);
     logger.info(`Blog post deleted for ID: ${blogPostId}`);
   }
 }
 
 const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Promise<{ blogPostViews: BlogPostView[]; totalCount: number; }> => {
-  const {page = 0, size = 10, sort} = searchParams;
-  
+  const {page = 0, size = 10, sort, query, status} = searchParams;
   validatePaginationDetails(page, size);
 
-  const searchFilter = buildSearchFilter(searchParams);
-  const sortOptions = getSortOptions(sort);
+  const locale = resolveLocale(lang);
+  const normalizedSort = resolveSortKey(sort);
+  const normalizedStatus = Object.values(DocumentStatus).includes(status as DocumentStatus)
+    ? status : undefined;
+  const normalizedQuery = query?.trim().slice(0, 100) || undefined;
+
+  const cache = getCacheStrategy();
+  const cacheKey = blogPostListCacheKey(locale, page, size, normalizedSort, normalizedQuery, normalizedStatus);
+
+  const cached = await cache.get<{ blogPostViews: BlogPostView[]; totalCount: number }>(cacheKey);
+  if (cached) return cached;
+
+  logger.info(`No cached blog post view list found, hitting db to get blog post view list`);
+
+  const searchFilter = buildSearchFilter({ ...searchParams, query: normalizedQuery, status: normalizedStatus });
+  const sortOptions = getSortOptions(normalizedSort);
 
   const commonFields = {
     path: 1,
@@ -361,8 +413,8 @@ const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Pro
   };
 
   const langFields = {
-    [`title${capitalizeLang(lang)}`]: 1,
-    [`summary${capitalizeLang(lang)}`]: 1,
+    [`title${capitalizeLang(locale)}`]: 1,
+    [`summary${capitalizeLang(locale)}`]: 1,
   };
 
   const projection = { ...commonFields, ...langFields };
@@ -378,10 +430,17 @@ const searchBlogPosts = async (lang: string, searchParams: SearchParamsDto): Pro
     BlogPostModel.countDocuments(searchFilter),
   ]);
 
-  const blogPostViews: BlogPostView[] = mapDocumentsToBlogPostViews(lang, blogPostDocs);
+  const result = {
+    blogPostViews: mapDocumentsToBlogPostViews(locale, blogPostDocs),
+    totalCount,
+  };
 
-  return { blogPostViews, totalCount };
+  await cache.set(cacheKey, result, BLOG_POST_LIST_CACHE_TTL_SECONDS);
+  return result;
 }
+
+const resolveSortKey = (sort?: string): "latest" | "oldest" =>
+  sort === "oldest" ? "oldest" : "latest";
 
 const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
   const defaultSort: Record<string, 1 | -1> = { dateTime: -1 }; // Default to newest first
@@ -395,6 +454,39 @@ const getSortOptions = (sort?: string): Record<string, 1 | -1> => {
     default: return defaultSort;
   }
 };
+
+const invalidateBlogPostListCache = async (): Promise<void> => {
+  const cache = getCacheStrategy();
+  await cache.deleteByPrefix(BLOG_POST_LIST_CACHE_KEY_PREFIX);
+}
+
+const blogPostListCacheKey = (lang: string, page: number, size: number, sort?: string, query?: string, status?: DocumentStatus): string => {
+  const normalizedQuery = query?.trim().toLowerCase();
+
+  const parts = [
+    BLOG_POST_LIST_CACHE_KEY_PREFIX,
+    `lang=${lang ?? "en"}`,
+    `p${page}`,
+    `s${size}`,
+    `sort=${sort ?? "default"}`,
+    `status=${status ?? "all"}`,
+    `q=${normalizedQuery ? hashQuery(normalizedQuery) : "none"}`,
+  ];
+
+  return parts.join(":");
+}
+
+const hashQuery = (query: string): string =>
+  createHash("sha1").update(query).digest("hex").slice(0, 16);
+
+const blogPostDetailCacheKey = (path: string, locale: Locale) => `blog-post:detail:${locale}:${path}`;
+
+const invalidateBlogPostDetailCache = async (path: string): Promise<void> => {
+  const cache = getCacheStrategy();
+  await Promise.all(
+    SUPPORTED_LOCALES.map(locale => cache.delete(blogPostDetailCacheKey(path, locale)))
+  );
+}
 
 export {
   createBlogPostTextEn,
