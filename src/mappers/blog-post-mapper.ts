@@ -2,7 +2,7 @@ import { DEFAULT_LOCALE, LANG_EN, LANG_SI, LOCALE_EN, LOCALE_SI } from "../const
 import BlogPostDocument from "../documents/blog-post-document";
 import BlogPost from "../interfaces/i-blog-post";
 import BlogPostView from "../interfaces/i-blog-post-view";
-import { capitalizeLang } from "../utils/common-util";
+import { capitalizeLang, localizeDate, localizeTime, resolveLocale } from "../utils/common-util";
 import { mapDocument, mapDocuments } from "./generic-mapper";
 
 export const mapDocumentToBlogPost = (doc: BlogPostDocument): BlogPost => {
@@ -24,20 +24,8 @@ export const mapDocumentToBlogPostView = (lang: string, doc: BlogPostDocument): 
   blogPostView.content = blogPostView[`content${langSuffix}`];
   blogPostView.pageDescription = blogPostView[`pageDescription${langSuffix}`];
 
-  const locale = lang === LANG_SI ? LOCALE_SI : lang === LANG_EN ? LOCALE_EN : DEFAULT_LOCALE;
-
-  const formattedDate = new Intl.DateTimeFormat(locale, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(blogPostView.dateTime));
-
-  const formattedTime = new Intl.DateTimeFormat(locale, {
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: true,
-  }).format(new Date(blogPostView.dateTime));
+  const formattedDate = localizeDate(blogPostView.dateTime, resolveLocale(lang));
+  const formattedTime = localizeTime(blogPostView.dateTime, resolveLocale(lang));
 
   blogPostView.formattedDate = formattedDate;
   blogPostView.formattedTime = formattedTime;
